@@ -2,6 +2,41 @@
   (:require [datalevin.core :as d]
             [instaparse.core :as insta]))
 
+; comments
+; haskell: {- ... -}
+; ocaml:   (* ... *)
+; c:       /* ... */
+; mine?:   {* ... *}
+; curly:   {  ...  }
+; bracket: [  ...  ]
+
+; should have a way of providing *checks* on evaluation
+; like at a period, can write <A 12 S 13> to indicate the score,
+; and the evaluator will check this and either error or provide warning if that's not the case
+
+(def parser
+  (insta/parser "Game            ::= <Whitespace*> (Token <Whitespace+>)* Token?
+                 <Token>         ::= Team | Number | Numbers | Action | <Comment> | Verify
+                 Comment         ::= <'['> #'[^\\]]*' <']'>
+                 Numbers         ::= <'('> <Whitespace*> (Number <Whitespace>)* Number? <')'>
+                 Verify          ::= <'<'> Score <'>'>
+                 Score           ::= <Whitespace*> Team <Whitespace+> Number <Whitespace+> Team <Whitespace+> Number <Whitespace*>
+                 Number          ::= #'[0-9]+'
+                 Team            ::= #'[A-Z]+'
+                 Action          ::= #'[a-z]+'
+                 Whitespace      ::= #'[\\s,]+'"))
+
+(def game-string "V 12 three miss, 21 reb, rim make
+                 C 10 turnover
+                 V (41 20 ) in
+                 [long stoppage here (this was a comment) ]
+                 12 mid make
+                 <V 4 C 0>")
+
+(def parsed-game (insta/parse parser game-string :start :Game))
+
+(insta/transform {:Number #(vector :Number (read-string %))} parsed-game)
+
 (defn valid-shot-distance?
   [d]
   (and (>= d 0) (< d 100)))
@@ -253,14 +288,14 @@
 (defn team-offensive-rating
   [team]
   (let [[pts ftpts npos] (d/q '[:find [(sum ?points) (sum ?ft-points) (count-distinct ?p)]
-                                 :in $ ?t
-                                 :where
-                                 [?p :possession/team ?t]
-                                 [?p :possession/action ?a]
-                                 [?a :action/type ?at]
-                                 [(get-else $ ?at :action/score 0) ?points]
-                                 [(get-else $ ?a :action/ft-made 0) ?ft-points]]
-                               @conn (team-name->eid team))]
+                                :in $ ?t
+                                :where
+                                [?p :possession/team ?t]
+                                [?p :possession/action ?a]
+                                [?a :action/type ?at]
+                                [(get-else $ ?at :action/score 0) ?points]
+                                [(get-else $ ?a :action/ft-made 0) ?ft-points]]
+                              @conn (team-name->eid team))]
     (/ (+ pts ftpts) npos)))
 
 (team-offensive-rating "Blaine Borderites")
