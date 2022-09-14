@@ -1,5 +1,6 @@
-(ns src.core
-  (:require [datalevin.core :as d]))
+(ns core
+  (:require [datalevin.core :as d]
+            [instaparse.core :as insta]))
 
 (defn valid-shot-distance?
   [d]
@@ -44,7 +45,7 @@
                                    :db/doc "the number of attempted free throws in this action"}
              :shot/distance {:db/valueType :db.type/long
                              :db/cardinality :db.cardinality/one
-                             :db.attr/preds 'src.core/valid-shot-distance?
+                             :db.attr/preds 'core/valid-shot-distance?
                              :db/doc "the distance from the hoop in feet the shot was attempted from"}
              :possession/action {:db/valueType :db.type/ref
                                  :db/cardinality :db.cardinality/many
@@ -96,7 +97,7 @@
 ; this is unsupported functionality in datalevin
 (def guards [{:db/ident :player/guard
               :db.entity/attrs [:player/team :player/number]
-              :db.entity/preds 'src.core/player-is-unique?}])
+              :db.entity/preds 'core/player-is-unique?}])
 
 (def conn (d/get-conn "/tmp/datalevin/clj-basketball-db"))
 
@@ -175,46 +176,6 @@
        :where
        [?p :possession/order]]
      @conn)
-;; => ([{:db/id 13,
-;;       :possession/team {:db/id 10, :team/name "Blaine Borderites"},
-;;       :possession/action
-;;       [{:db/id 14, :action/player #:db{:id 15}, :action/order 1, :action/type #:db{:ident :action.type/miss-3}}
-;;        {:db/id 16,
-;;         :action/player #:db{:id 17},
-;;         :action/order 2,
-;;         :action/type #:db{:ident :action.type/make-2},
-;;         :action/ft-1 true}]}]
-;;     [{:db/id 24,
-;;       :possession/team {:db/id 11, :team/name "Bellingham Bayhawks"},
-;;       :possession/action
-;;       [{:db/id 25,
-;;         :action/player #:db{:id 26},
-;;         :action/order 1,
-;;         :action/type #:db{:ident :action.type/bonus},
-;;         :action/ft-2 false,
-;;         :action/ft-1 true}]}]
-;;     [{:db/id 27,
-;;       :possession/team {:db/id 10, :team/name "Blaine Borderites"},
-;;       :possession/action
-;;       [{:db/id 28,
-;;         :action/player #:db{:id 29},
-;;         :action/order 1,
-;;         :action/type #:db{:ident :action.type/miss-3},
-;;         :action/ft-attempted 3,
-;;         :action/ft-made 2}]}]
-;;     [{:db/id 30,
-;;       :possession/team {:db/id 10, :team/name "Blaine Borderites"},
-;;       :possession/action
-;;       [{:db/id 31,
-;;         :action/player #:db{:id 32},
-;;         :action/order 1,
-;;         :action/type #:db{:ident :action.type/make-2},
-;;         :action/ft-attempted 1,
-;;         :action/ft-made 1}]}]
-;;     [{:db/id 18,
-;;       :possession/team {:db/id 11, :team/name "Bellingham Bayhawks"},
-;;       :possession/action
-;;       [{:db/id 19, :action/player #:db{:id 20}, :action/order 1, :action/type #:db{:ident :action.type/miss-2}}]}])
 
 ; add an "and-one" to the specified action
 (d/transact! conn [{:db/id 16
@@ -240,6 +201,30 @@
                                          :action/ft-attempted 1
                                          :action/ft-made 1}]}])
 
+(defn team-name->eid
+  [team]
+  (d/q '[:find ?e .
+         :in $ ?team
+         :where
+         [?e :team/name ?team]] @conn team))
+
+(defn ft-points
+  [ft]
+  (if ft 1 0))
+
+(defn action-type->points
+  [type]
+  (case type
+    :action.type/make-2 2
+    :action.type/make-3 3
+    0))
+
+(defn action->points
+  [type ft-1 ft-2 ft-3]
+  (+ (action-type->points type)
+     (ft-points ft-1)
+     (ft-points ft-2)
+     (ft-points ft-3)))
 
 (d/q '[:find ?points
        :in $ ?t
@@ -251,8 +236,8 @@
        [(get-else $ ?a :action/ft-1 false) ?ft-1]
        [(get-else $ ?a :action/ft-2 false) ?ft-2]
        [(get-else $ ?a :action/ft-3 false) ?ft-3]
-       [(src.core/action->points ?type ?ft-1 ?ft-2 ?ft-3) ?points]]
-     @conn (src.core/team-name->eid "Blaine Borderites"))
+       [(core/action->points ?type ?ft-1 ?ft-2 ?ft-3) ?points]]
+     @conn (team-name->eid "Blaine Borderites"))
 
 ; get the number of points from FGs, FTs, and total possessions
 (d/q '[:find [(sum ?points) (sum ?ft-points) (count-distinct ?p)]
@@ -263,7 +248,7 @@
        [?a :action/type ?at]
        [(get-else $ ?at :action/score 0) ?points]
        [(get-else $ ?a :action/ft-made 0) ?ft-points]]
-     @conn (src.core/team-name->eid "Bellingham Bayhawks"))
+     @conn (team-name->eid "Bellingham Bayhawks"))
 
 (defn team-offensive-rating
   [team]
@@ -275,37 +260,10 @@
                                  [?a :action/type ?at]
                                  [(get-else $ ?at :action/score 0) ?points]
                                  [(get-else $ ?a :action/ft-made 0) ?ft-points]]
-                               @conn (src.core/team-name->eid team))]
+                               @conn (team-name->eid team))]
     (/ (+ pts ftpts) npos)))
 
 (team-offensive-rating "Blaine Borderites")
-
-(defn ft-points
-  [ft]
-  (if ft 1 0))
-
-(if 0 4 2)
-
-(defn action->points
-  [type ft-1 ft-2 ft-3]
-  (+ (src.core/action-type->points type)
-     (src.core/ft-points ft-1)
-     (src.core/ft-points ft-2)
-     (src.core/ft-points ft-3)))
-
-(defn action-type->points
-  [type]
-  (case type
-    :action.type/make-2 2
-    :action.type/make-3 3
-    0))
-
-(defn team-name->eid
-  [team]
-  (d/q '[:find ?e .
-         :in $ ?team
-         :where
-         [?e :team/name ?team]] @conn team))
 
 ; functions for resetting and closing database
 (defn clear [] (d/clear conn))
