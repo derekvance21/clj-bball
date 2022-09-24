@@ -1,5 +1,5 @@
 {:paths ["src"]
- :deps {datalevin/datalevin {:mvn/version "0.6.16"}
+ :deps {io.replikativ/datahike {:mvn/version "0.5.1511"}
         com.cognitect/transit-clj {:mvn/version "1.0.329"}
         instaparse/instaparse {:mvn/version "1.4.12"}}
  :aliases {:dev {:jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED"

@@ -1,6 +1,170 @@
 (ns core
-  (:require [datalevin.core :as d]
+  (:require [datahike.api :as d]
             [instaparse.core :as insta]))
+
+; what ends an action?
+; - number
+; - reb
+; - shot attempt (rim, mid, three, ...)
+; - technical
+; - turnover
+
+; what ends a possession (and thus also an action)?
+; - *new* team
+; - period
+
+(defn team-selector? [command] (keyword? command))
+(defn number-selector? [command] (number? command))
+(defn action? [command] (symbol? command))
+(defn players-selector? [command] (vector? command))
+
+(defn append-action
+  [parser]
+  (if (empty? (:action parser))
+    parser
+    (as-> parser p
+      (assoc-in p [:action :action/player] [:player/team+number (:team p) (:number p)])
+      (assoc-in p [:action :action/order] (count (:possession p)))
+      (update p :possession (fn [possession] (conj possession (:action p))))
+      (assoc p :action {}))))
+
+(append-action {:number 12
+                :team :A
+                :action {:action/type :action.type/make-3}
+                :possession [{:action/type :action.type/rebound
+                              :action/player [:player/team+number :A 10]
+                              :action/order 0}]
+                })
+
+(defn append-possession
+  [parser]
+  (as-> parser p
+      (append-action p)
+      (update p :possessions (fn [possessions] (conj possessions (:possession p))))
+      (assoc p :possession [])))
+
+(defn apply-team
+  [parser team]
+  (let [curr-team (:team parser)
+        possession-change? (and (not (nil? curr-team))
+                                (not= curr-team team))]
+    ; TODO: could refactor this into as->, with as-> parser p (if possession-change? p) (-> ...)
+    (cond-> parser
+      possession-change? append-possession
+      true (assoc :team team)
+      true (assoc :number nil))))
+
+(apply-team {:team :V
+             :number 12
+             :possession []
+             :possessions []
+             :action {:action/type :action.type/make-3}}
+            :C)
+
+(apply-team {} :V)
+
+
+(defn apply-number
+  [parser number]
+  (-> parser
+      append-action
+      (assoc :number number)))
+
+(apply-number {:number 10
+               :team :C
+               :action {:action/type :action.type/miss-3}
+               :possession []}
+              3)
+
+(defn apply-action
+  [parser action]
+  ((resolve action) parser))
+
+(defn turnover
+  [parser]
+  (-> parser
+      append-action
+      (assoc-in [:action :action/type] :action.type/turnover)))
+
+(defn miss-3
+  [parser]
+  (-> parser
+      append-action
+      (assoc-in [:action :action/type] :action.type/miss-3)))
+
+(defn make-3
+  [parser]
+  (-> parser
+      append-action
+      (assoc-in [:action :action/type] :action.type/make-3)))
+
+(defn miss-2
+  [parser]
+  (-> parser
+      append-action
+      (assoc-in [:action :action/type] :action.type/miss-2)))
+
+(defn make-2
+  [parser]
+  (-> parser
+      append-action
+      (assoc-in [:action :action/type] :action.type/make-2)))
+
+(defn reb
+  [parser]
+  (-> parser
+      append-action
+      (assoc-in [:action :action/type] :action.type/rebound)))
+
+(defn in
+  [parser]
+  (-> parser
+      (assoc :players (:player parser))))
+
+
+(defn game-edn-reducer
+  [parser command]
+  ((cond (team-selector? command) apply-team
+         (number-selector? command) apply-number
+         (players-selector? command) apply-number
+         (action? command) apply-action)
+   parser
+   command))
+
+
+(defn transform-game-edn
+  [game]
+  (as-> (reduce game-edn-reducer {:possession []
+                                  :possessions []} game) parser
+    (append-possession parser)))
+
+(def game-edn '[:V 12 miss-3 21 reb make-2
+                :C 10 miss-2 33 reb turnover
+                :V [41 20] in 12 make-2])
+
+(apply-team
+ {:team :V
+  :number :12
+  :action {:action/type :action.type/make-3}
+  :possession []
+  :possessions []}
+ :C)
+
+(:possessions (transform-game-edn game-edn))
+;; => [[#:action{:type :action.type/miss-3, :player [:player/team+number :V 12], :order 0}
+;;      #:action{:type :action.type/rebound, :player [:player/team+number :V 21], :order 1}
+;;      #:action{:type :action.type/make-2, :player [:player/team+number :V 21], :order 2}]
+;;     [#:action{:type :action.type/miss-2, :player [:player/team+number :C 10], :order 0}
+;;      #:action{:type :action.type/rebound, :player [:player/team+number :C 33], :order 1}
+;;      #:action{:type :action.type/turnover, :player [:player/team+number :C 33], :order 2}]
+;;     [#:action{:type :action.type/make-2, :player [:player/team+number :V 12], :order 0}]]
+
+
+
+
+;; ======
+;; PARSER
+;; ======
 
 ; comments
 ; haskell: {- ... -}
@@ -33,93 +197,116 @@
                  12 mid make
                  <V 4 C 0>")
 
+
 (def parsed-game (insta/parse parser game-string :start :Game))
 
 (insta/transform {:Number #(vector :Number (read-string %))} parsed-game)
+;; => [:Game
+;;     [:Team "V"]
+;;     [:Number 12]
+;;     [:Action "three"]
+;;     [:Action "miss"]
+;;     [:Number 21]
+;;     [:Action "reb"]
+;;     [:Action "rim"]
+;;     [:Action "make"]
+;;     [:Team "C"]
+;;     [:Number 10]
+;;     [:Action "turnover"]
+;;     [:Team "V"]
+;;     [:Numbers [:Number 41] [:Number 20]]
+;;     [:Action "in"]
+;;     [:Number 12]
+;;     [:Action "mid"]
+;;     [:Action "make"]
+;;     [:Verify [:Score [:Team "V"] [:Number 4] [:Team "C"] [:Number 0]]]]
+
 
 (defn valid-shot-distance?
   [d]
   (and (>= d 0) (< d 100)))
 
-(defn player-is-unique?
-  [db eid]
-  (let [p (d/pull db [:player/team :player/number] eid)]
-    false ;; TODO: ensure player is unique here with d/q
-    ))
-
-(def schema {:action/type {:db/valueType :db.type/ref
-                           :db/cardinality :db.cardinality/one
-                           :db/doc "the enumerated type of an action"}
-             :action/player {:db/valueType :db.type/ref
-                             :db/cardinality :db.cardinality/one
-                             :db/doc "the player involved in this action"}
-             :action/order {:db/valueType :db.type/long
-                            :db/cardinality :db.cardinality/one
-                            :db/doc "the order this action happened in its possession"}
-             :action/free-throw {:db/valueType :db.type/boolean
-                                 :db/cardinality :db.cardinality/many
-                                 :schema/see-instead :action/ft-made
-                                 :db/doc "DEPRECATED, SEE :action/ft-made and :action/ft-attempted | the free throw attempts of this action"}
-             :action/ft-1 {:db/valueType :db.type/boolean
-                           :db/cardinality :db.cardinality/one
-                           :schema/see-instead :action/ft-made
-                           :db/doc "DEPRECATED, SEE :action/ft-made and :action/ft-attempted | the result of the first free throw attempt"}
-             :action/ft-2 {:db/valueType :db.type/boolean
-                           :db/cardinality :db.cardinality/one
-                           :schema/see-instead :action/ft-made
-                           :db/doc "DEPRECATED, SEE :action/ft-made and :action/ft-attempted | the result of the second free throw attempt"}
-             :action/ft-3 {:db/valueType :db.type/boolean
-                           :db/cardinality :db.cardinality/one
-                           :schema/see-instead :action/ft-made
-                           :db/doc "DEPRECATED, SEE :action/ft-made and :action/ft-attempted | the result of the third free throw attempt"}
-             :action/ft-made {:db/valueType :db.type/long
-                              :db/cardinality :db.cardinality/one
-                              :db/doc "the number of made free throws in this action"}
-             :action/ft-attempted {:db/valueType :db.type/long
-                                   :db/cardinality :db.cardinality/one
-                                   :db/doc "the number of attempted free throws in this action"}
-             :shot/distance {:db/valueType :db.type/long
-                             :db/cardinality :db.cardinality/one
-                             :db.attr/preds 'core/valid-shot-distance?
-                             :db/doc "the distance from the hoop in feet the shot was attempted from"}
-             :possession/action {:db/valueType :db.type/ref
-                                 :db/cardinality :db.cardinality/many
-                                 :db/isComponent true
-                                 :db/doc "the actions of this possession"}
-             :possession/lineup {:db/valueType :db.type/ref
-                                 :db/cardinality :db.cardinality/many
-                                 :db/doc "the lineup in at the end of this possession"}
-             :possession/points {:db/valueType :db.type/long
-                                 :db/cardinality :db.cardinality/one
-                                 :db/doc "the number of points scored in this possession"
-                                 ;; either needs a :db.entity/preds validator,
-                                 ;; or just use a rule to get the points for a possession by summing the action scores
-                                 }
-             :possession/team {:db/valueType :db.type/ref
-                               :db/cardinality :db.cardinality/one
-                               :db/doc "the team with the ball on this possession"}
-             :possession/order {:db/valueType :db.type/long
-                                :db/cardinality :db.cardinality/one
-                                :db/doc "the order this possession happened in its game"}
-             :game/possession {:db/valueType :db.type/ref
-                               :db/cardinality :db.cardinality/many
-                               :db/isComponent true
-                               :db/doc "the possessions of this game"}
-             :game/minutes {:db/valueType :db.type/long
-                            :db/cardinality :db.cardinality/one
-                            :db/doc "the number of minutes this game lasted"}
-             :player/number {:db/valueType :db.type/long
-                             :db/cardinality :db.cardinality/one
-                             :db/doc "the number jersey the player wears"}
-             :player/team {:db/valueType :db.type/ref
-                           :db/cardinality :db.cardinality/one
-                           :db/doc "the team the player plays for"}
-             :team/name {:db/valueType :db.type/string
-                         :db/cardinality :db.cardinality/one
-                         :db/unique :db.unique/identity}})
+(def schema [
+             ;;action
+             {:db/ident :action/type
+              :db/valueType :db.type/ref
+              :db/cardinality :db.cardinality/one
+              :db/doc "the enumerated type of an action"}
+             {:db/ident :action/player
+              :db/valueType :db.type/ref
+              :db/cardinality :db.cardinality/one
+              :db/doc "the player involved in this action"}
+             {:db/ident :action/order
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the order this action happened in its possession"}
+             {:db/ident :action/ft-made
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number of made free throws in this action"}
+             {:db/ident :action/ft-attempted
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number of attempted free throws in this action"}
+             {:db/ident :shot/distance
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the distance from the hoop in feet the shot was attempted from"}
+             
+             ;; possession
+             {:db/ident :possession/action
+              :db/valueType :db.type/ref
+              :db/cardinality :db.cardinality/many
+              :db/isComponent true
+              :db/doc "the actions of this possession"}
+             {:db/ident :possession/lineup
+              :db/valueType :db.type/ref
+              :db/cardinality :db.cardinality/many
+              :db/doc "the lineup in at the end of this possession"}
+             {:db/ident :possession/points
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number of points scored in this possession"}
+             {:db/ident :possession/team
+              :db/valueType :db.type/ref
+              :db/cardinality :db.cardinality/one
+              :db/doc "the team with the ball on this possession"}
+             {:db/ident :possession/order
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the order this possession happened in its game"}
+             
+             ;; game
+             {:db/ident :game/possession
+              :db/valueType :db.type/ref
+              :db/cardinality :db.cardinality/many
+              :db/isComponent true
+              :db/doc "the possessions of this game"}
+             {:db/ident :game/minutes
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number of minutes this game lasted"}
+             
+             ;; player
+             {:db/ident :player/number
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number jersey the player wears"}
+             {:db/ident :player/team
+              :db/valueType :db.type/ref
+              :db/cardinality :db.cardinality/one
+              :db/doc "the team the player plays for"}
+    
+             ;; team
+             {:db/ident :team/name
+              :db/valueType :db.type/string
+              :db/cardinality :db.cardinality/one
+              :db/unique :db.unique/identity
+              :db/doc "the name of the team"}])
 
 (def action-type-enums [{:db/ident :action.type/turnover}
-                        {:db/ident :action.type/rebound}
+                        {:db/ident :action.type/def-rebound} ; TODO: potentially make rebounds ref's of a shot attempt action
+                        {:db/ident :action.type/off-rebound} ; TODO: potentially make rebounds ref's of a shot attempt action
                         {:db/ident :action.type/make-2
                          :action/score 2}
                         {:db/ident :action.type/make-3
@@ -129,22 +316,36 @@
                         {:db/ident :action.type/bonus}
                         {:db/ident :action.type/technical}])
 
-; this is unsupported functionality in datalevin
-(def guards [{:db/ident :player/guard
-              :db.entity/attrs [:player/team :player/number]
-              :db.entity/preds 'core/player-is-unique?}])
+(def cfg {:store {:backend :file
+                  :path "/tmp/datahike-clj-basketball-db"}})
 
-(def conn (d/get-conn "/tmp/datalevin/clj-basketball-db"))
+(d/create-database cfg)
+(def conn (d/connect cfg))
 
-(d/update-schema conn schema)
+(d/transact conn schema)
 
-(d/transact! conn action-type-enums)
-; (d/transact! conn guards) ;; :db/ensure and guards do not exist in datalevin! They do in datahike 
+(d/transact conn [{:db/ident :player/team+number
+                   :db/valueType :db.type/tuple
+                   :db/tupleAttrs [:player/team :player/number]
+                   :db/cardinality :db.cardinality/one
+                   :db/unique :db.unique/identity}])
+
+(d/transact conn [{:db/ident :action/score
+                   :db/valueType :db.type/long
+                   :db/cardinality :db.cardinality/one
+                   :db/doc "the number of points scored for this action type"}])
+
+(d/transact conn action-type-enums)
+
+(d/schema @conn)
 
 ; gets all action types, and their score, defaulted to 0
+; note: predicates can't have nested transformations, so [(= (namespace ?ai) "action.type")] fails (without error)
 (d/q '[:find (pull ?a [:db/id :db/ident [:action/score :default 0]])
        :where
-       [?a :db/ident]]
+       [?a :db/ident ?ai]
+       [(namespace ?ai) ?ns]
+       [(= ?ns "action.type")]]
      @conn)
 
 (def game [{:db/id -1
