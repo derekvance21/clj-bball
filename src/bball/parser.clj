@@ -36,109 +36,140 @@
   [parser]
   (:team parser))
 
-(defn team-transact
-  [parser]
-  (let [team (parser-team parser)]
-    [:team/name (get-in parser [:teams team] team)]))
-
 (defn number-transact
   [parser]
   (:number parser))
 
 (defn append-action
   [parser]
-  (if (empty? (:action parser))
-    parser
-    (as-> parser p
-      (assoc-in p [:action :action/player] [:player/team+number (team-transact p) (number-transact p)])
-      (assoc-in p [:action :action/order] (count (:possession p)))
-      (update p :possession (fnil (fn [possession] (conj possession (:action p))) []))
-      (assoc p :action {}))))
+  (let [action (:action parser)]
+    (if (empty? action)
+      parser
+      (-> parser
+          (update-in [:possession :possession/action]
+                     (fnil (fn [actions]
+                             (conj actions
+                                   (assoc action
+                                          :action/order
+                                          (count actions))))
+                           []))
+          (assoc :action {})))))
 
-(append-action {:action {:action/type :action.type/miss-2}
-                :team :A
-                :number 21
-                :possession [{:action/type :action.type/rebound
-                              :action/player [:player/team+number :A 30]}]})
+(append-action {:possession {:possession/order 3
+                             :possession/team {:team/name "Seattle Storm"}
+                             :possession/action [{:action/type :action.type/rebound
+                                                  :player/number 23
+                                                  :action/order 0}]}
+                :action {:action/type :action.type/turnover
+                         :player/number 30}})
 
 (defn append-possession
   [parser]
-  (as-> parser p
-    (append-action p)
-    (update p :possessions (fnil (fn [possessions] (conj possessions (:possession p))) []))
-    (assoc p :possession [])))
+  (-> parser
+    (update-in [:game :game/possession] (fnil (fn [possessions]
+                                                (conj possessions
+                                                      (assoc (:possession parser)
+                                                             :possession/order
+                                                             (count possessions))))
+                                              []))
+    (assoc :possession {:possession/team (:team parser)})
+    (assoc :action {})))
+
+(append-possession {:teams {:V "Las Vegas Aces"
+                            :S "Seattle Storm"}
+                    :team {:team/name "Las Vegas Aces"}
+                    :possession {:possession/team {:team/name "Seattle Storm"}
+                                 :possession/action [{:action/type :action.type/turnover
+                                                      :player/number 30}]}})
 
 (defn apply-team
-  [parser team]
-  (let [curr-team (:team parser)
-        possession-change? (and (not (nil? curr-team))
-                                (not= curr-team team))]
-    ; TODO: could refactor this into as->, with as-> parser p (if possession-change? p) (-> ...)
-    (cond-> parser
-      possession-change? append-possession
-      true (assoc :team team)
-      true (assoc :number nil))))
+  [parser team-keyword]
+  (let [team {:team/name (get-in parser [:teams team-keyword])}]
+    (-> parser
+        (update-in [:possession :possession/team] (fnil identity team))
+        (assoc :team team)
+        (assoc :number nil))))
 
-(append-possession {:team :A
-                    :number 12
-                    :action {:action/type :action.type/make-2}})
+(apply-team {:teams {:S "Seattle Storm"
+                     :V "Las Vegas Aces"}}
+            :S)
 
 (defn apply-number
   [parser number]
   (-> parser
-      append-action
       (assoc :number number)))
 
 (defn apply-action
   [parser action]
-  ((resolve action) parser))
+  ((ns-resolve *ns* action) parser))
 
-(resolve 'turnover)
+(defn possession-change?
+  [parser]
+  (not= (get-in parser [:possession :possession/team])
+        (:team parser)))
 
-(defn change-action-type
-  [parser type]
-  (assoc-in parser [:action :action/type] type))
+(defn check-possession-change
+  [parser]
+  (cond-> parser
+    (possession-change? parser) append-possession))
+
+(check-possession-change {:teams {:V "Las Vegas Aces"
+                                  :S "Seattle Storm"}
+                          :team {:team/name "Seattle Storm"}
+                          :possession {:possession/team {:team/name "Las Vegas Aces"}}})
 
 (defn turnover
   [parser]
   (-> parser
-      append-action
-      (change-action-type :action.type/turnover)))
+    append-action
+    check-possession-change
+    (assoc-in [:action :player/number] (:number parser))
+    (assoc-in [:action :action/type] :action.type/turnover)))
 
-(defn miss-3
+(defn three
   [parser]
   (-> parser
       append-action
-      (change-action-type :action.type/miss-3)))
+      check-possession-change
+      (assoc-in [:action :player/number] (:number parser))
+      (assoc-in [:action :action/type] :action.type/shot)
+      (assoc-in [:action :shot/value] 3)))
 
-(defn make-3
+(defn two
   [parser]
   (-> parser
       append-action
-      (change-action-type :action.type/make-3)))
+      check-possession-change
+      (assoc-in [:action :player/number] (:number parser))
+      (assoc-in [:action :action/type] :action.type/shot)
+      (assoc-in [:action :shot/value] 2)))
 
-(defn miss-2
+(defn make
   [parser]
-  (-> parser
-      append-action
-      (change-action-type :action.type/miss-2)))
+  (assoc-in parser [:action :shot/make?] true))
 
-(defn make-2
+(defn miss
   [parser]
-  (-> parser
-      append-action
-      (change-action-type :action.type/make-2)))
+  (assoc-in parser [:action :shot/make?] false))
 
 (defn reb
   [parser]
-  (-> parser
-      append-action
-      (change-action-type :action.type/rebound)))
+  (cond-> parser
+      true (assoc-in [:action :shot/off-reb?] (= (:team parser)
+                                            (get-in parser [:possession :possession/team])))
+      (:number parser) (assoc-in [:action :shot/rebounder] (:number parser))))
 
 (defn in
   [parser]
   (-> parser
       (assoc :players (:player parser))))
+
+; TODO: end of period should end possession (use for end of game, too)
+(defn period
+  [parser]
+  (-> parser
+      append-action
+      append-possession))
 
 (defn game-edn-reducer
   [parser command]
@@ -149,15 +180,136 @@
    parser
    command))
 
-
 (defn transform-game-edn
-  [[teams & commands]]
-  (as-> (reduce game-edn-reducer {:teams teams} commands) parser
-    (append-possession parser)))
+  [[teams commands]]
+  (reduce game-edn-reducer {:teams teams} commands))
+
+(transform-game-edn '[{:V "Vegas"
+                       :S "Seattle"}
+                      [:V 12 three miss 22 reb two make
+                       :S 30 three miss reb 24 turnover
+                       :V 41 two miss :V reb 22 two miss
+                       :S 30 reb 10 three make
+                       period]])
+;; => {:teams {:V "Vegas", :S "Seattle"},
+;;     :possession #:possession{:team #:team{:name "Seattle"}},
+;;     :team #:team{:name "Seattle"},
+;;     :number 10,
+;;     :action {},
+;;     :game
+;;     #:game{:possession
+;;            [#:possession{:team #:team{:name "Vegas"},
+;;                          :action
+;;                          [{:player/number 12,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 3,
+;;                            :shot/make? false,
+;;                            :shot/off-reb? true,
+;;                            :shot/rebounder 22,
+;;                            :action/order 0}
+;;                           {:player/number 22,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 2,
+;;                            :shot/make? true,
+;;                            :action/order 1}],
+;;                          :order 0}
+;;             #:possession{:team #:team{:name "Seattle"},
+;;                          :action
+;;                          [{:player/number 30,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 3,
+;;                            :shot/make? false,
+;;                            :shot/off-reb? true,
+;;                            :shot/rebounder 30,
+;;                            :action/order 0}
+;;                           {:player/number 24, :action/type :action.type/turnover, :action/order 1}],
+;;                          :order 1}
+;;             #:possession{:team #:team{:name "Vegas"},
+;;                          :action
+;;                          [{:player/number 41,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 2,
+;;                            :shot/make? false,
+;;                            :shot/off-reb? true,
+;;                            :action/order 0}
+;;                           {:player/number 22,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 2,
+;;                            :shot/make? false,
+;;                            :shot/off-reb? false,
+;;                            :shot/rebounder 30,
+;;                            :action/order 1}],
+;;                          :order 2}
+;;             #:possession{:team #:team{:name "Seattle"},
+;;                          :action
+;;                          [{:player/number 10,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 3,
+;;                            :shot/make? true,
+;;                            :action/order 0}],
+;;                          :order 3}]}}
+
+;; => {:teams {:V "Vegas", :S "Seattle"},
+;;     :possession #:possession{:team #:team{:name "Seattle"}},
+;;     :team #:team{:name "Seattle"},
+;;     :number 10,
+;;     :action {},
+;;     :game
+;;     #:game{:possession
+;;            [#:possession{:team #:team{:name "Vegas"},
+;;                          :action
+;;                          [{:player/number 12,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 3,
+;;                            :shot/make? false,
+;;                            :shot/off-reb? true,
+;;                            :shot/rebounder 22,
+;;                            :action/order 0}
+;;                           {:player/number 22,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 2,
+;;                            :shot/make? true,
+;;                            :action/order 1}],
+;;                          :order 0}
+;;             #:possession{:team #:team{:name "Seattle"},
+;;                          :action
+;;                          [{:player/number 30,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 3,
+;;                            :shot/make? false,
+;;                            :shot/off-reb? true,
+;;                            :shot/rebounder 30,
+;;                            :action/order 0}
+;;                           {:player/number 24, :action/type :action.type/turnover, :action/order 1}],
+;;                          :order 1}
+;;             #:possession{:team #:team{:name "Vegas"},
+;;                          :action
+;;                          [{:player/number 41,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 2,
+;;                            :shot/make? false,
+;;                            :shot/off-reb? true,
+;;                            :action/order 0}
+;;                           {:player/number 22,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 2,
+;;                            :shot/make? false,
+;;                            :shot/off-reb? false,
+;;                            :action/order 1}],
+;;                          :order 2}
+;;             #:possession{:team #:team{:name "Seattle"},
+;;                          :action
+;;                          [{:player/number 10,
+;;                            :action/type :action.type/shot,
+;;                            :shot/value 3,
+;;                            :shot/make? true,
+;;                            :action/order 0}],
+;;                          :order 3}]}}
+
 
 (defn debug-transform-game-edn
   [[teams commands]]
-  (reductions game-edn-reducer {:teams teams} (conj commands 'append-possession)))
+  (reductions game-edn-reducer {:teams teams} commands))
 
 (def game-edn '[{:V "Las Vegas Aces"
                  :C "Chicago Sky"}

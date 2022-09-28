@@ -1,5 +1,6 @@
 (ns bball.core
-  (:require [datahike.api :as d]))
+  (:require [datahike.api :as d]
+            [bball.parser :as p]))
 
 (defn valid-shot-distance?
   [d]
@@ -34,9 +35,9 @@
               :db/cardinality :db.cardinality/one
               :db/doc "the distance from the hoop in feet the shot was attempted from"}
              {:db/ident :shot/rebounder
-              :db/valueType :db.type/ref
+              :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
-              :db/doc "the rebounder of the shot attempt"}
+              :db/doc "the number player of the rebounder of the shot attempt"}
              {:db/ident :shot/value
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
@@ -45,6 +46,10 @@
               :db/valueType :db.type/boolean
               :db/cardinality :db.cardinality/one
               :db/doc "whether or not the shot was made"}
+             {:db/ident :shot/off-reb?
+              :db/valueType :db.type/boolean
+              :db/cardinality :db.cardinality/one
+              :db/doc "whether or not the shot was offensive rebounded"}
              
              ;; possession
              {:db/ident :possession/action
@@ -176,7 +181,7 @@
             :team/name "Bellingham Bayhawks"}
            {:game/minutes 32
             :game/possession [{:possession/team -1
-                               :possession/order 1
+                               :possession/order 0
                                :possession/points 2
                                :possession/action [{:action/order 1
                                                     :action/type :action.type/miss-3
@@ -195,6 +200,17 @@
                                                                     :player/team -2}}]}]}])
 
 (d/transact! conn game)
+
+; how do I get the action commands do resolve correctly???
+(p/transform-game-edn '[{:V "Vegas"
+                         :S "Seattle"}
+                        [:V 12
+                         three miss 22 reb two make
+                         :S 30 three miss reb 24 turnover
+                         :V 41 two miss :V reb 22 two miss
+                         :S 30 reb 10 three make
+                         period
+                         ]])
 
 ; gets all players, and their team
 (def player-query '[:find (pull ?p [:db/id :player/number]) (pull ?t [:db/id :team/name])
