@@ -1,34 +1,63 @@
 (ns bball.parser
   (:require [instaparse.core :as insta]))
 
-; what ends an action?
-; - number
-; - reb
-; - shot attempt (rim, mid, three, ...)
-; - technical
-; - turnover
+; what commands can start a new possession?
+; - shot, where team selector doesn't match current :possession/team
+;   - if so:
+;   - end the current action,
+;   - end the current possession,
+;   - set :possession/team to current team selector
+;   - always:
+;   - set :action/type to shot
+;   - set :player/number to player selector
+; - turnover, where team selector doesn't match current :possession/team
+;   - if so: same as above
+;   - always:
+;   - set :action/type to turnover
+;   - set :player/number to player selector
 
-; what ends a possession (and thus also an action)?
-; - *new* team
-; - period
+; what starts a new action?
+; - turnover
+; - shot
+; - bonus
+; - technical
+; - rebound (modifies current action, then starts new one)
+
+; when above has a team selector that doesn't match current :possession/team, a new possession is started
+
+; list form: (ft 1 2) ; made 1 free throw of 2 attempts
 
 (defn team-selector? [command] (keyword? command))
 (defn number-selector? [command] (number? command))
 (defn action? [command] (symbol? command))
 (defn players-selector? [command] (vector? command))
 
+(defn parser-team
+  [parser]
+  (:team parser))
+
+(defn team-transact
+  [parser]
+  (let [team (parser-team parser)]
+    [:team/name (get-in parser [:teams team] team)]))
+
+(defn number-transact
+  [parser]
+  (:number parser))
+
 (defn append-action
   [parser]
   (if (empty? (:action parser))
     parser
     (as-> parser p
-      (assoc-in p [:action :action/player] [:player/team+number (:team p) (:number p)])
+      (assoc-in p [:action :action/player] [:player/team+number (team-transact p) (number-transact p)])
       (assoc-in p [:action :action/order] (count (:possession p)))
       (update p :possession (fnil (fn [possession] (conj possession (:action p))) []))
       (assoc p :action {}))))
 
-(append-action {:action {:action/type :action.type/miss-2
-                         :action/player [:player/team+number :A 12]}
+(append-action {:action {:action/type :action.type/miss-2}
+                :team :A
+                :number 21
                 :possession [{:action/type :action.type/rebound
                               :action/player [:player/team+number :A 30]}]})
 
@@ -64,41 +93,47 @@
   [parser action]
   ((resolve action) parser))
 
+(resolve 'turnover)
+
+(defn change-action-type
+  [parser type]
+  (assoc-in parser [:action :action/type] type))
+
 (defn turnover
   [parser]
   (-> parser
       append-action
-      (assoc-in [:action :action/type] :action.type/turnover)))
+      (change-action-type :action.type/turnover)))
 
 (defn miss-3
   [parser]
   (-> parser
       append-action
-      (assoc-in [:action :action/type] :action.type/miss-3)))
+      (change-action-type :action.type/miss-3)))
 
 (defn make-3
   [parser]
   (-> parser
       append-action
-      (assoc-in [:action :action/type] :action.type/make-3)))
+      (change-action-type :action.type/make-3)))
 
 (defn miss-2
   [parser]
   (-> parser
       append-action
-      (assoc-in [:action :action/type] :action.type/miss-2)))
+      (change-action-type :action.type/miss-2)))
 
 (defn make-2
   [parser]
   (-> parser
       append-action
-      (assoc-in [:action :action/type] :action.type/make-2)))
+      (change-action-type :action.type/make-2)))
 
 (defn reb
   [parser]
   (-> parser
       append-action
-      (assoc-in [:action :action/type] :action.type/rebound)))
+      (change-action-type :action.type/rebound)))
 
 (defn in
   [parser]
@@ -116,37 +151,26 @@
 
 
 (defn transform-game-edn
-  [game]
-  (as-> (reduce game-edn-reducer {:possession []
-                                  :possessions []} game) parser
+  [[teams & commands]]
+  (as-> (reduce game-edn-reducer {:teams teams} commands) parser
     (append-possession parser)))
 
-(def game-edn '[:V 12 miss-3 21 reb make-2
-                :C 10 miss-2 33 reb turnover
-                :V [41 20] in 12 make-2])
+(defn debug-transform-game-edn
+  [[teams commands]]
+  (reductions game-edn-reducer {:teams teams} (conj commands 'append-possession)))
 
-(apply-team
- {:team :V
-  :number :12
-  :action {:action/type :action.type/make-3}
-  :possession []
-  :possessions []}
- :C)
+(def game-edn '[{:V "Las Vegas Aces"
+                 :C "Chicago Sky"}
+                [:V 12 miss-3 21 reb make-2
+                 :C 10 miss-2 33 reb turnover
+                 :V [41 20] in 12 make-2]])
+
+(debug-transform-game-edn game-edn)
 
 (:possessions (transform-game-edn game-edn))
-;; => [[#:action{:type :action.type/miss-3, :player [:player/team+number :V 12], :order 0}
-;;      #:action{:type :action.type/rebound, :player [:player/team+number :V 21], :order 1}
-;;      #:action{:type :action.type/make-2, :player [:player/team+number :V 21], :order 2}]
-;;     [#:action{:type :action.type/miss-2, :player [:player/team+number :C 10], :order 0}
-;;      #:action{:type :action.type/rebound, :player [:player/team+number :C 33], :order 1}
-;;      #:action{:type :action.type/turnover, :player [:player/team+number :C 33], :order 2}]
-;;     [#:action{:type :action.type/make-2, :player [:player/team+number :V 12], :order 0}]]
-
-
-
 
 ;; ======
-;; PARSER
+;; INSTAPARSER
 ;; ======
 
 ; comments

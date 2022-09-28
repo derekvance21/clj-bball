@@ -5,7 +5,7 @@
   [d]
   (and (>= d 0) (< d 100)))
 
-(def schema [;;action
+(def schema [;; action
              {:db/ident :action/type
               :db/valueType :db.type/ref
               :db/cardinality :db.cardinality/one
@@ -14,6 +14,7 @@
               :db/valueType :db.type/ref
               :db/cardinality :db.cardinality/one
               :db/doc "the player involved in this action"}
+             ; use :player/number here for player performing action
              {:db/ident :action/order
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
@@ -26,10 +27,24 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number of attempted free throws in this action"}
+             
+             ;; shot
              {:db/ident :shot/distance
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the distance from the hoop in feet the shot was attempted from"}
+             {:db/ident :shot/rebounder
+              :db/valueType :db.type/ref
+              :db/cardinality :db.cardinality/one
+              :db/doc "the rebounder of the shot attempt"}
+             {:db/ident :shot/value
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the value of the shot attempted, 2 or 3"}
+             {:db/ident :shot/make?
+              :db/valueType :db.type/boolean
+              :db/cardinality :db.cardinality/one
+              :db/doc "whether or not the shot was made"}
              
              ;; possession
              {:db/ident :possession/action
@@ -85,17 +100,17 @@
 (def action-type-enums [{:db/ident :action.type/turnover}
                         {:db/ident :action.type/def-rebound} ; TODO: potentially make rebounds ref's of a shot attempt action
                         {:db/ident :action.type/off-rebound} ; TODO: potentially make rebounds ref's of a shot attempt action
-                        {:db/ident :action.type/make-2
-                         :action/score 2}
-                        {:db/ident :action.type/make-3
-                         :action/score 3}
+                        {:db/ident :action.type/make-2}
+                        {:db/ident :action.type/make-3}
                         {:db/ident :action.type/miss-2}
                         {:db/ident :action.type/miss-3}
                         {:db/ident :action.type/bonus}
-                        {:db/ident :action.type/technical}])
+                        {:db/ident :action.type/technical}
+                        {:db/ident :action.type/shot
+                         :db/doc "a shot attempted in this action"}])
 
-(def cfg {:store {:backend :file
-                  :path "/tmp/datahike-clj-basketball-db"}})
+(def cfg {:store {:backend :mem
+                  :id "clj-basketball-db"}})
 
 (d/create-database cfg)
 (def conn (d/connect cfg))
@@ -108,22 +123,51 @@
                    :db/cardinality :db.cardinality/one
                    :db/unique :db.unique/identity}])
 
-(d/transact conn [{:db/ident :action/score
-                   :db/valueType :db.type/long
-                   :db/cardinality :db.cardinality/one
-                   :db/doc "the number of points scored for this action type"}])
-
 (d/transact conn action-type-enums)
 
 (d/schema @conn)
 
-; gets all action types, and their score, defaulted to 0
+; gets all action types
 ; note: predicates can't have nested transformations, so [(= (namespace ?ai) "action.type")] fails (without error)
-(d/q '[:find (pull ?a [:db/id :db/ident [:action/score :default 0]])
+(d/q '[:find (pull ?a [:db/id :db/ident])
        :where
        [?a :db/ident ?ai]
        [(namespace ?ai) ?ns]
        [(= ?ns "action.type")]]
+     @conn)
+
+(d/transact conn [{:db/id -1
+                   :player/number 12
+                   :player/team {:team/name "Anacortes Seahawks"}}
+                  {:action/type :action.type/shot
+                   :action/order 0
+                   :action/player -1}])
+
+(d/transact conn [{:db/id -1
+                   :player/number 20
+                   :player/team {:team/name "Anacortes Seahawks"}}
+                  {:action/type :action.type/turnover
+                   :action/order 0
+                   :action/player -1}])
+
+(d/q '[:find (pull ?a [* {:action/player [* {:player/team [*]}]}])
+       :where
+       [?a :action/type]]
+     @conn)
+
+(d/transact conn [{:possession/team {:team/name "Blaine Borderites"}
+                   :possession/order 0
+                   :possession/action [{:action/player {:team/name "Blaine Borderites"}
+                                        :action/type :action.type/turnover}]}])
+
+(d/transact conn [{:possession/team {:team/name "Sehome Mariners"}
+                   :possession/order 0
+                   :possession/action [{:action/player [:team/name "Sehome Mariners"]
+                                        :action/type :action.type/turnover}]}])
+
+(d/q '[:find (pull ?t [*])
+       :where
+       [?t :team/name]]
      @conn)
 
 (def game [{:db/id -1
