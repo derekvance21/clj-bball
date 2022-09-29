@@ -31,6 +31,7 @@
 (defn number-selector? [command] (number? command))
 (defn action? [command] (symbol? command))
 (defn players-selector? [command] (vector? command))
+(defn action-call? [command] (list? command))
 
 (defn parser-team
   [parser]
@@ -51,7 +52,7 @@
                              (conj actions
                                    (assoc action
                                           :action/order
-                                          (count actions))))
+                                          (-> actions count long))))
                            []))
           (assoc :action {})))))
 
@@ -70,7 +71,7 @@
                                                 (conj possessions
                                                       (assoc (:possession parser)
                                                              :possession/order
-                                                             (count possessions))))
+                                                             (-> possessions count long))))
                                               []))
     (assoc :possession {:possession/team (:team parser)})
     (assoc :action {})))
@@ -101,7 +102,21 @@
 
 (defn apply-action
   [parser action]
-  ((ns-resolve *ns* action) parser))
+  ((ns-resolve (find-ns 'bball.parser) action) parser))
+
+(defn apply-action-call
+  [parser [fn-symbol & args]]
+  (let [fn (ns-resolve (find-ns 'bball.parser) fn-symbol)]
+    (apply fn parser args)))
+
+(defn ft
+  [parser made attempted]
+  (-> parser
+      (assoc-in [:action :action/ft-made] made)
+      (assoc-in [:action :action/ft-attempted] attempted)))
+
+
+(apply-action-call {:team :S} '(ft 1 2))
 
 (defn possession-change?
   [parser]
@@ -176,7 +191,8 @@
   ((cond (team-selector? command) apply-team
          (number-selector? command) apply-number
          (players-selector? command) apply-number
-         (action? command) apply-action)
+         (action? command) apply-action
+         (action-call? command) apply-action-call)
    parser
    command))
 
@@ -191,121 +207,11 @@
                        :V 41 two miss :V reb 22 two miss
                        :S 30 reb 10 three make
                        period]])
-;; => {:teams {:V "Vegas", :S "Seattle"},
-;;     :possession #:possession{:team #:team{:name "Seattle"}},
-;;     :team #:team{:name "Seattle"},
-;;     :number 10,
-;;     :action {},
-;;     :game
-;;     #:game{:possession
-;;            [#:possession{:team #:team{:name "Vegas"},
-;;                          :action
-;;                          [{:player/number 12,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 3,
-;;                            :shot/make? false,
-;;                            :shot/off-reb? true,
-;;                            :shot/rebounder 22,
-;;                            :action/order 0}
-;;                           {:player/number 22,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 2,
-;;                            :shot/make? true,
-;;                            :action/order 1}],
-;;                          :order 0}
-;;             #:possession{:team #:team{:name "Seattle"},
-;;                          :action
-;;                          [{:player/number 30,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 3,
-;;                            :shot/make? false,
-;;                            :shot/off-reb? true,
-;;                            :shot/rebounder 30,
-;;                            :action/order 0}
-;;                           {:player/number 24, :action/type :action.type/turnover, :action/order 1}],
-;;                          :order 1}
-;;             #:possession{:team #:team{:name "Vegas"},
-;;                          :action
-;;                          [{:player/number 41,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 2,
-;;                            :shot/make? false,
-;;                            :shot/off-reb? true,
-;;                            :action/order 0}
-;;                           {:player/number 22,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 2,
-;;                            :shot/make? false,
-;;                            :shot/off-reb? false,
-;;                            :shot/rebounder 30,
-;;                            :action/order 1}],
-;;                          :order 2}
-;;             #:possession{:team #:team{:name "Seattle"},
-;;                          :action
-;;                          [{:player/number 10,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 3,
-;;                            :shot/make? true,
-;;                            :action/order 0}],
-;;                          :order 3}]}}
 
-;; => {:teams {:V "Vegas", :S "Seattle"},
-;;     :possession #:possession{:team #:team{:name "Seattle"}},
-;;     :team #:team{:name "Seattle"},
-;;     :number 10,
-;;     :action {},
-;;     :game
-;;     #:game{:possession
-;;            [#:possession{:team #:team{:name "Vegas"},
-;;                          :action
-;;                          [{:player/number 12,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 3,
-;;                            :shot/make? false,
-;;                            :shot/off-reb? true,
-;;                            :shot/rebounder 22,
-;;                            :action/order 0}
-;;                           {:player/number 22,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 2,
-;;                            :shot/make? true,
-;;                            :action/order 1}],
-;;                          :order 0}
-;;             #:possession{:team #:team{:name "Seattle"},
-;;                          :action
-;;                          [{:player/number 30,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 3,
-;;                            :shot/make? false,
-;;                            :shot/off-reb? true,
-;;                            :shot/rebounder 30,
-;;                            :action/order 0}
-;;                           {:player/number 24, :action/type :action.type/turnover, :action/order 1}],
-;;                          :order 1}
-;;             #:possession{:team #:team{:name "Vegas"},
-;;                          :action
-;;                          [{:player/number 41,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 2,
-;;                            :shot/make? false,
-;;                            :shot/off-reb? true,
-;;                            :action/order 0}
-;;                           {:player/number 22,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 2,
-;;                            :shot/make? false,
-;;                            :shot/off-reb? false,
-;;                            :action/order 1}],
-;;                          :order 2}
-;;             #:possession{:team #:team{:name "Seattle"},
-;;                          :action
-;;                          [{:player/number 10,
-;;                            :action/type :action.type/shot,
-;;                            :shot/value 3,
-;;                            :shot/make? true,
-;;                            :action/order 0}],
-;;                          :order 3}]}}
-
+(transform-game-edn '[{:V "Vegas"
+                       :S "Seattle"}
+                      [:V 10 two miss (ft 1 2)
+                       period]])
 
 (defn debug-transform-game-edn
   [[teams commands]]

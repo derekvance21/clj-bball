@@ -28,7 +28,7 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number of attempted free throws in this action"}
-             
+
              ;; shot
              {:db/ident :shot/distance
               :db/valueType :db.type/long
@@ -50,7 +50,7 @@
               :db/valueType :db.type/boolean
               :db/cardinality :db.cardinality/one
               :db/doc "whether or not the shot was offensive rebounded"}
-             
+
              ;; possession
              {:db/ident :possession/action
               :db/valueType :db.type/ref
@@ -73,7 +73,7 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the order this possession happened in its game"}
-             
+
              ;; game
              {:db/ident :game/possession
               :db/valueType :db.type/ref
@@ -84,7 +84,7 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number of minutes this game lasted"}
-             
+
              ;; player
              {:db/ident :player/number
               :db/valueType :db.type/long
@@ -94,7 +94,7 @@
               :db/valueType :db.type/ref
               :db/cardinality :db.cardinality/one
               :db/doc "the team the player plays for"}
-    
+
              ;; team
              {:db/ident :team/name
               :db/valueType :db.type/string
@@ -201,16 +201,37 @@
 
 (d/transact! conn game)
 
-; how do I get the action commands do resolve correctly???
-(p/transform-game-edn '[{:V "Vegas"
-                         :S "Seattle"}
-                        [:V 12
-                         three miss 22 reb two make
-                         :S 30 three miss reb 24 turnover
-                         :V 41 two miss :V reb 22 two miss
-                         :S 30 reb 10 three make
-                         period
-                         ]])
+(def edn-game '[{:V "Las Vegas Aces"
+                 :S "Seattle Storm"}
+                [:V 12 three miss 22 reb two make
+                 :S 30 three miss reb 24 turnover
+                 :V 41 two miss :V reb 22 two miss (ft 1 2)
+                 :S 30 reb 10 three make
+                 period]])
+(def game-transact-obj (:game (p/transform-game-edn edn-game)))
+
+(d/transact conn [game-transact-obj])
+
+(d/q '[:find (sum ?points) .
+       :in $ % ?team
+       :with ?a
+       :where
+       [?p :possession/team ?team]
+       [?p :possession/action ?a]
+       (ft-points ?a ?ft-points)
+       (fg-points ?a ?fg-points)
+       [(+ ?ft-points ?fg-points) ?points]]
+     @conn
+     '[[(ft-points ?a ?points)
+        [?a :action/ft-made ?points]]
+       [(ft-points ?a ?points)
+        [(ground 0) ?points]]
+       [(fg-points ?a ?points)
+        [?a :shot/make? true]
+        [?a :shot/value ?points]]
+       [(fg-points ?a ?points)
+        [(ground 0) ?points]]]
+     [:team/name "Seattle Storm"])
 
 ; gets all players, and their team
 (def player-query '[:find (pull ?p [:db/id :player/number]) (pull ?t [:db/id :team/name])
