@@ -1,5 +1,4 @@
-(ns bball.parser
-  (:require [instaparse.core :as insta]))
+(ns bball.parser)
 
 ; what commands can start a new possession?
 ; - shot, where team selector doesn't match current :possession/team
@@ -222,67 +221,3 @@
                 [:V 12 miss-3 21 reb make-2
                  :C 10 miss-2 33 reb turnover
                  :V [41 20] in 12 make-2]])
-
-(debug-transform-game-edn game-edn)
-
-(:possessions (transform-game-edn game-edn))
-
-;; ======
-;; INSTAPARSER
-;; ======
-
-; comments
-; haskell: {- ... -}
-; ocaml:   (* ... *)
-; c:       /* ... */
-; mine?:   {* ... *}
-; curly:   {  ...  }
-; bracket: [  ...  ]
-
-; should have a way of providing *checks* on evaluation
-; like at a period, can write <A 12 S 13> to indicate the score,
-; and the evaluator will check this and either error or provide warning if that's not the case
-
-(def parser
-  (insta/parser "Game            ::= <Whitespace*> (Token <Whitespace+>)* Token?
-                 <Token>         ::= Team | Number | Numbers | Action | <Comment> | Verify
-                 Comment         ::= <'['> #'[^\\]]*' <']'>
-                 Numbers         ::= <'('> <Whitespace*> (Number <Whitespace>)* Number? <')'>
-                 Verify          ::= <'<'> Score <'>'>
-                 Score           ::= <Whitespace*> Team <Whitespace+> Number <Whitespace+> Team <Whitespace+> Number <Whitespace*>
-                 Number          ::= #'[0-9]+'
-                 Team            ::= #'[A-Z]+'
-                 Action          ::= #'[a-z]+'
-                 Whitespace      ::= #'[\\s,]+'"))
-
-(def game-string "V 12 three miss, 21 reb, rim make
-                 C 10 turnover
-                 V (41 20 ) in
-                 [long stoppage here (this was a comment) ]
-                 12 mid make
-                 <V 4 C 0>")
-
-
-(def parsed-game (insta/parse parser game-string :start :Game))
-
-(insta/transform {:Number #(vector :Number (read-string %))} parsed-game)
-;; => [:Game
-;;     [:Team "V"]
-;;     [:Number 12]
-;;     [:Action "three"]
-;;     [:Action "miss"]
-;;     [:Number 21]
-;;     [:Action "reb"]
-;;     [:Action "rim"]
-;;     [:Action "make"]
-;;     [:Team "C"]
-;;     [:Number 10]
-;;     [:Action "turnover"]
-;;     [:Team "V"]
-;;     [:Numbers [:Number 41] [:Number 20]]
-;;     [:Action "in"]
-;;     [:Number 12]
-;;     [:Action "mid"]
-;;     [:Action "make"]
-;;     [:Verify [:Score [:Team "V"] [:Number 4] [:Team "C"] [:Number 0]]]]
-
