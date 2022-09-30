@@ -32,28 +32,19 @@
 (defn players-selector? [command] (vector? command))
 (defn action-call? [command] (list? command))
 
-(defn parser-team
-  [parser]
-  (:team parser))
-
-(defn number-transact
-  [parser]
-  (:number parser))
-
 (defn append-action
   [parser]
-  (let [action (:action parser)]
-    (if (empty? action)
-      parser
-      (-> parser
-          (update-in [:possession :possession/action]
-                     (fnil (fn [actions]
-                             (conj actions
-                                   (assoc action
-                                          :action/order
-                                          (-> actions count long))))
-                           []))
-          (assoc :action {})))))
+  (if (empty? (:action parser))
+    parser
+    (-> parser
+        (update-in [:possession :possession/action]
+                   (fnil (fn [actions]
+                           (conj actions
+                                 (assoc (:action parser)
+                                        :action/order
+                                        (-> actions count long))))
+                         []))
+        (assoc :action {}))))
 
 (append-action {:possession {:possession/order 3
                              :possession/team {:team/name "Seattle Storm"}
@@ -96,8 +87,7 @@
 
 (defn apply-number
   [parser number]
-  (-> parser
-      (assoc :number number)))
+  (assoc parser :number number))
 
 (defn apply-action
   [parser action]
@@ -105,15 +95,15 @@
 
 (defn apply-action-call
   [parser [fn-symbol & args]]
-  (let [fn (ns-resolve (find-ns 'bball.parser) fn-symbol)]
-    (apply fn parser args)))
+    (apply (ns-resolve (find-ns 'bball.parser) fn-symbol)
+           parser
+           args))
 
 (defn ft
   [parser made attempted]
   (-> parser
       (assoc-in [:action :action/ft-made] made)
       (assoc-in [:action :action/ft-attempted] attempted)))
-
 
 (apply-action-call {:team :S} '(ft 1 2))
 
@@ -132,30 +122,35 @@
                           :team {:team/name "Seattle Storm"}
                           :possession {:possession/team {:team/name "Las Vegas Aces"}}})
 
-(defn turnover
-  [parser]
-  (-> parser
-    append-action
-    check-possession-change
-    (assoc-in [:action :player/number] (:number parser))
-    (assoc-in [:action :action/type] :action.type/turnover)))
-
-(defn three
+(defn next-action
   [parser]
   (-> parser
       append-action
       check-possession-change
-      (assoc-in [:action :player/number] (:number parser))
-      (assoc-in [:action :action/type] :action.type/shot)
+      (assoc-in [:action :player/number] (:number parser))))
+
+(defn turnover
+  [parser]
+  (-> parser
+      next-action
+      (assoc-in [:action :action/type] :action.type/turnover)))
+
+(defn shot
+  [parser]
+  (-> parser
+      next-action
+      (assoc-in [:action :action/type] :action.type/shot)))
+
+(defn three
+  [parser]
+  (-> parser
+      shot
       (assoc-in [:action :shot/value] 3)))
 
 (defn two
   [parser]
   (-> parser
-      append-action
-      check-possession-change
-      (assoc-in [:action :player/number] (:number parser))
-      (assoc-in [:action :action/type] :action.type/shot)
+      shot
       (assoc-in [:action :shot/value] 2)))
 
 (defn make
@@ -169,16 +164,14 @@
 (defn reb
   [parser]
   (cond-> parser
-      true (assoc-in [:action :shot/off-reb?] (= (:team parser)
-                                            (get-in parser [:possession :possession/team])))
-      (:number parser) (assoc-in [:action :shot/rebounder] (:number parser))))
+    (:number parser) (assoc-in [:action :shot/rebounder] (:number parser))
+    :always (assoc-in [:action :shot/off-reb?] (= (:team parser)
+                                                  (get-in parser [:possession :possession/team])))))
 
 (defn in
   [parser]
-  (-> parser
-      (assoc :players (:player parser))))
+  (assoc parser :players (:player parser)))
 
-; TODO: end of period should end possession (use for end of game, too)
 (defn period
   [parser]
   (-> parser
@@ -187,13 +180,12 @@
 
 (defn game-edn-reducer
   [parser command]
-  ((cond (team-selector? command) apply-team
-         (number-selector? command) apply-number
-         (players-selector? command) apply-number
-         (action? command) apply-action
-         (action-call? command) apply-action-call)
-   parser
-   command))
+  (let [reducer (cond (team-selector? command) apply-team
+                      (number-selector? command) apply-number
+                      (players-selector? command) apply-number
+                      (action? command) apply-action
+                      (action-call? command) apply-action-call)]
+    (reducer parser command)))
 
 (defn transform-game-edn
   [[teams commands]]
@@ -211,13 +203,3 @@
                        :S "Seattle"}
                       [:V 10 two miss (ft 1 2)
                        period]])
-
-(defn debug-transform-game-edn
-  [[teams commands]]
-  (reductions game-edn-reducer {:teams teams} commands))
-
-(def game-edn '[{:V "Las Vegas Aces"
-                 :C "Chicago Sky"}
-                [:V 12 miss-3 21 reb make-2
-                 :C 10 miss-2 33 reb turnover
-                 :V [41 20] in 12 make-2]])
