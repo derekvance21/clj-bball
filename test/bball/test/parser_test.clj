@@ -3,15 +3,13 @@
             [bball.parser :refer [parse]]))
 
 (deftest game-interpreter
-  (is (= (-> '[{:teams {:V {:team/name "Vegas"}
-                        :S {:team/name "Seattle"}}}
-               [:V 12 three miss 22 reb two make
-                :S 30 three miss reb 24 turnover
-                :V 41 two miss :V reb 22 two miss (ft 1 2)
-                :S 30 reb 10 three make
-                period]]
-             parse
-             (get :game))
+  (is (= (parse '[{:teams {:V {:team/name "Vegas"}
+                           :S {:team/name "Seattle"}}}
+                  [:V 12 three miss 22 reb two make
+                   :S 30 three miss reb 24 turnover
+                   :V 41 two miss :V reb 22 two miss (ft 1 2)
+                   :S 30 reb 10 three make
+                   period]])
          {:game/possession
           [{:possession/team {:team/name "Vegas"}
             :possession/action
@@ -53,8 +51,8 @@
               :shot/make? false
               :shot/rebounder 30
               :shot/off-reb? false
-              :action/ft-made 1
-              :action/ft-attempted 2
+              :ft/made 1
+              :ft/attempted 2
               :action/order 1}]
             :possession/order 2}
            {:possession/team {:team/name "Seattle"}

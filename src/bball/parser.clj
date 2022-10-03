@@ -65,8 +65,8 @@
 (defn ft
   [parser made attempted]
   (-> parser
-      (assoc-in [:action :action/ft-made] made)
-      (assoc-in [:action :action/ft-attempted] attempted)))
+      (assoc-in [:action :ft/made] made)
+      (assoc-in [:action :ft/attempted] attempted)))
 
 (defn possession-change?
   [parser]
@@ -132,12 +132,13 @@
 
 (defn reducer
   [parser command]
-  (let [reducer (cond (keyword? command) apply-team
-                      (number? command) apply-number
-                      (symbol? command) apply-action
-                      (list? command) apply-action-call)]
-    (reducer parser command)))
+  (cond (keyword? command) (apply-team parser command)
+        (number? command) (apply-number parser command)
+        (symbol? command) (apply-action parser command)
+        (list? command) (apply-action-call parser command)))
 
 (defn parse
   [[init-parser commands]]
-  (reduce reducer init-parser commands))
+  (-> init-parser
+      ((partial reduce reducer) commands)
+      :game))
