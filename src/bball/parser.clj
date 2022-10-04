@@ -5,58 +5,43 @@
 ; - shot
 ; - bonus
 ; - technical
-
 ; when a new action is started, check for possession change (where team selector doesn't match :possession/team)
-
-; todo: don't have the parser have its own :action and :parser,
-; just update the last element as you go. Then, when adding an
-; action or possession, you can set the :action/order at the start
-; complication? - there's an empty? check on :action, which wouldn't
-; jive with the :action/order setting at the beginning
 
 (defn append-action
   [parser]
-  (if (empty? (:action parser))
-    parser
+  (if (:action parser)
     (-> parser
         (update-in [:possession :possession/action]
-                   (fnil (fn [actions]
-                           (conj actions
-                                 (assoc (:action parser)
-                                        :action/order
-                                        (-> actions count long))))
+                   (fnil #(conj % (assoc (:action parser) :action/order (-> % count long)))
                          []))
-        (assoc :action {}))))
+        (dissoc :action))
+    parser))
 
 (defn append-possession
   [parser]
-  (-> parser
-      (update-in [:game :game/possession] (fnil (fn [possessions]
-                                                  (conj possessions
-                                                        (assoc (:possession parser)
-                                                               :possession/order
-                                                               (-> possessions count long))))
-                                                []))
-      (assoc :possession {:possession/team (:team parser)})
-      (assoc :action {})))
-
-(defn apply-team
-  [parser team-keyword]
-  (let [team (get-in parser [:teams team-keyword])]
+  (if (:possession parser)
     (-> parser
-        (update-in [:possession :possession/team] (fnil identity team))
-        (assoc :team team)
-        (assoc :number nil))))
+        (update-in [:game :game/possession]
+                   (fnil #(conj % (assoc (:possession parser) :possession/order (-> % count long)))
+                         []))
+        (dissoc :possession))
+    parser))
 
-(defn apply-number
+(defn team
+  [parser team-keyword]
+  (-> parser
+      (assoc :team (get-in parser [:teams team-keyword]))
+      (dissoc :number)))
+
+(defn number
   [parser number]
   (assoc parser :number number))
 
-(defn apply-action
+(defn action
   [parser action]
   ((ns-resolve (find-ns 'bball.parser) action) parser))
 
-(defn apply-action-call
+(defn action-form
   [parser [fn-symbol & args]]
   (apply (ns-resolve (find-ns 'bball.parser) fn-symbol)
          parser
@@ -68,34 +53,35 @@
       (assoc-in [:action :ft/made] made)
       (assoc-in [:action :ft/attempted] attempted)))
 
-(defn possession-change?
+(defn- possession-change?
   [parser]
   (not= (get-in parser [:possession :possession/team])
         (:team parser)))
 
-(defn check-possession-change
-  [parser]
-  (cond-> parser
-    (possession-change? parser) append-possession))
-
 (defn next-action
-  [parser]
-  (-> parser
-      append-action
-      check-possession-change
-      (assoc-in [:action :player/number] (:number parser))))
+  [parser action-type]
+  (cond-> parser
+    :always append-action
+    (possession-change? parser) append-possession
+    (possession-change? parser) (assoc-in [:possession :possession/team] (:team parser))
+    :always (assoc-in [:action :player/number] (:number parser))
+    :always (assoc-in [:action :action/type] action-type)))
 
 (defn turnover
   [parser]
-  (-> parser
-      next-action
-      (assoc-in [:action :action/type] :action.type/turnover)))
+  (next-action parser :action.type/turnover))
+
+(defn bonus
+  [parser]
+  (next-action parser :action.type/bonus))
+
+(defn technical
+  [parser]
+  (next-action parser :action.type/technical))
 
 (defn shot
   [parser]
-  (-> parser
-      next-action
-      (assoc-in [:action :action/type] :action.type/shot)))
+  (next-action parser :action.type/shot))
 
 (defn three
   [parser]
@@ -121,8 +107,7 @@
   [parser]
   (cond-> parser
     (:number parser) (assoc-in [:action :shot/rebounder] (:number parser))
-    :always (assoc-in [:action :shot/off-reb?] (= (:team parser)
-                                                  (get-in parser [:possession :possession/team])))))
+    :always (assoc-in [:action :shot/off-reb?] (not (possession-change? parser)))))
 
 (defn period
   [parser]
@@ -132,13 +117,11 @@
 
 (defn reducer
   [parser command]
-  (cond (keyword? command) (apply-team parser command)
-        (number? command) (apply-number parser command)
-        (symbol? command) (apply-action parser command)
-        (list? command) (apply-action-call parser command)))
+  (cond (keyword? command) (team parser command)
+        (number? command) (number parser command)
+        (symbol? command) (action parser command)
+        (list? command) (action-form parser command)))
 
 (defn parse
   [[init-parser commands]]
-  (-> init-parser
-      ((partial reduce reducer) commands)
-      :game))
+  (:game (reduce reducer init-parser commands)))
