@@ -12,7 +12,7 @@
               :db/cardinality :db.cardinality/one
               :db/doc "the order this action happened in its possession"}
              {:db/ident :player/number
-              :db/valueType :db.type/ref
+              :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number of the player"}
              {:db/ident :ft/made
@@ -92,39 +92,67 @@
 
 (def conn (d/connect config))
 
-(parse '[{:V {:team/name "Las Vegas Aces"}
-          :S {:team/name "Seattle Storm"}}
-         [:V 12 three miss 22 reb two make
-          :S 30 three miss reb 24 turnover
-          :V 41 two miss :V reb 22 two miss (ft 1 2)
-          :S 30 reb 10 three make
-          period]])
+(def game (-> "games/9-6-2022-Vegas-Seattle.edn" slurp read-string parse))
 
-(d/transact conn [(parse '[{:V {:team/name "Las Vegas Aces"}
-                            :S {:team/name "Seattle Storm"}}
-                           [:V 12 three miss 22 reb two make
-                            :S 30 three miss reb 24 turnover
-                            :V 41 two miss :V reb 22 two miss (ft 1 2)
-                            :S 30 reb 10 three make
-                            period]])])
+(d/transact conn [game])
 
-(d/q '[:find (sum ?points) .
-       :in $ % ?team
+(def points-rules '[[(ft-points ?a ?points)
+                     [?a :ft/made ?points]]
+                    [(ft-points ?a ?points)
+                     [(missing? $ ?a :ft/made)]
+                     [(ground 0) ?points]]
+                    
+                    [(fg-points ?a ?points)
+                     [?a :shot/make? true]
+                     [?a :shot/value ?points]]
+                    [(fg-points ?a ?points)
+                     [?a :shot/make? false]
+                     [(ground 0) ?points]]
+                    [(fg-points ?a ?points)
+                     [(missing? $ ?a :shot/make?)]
+                     [(ground 0) ?points]]
+                    
+                    [(points ?a ?points)
+                     (ft-points ?a ?ft-points)
+                     (fg-points ?a ?fg-points)
+                     [(+ ?ft-points ?fg-points) ?points]]])
+
+(d/q '[:find ?team (sum ?points)
+       :in $ % [?team ...]
        :with ?a
        :where
        [?p :possession/team ?team]
        [?p :possession/action ?a]
-       (ft-points ?a ?ft-points)
-       (fg-points ?a ?fg-points)
-       [(+ ?ft-points ?fg-points) ?points]]
+       (points ?a ?points)]
      @conn
-     '[[(ft-points ?a ?points)
-        [?a :action/ft-made ?points]]
-       [(ft-points ?a ?points)
-        [(ground 0) ?points]]
-       [(fg-points ?a ?points)
-        [?a :shot/make? true]
-        [?a :shot/value ?points]]
-       [(fg-points ?a ?points)
-        [(ground 0) ?points]]]
-     [:team/name "Seattle Storm"])
+     points-rules
+     [[:team/name "Las Vegas Aces"] [:team/name "Seattle Storm"]])
+;; => [[[:team/name "Las Vegas Aces"] 97] [[:team/name "Seattle Storm"] 92]]
+
+(d/q '[:find ?team ?number (sum ?points)
+       :in $ % [?team ...]
+       :with ?a
+       :where
+       [?p :possession/team ?team]
+       [?p :possession/action ?a]
+       [?a :player/number ?number]
+       (points ?a ?points)]
+     @conn
+     points-rules
+     [[:team/name "Las Vegas Aces"] [:team/name "Seattle Storm"]])
+;; => [[[:team/name "Seattle Storm"] 5 8]
+;;     [[:team/name "Seattle Storm"] 20 0]
+;;     [[:team/name "Seattle Storm"] 10 8]
+;;     [[:team/name "Seattle Storm"] 31 2]
+;;     [[:team/name "Las Vegas Aces"] 22 23]
+;;     [[:team/name "Las Vegas Aces"] 10 15]
+;;     [[:team/name "Las Vegas Aces"] 41 4]
+;;     [[:team/name "Seattle Storm"] 24 29]
+;;     [[:team/name "Seattle Storm"] 7 3]
+;;     [[:team/name "Seattle Storm"] 30 42]
+;;     [[:team/name "Seattle Storm"] 13 0]
+;;     [[:team/name "Las Vegas Aces"] 2 6]
+;;     [[:team/name "Las Vegas Aces"] 5 0]
+;;     [[:team/name "Las Vegas Aces"] 12 31]
+;;     [[:team/name "Las Vegas Aces"] 0 18]]
+

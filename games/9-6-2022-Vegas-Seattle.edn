@@ -1,0 +1,163 @@
+[{:teams {:V {:team/name "Las Vegas Aces"}
+          :S {:team/name "Seattle Storm"}}
+  :game {:game/minutes 40}}
+ [:V 10 two make
+  :S 30 two miss
+  :V 41 reb 10 two make
+  :S 31 turnover
+  :V 41 two make
+  :S 31 two make
+  :V 22 turnover
+  :S 5 two miss reb two make
+  :V 22 two miss
+  :S 30 reb 31 two miss :S reb 31 two miss
+  :V 10 reb three miss 12 reb three miss 22 reb two miss
+  :S 10 reb three make
+  :V 10 two miss (ft 1 2)
+  :S 31 reb two miss 24 reb two miss 5 reb 30 three make
+  :V 41 three miss
+  :S 31 reb 30 two make
+  :V 0 two make
+  :S 24 two miss 5 reb 30 three make
+  :V 22 two miss
+  :S 5 reb three miss
+  :V 22 reb 2 three miss
+  :S 31 reb 30 two make
+  :V 12 turnover
+  :S 24 turnover
+  :V 10 two make
+  :S 30 three make
+  :V 10 three make
+  :S 31 two miss (ft 0 2)
+  :V 12 reb 5 turnover
+  :S 31 two miss
+  :V 5 reb 22 two miss
+  :S 30 reb 7 three miss
+  :V 22 reb 2 three make
+  :S 13 two miss
+  :V reb 22 two make
+  :S 20 turnover
+  :V 2 three miss
+  :S 20 reb 24 three make
+  period
+  :S 24 two make
+  :V 5 turnover
+  :S 24 turnover
+  :V 0 turnover
+  :S 20 turnover
+  :V 12 three make
+  :S 24 two make
+  :V 10 two make
+  :S 7 two miss (ft 1 2)
+  :V 41 reb 0 two miss
+  :S 7 reb 24 three make
+  :V 12 two make
+  :S 24 two miss (ft 2 2)
+  :V 10 three miss
+  :S 30 reb 7 three miss
+  :V 10 reb 12 two miss
+  :S 13 reb 7 three miss
+  :V 0 reb turnover
+  :S 5 three miss
+  :V 22 reb two make
+  :S 30 three make
+  :V 0 three make
+  :S 30 two miss (ft 1 2) reb three make
+  :V 22 two make
+  :S 30 two miss
+  :V 22 reb 10 two make
+  :S 5 two miss (ft 1 2)
+  :V 22 two miss
+  :S 30 reb bonus (ft 2 2)
+  :V 0 three make
+  :S 30 two miss reb two make
+  :V 22 two make
+  :S 10 two miss
+  :V 12 reb two make
+  :S 30 two make
+  :V 12 two miss 22 reb two make
+  :S 10 turnover
+  period
+  :S 10 three miss 31 reb 24 three miss
+  :V 22 reb 10 turnover
+  :S 10 three miss
+  :V 0 reb 10 three miss
+  :S 31 reb 10 three miss
+  :V 12 reb 41 two make
+  :S 24 two miss
+  :V 41 reb 10 three miss 41 reb 12 three make
+  :S 24 three miss
+  :V 22 reb 12 three miss
+  :S 5 reb 31 three miss
+  :V 12 reb 22 two make
+  :S 24 two miss
+  :V 0 reb two miss
+  :S 5 reb 30 two miss (ft 2 2)
+  :V 2 three miss
+  :S 24 reb 30 three miss
+  :V 0 reb turnover
+  :S 10 turnover
+  :V 22 two make (ft 1 1)
+  :S 10 three miss
+  :V 22 reb 10 three miss
+  :S 30 reb two make
+  :V 10 two miss (ft 1 2)
+  :S 31 reb 24 three make
+  :V 12 three miss 22 reb bonus (ft 2 2)
+  :S 7 turnover
+  :V 12 two make
+  :S 31 two miss
+  :V 2 reb three make
+  :S 24 two make
+  :V 2 two miss
+  :S 13 reb two miss reb 30 two make
+  :V 22 three miss
+  :S 24 reb two miss
+  :V 22 reb 12 turnover
+  :S 24 two miss 7 reb 30 two miss 24 reb two miss (ft 1 2)
+  :V 22 reb 12 two make
+  :S 30 three miss
+  :V 12 reb two make
+  period
+  :V 22 two miss
+  :S 7 reb 10 three make
+  :V 12 two miss
+  :S reb 7 two make
+  :V 22 two miss (ft 1 2)
+  :S 30 reb two miss
+  :V 22 reb 12 three miss
+  :S 24 reb two make (ft 1 1)
+  :V 12 three make
+  :S 24 two miss
+  :V 22 reb two make (ft 1 1)
+  :S 24 two miss :S reb 30 two make
+  :V 12 turnover
+  :S 24 two miss (ft 2 2)
+  :V 0 two miss (ft 2 2)
+  :S 30 two miss (ft 2 2)
+  :V 0 three make
+  :S 24 two miss (ft 2 2)
+  :V 12 two make
+  :S 30 three make
+  :V 12 two make
+  :S 24 two make
+  :V 12 two miss
+  :S 7 reb 5 two make (ft 1 1)
+  :V 0 two make (ft 1 1)
+  :S 5 two make
+  :V 12 two make
+  :S 24 two make
+  :V 22 turnover
+  :S 30 two miss
+  :V 12 reb three make
+  :S 24 two miss
+  :V 0 reb 12 two make
+  :S 30 bonus (ft 1 2)
+  :V 22 bonus (ft 2 2)
+  :S 10 two make
+  :V 12 bonus (ft 1 2)
+  :S 10 turnover
+  :V 12 turnover
+  :S 24 three miss 30 reb two make
+  :V 0 bonus (ft 2 2)
+  period]]
