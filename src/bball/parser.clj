@@ -46,10 +46,20 @@
          args))
 
 (defn ft
-  [parser made attempted]
-  (-> parser
-      (assoc-in [:action :ft/made] made)
-      (assoc-in [:action :ft/attempted] attempted)))
+  [parser & args]
+  (let [number-form? (and (= 2 (count args))
+                          (every? number? args))
+        made (if number-form?
+               (nth args 0)
+               (->> args
+                    (filter #(= % 'make))
+                    count))
+        attempted (if number-form?
+                    (nth args 1)
+                    (count args))]
+    (-> parser
+        (assoc-in [:action :ft/made] made)
+        (assoc-in [:action :ft/attempted] attempted))))
 
 (defn possession-change?
   [parser]
@@ -111,6 +121,14 @@
   (cond-> parser
     (:number parser) (assoc-in [:action :shot/rebounder] (:number parser))
     :always (assoc-in [:action :shot/off-reb?] (not (possession-change? parser)))))
+
+(defn steal
+  [parser]
+  (assoc-in parser [:action :turnover/stealer] (:number parser)))
+
+(defn block
+  [parser]
+  (assoc-in parser [:action :shot/blocker] (:number parser)))
 
 (defn period
   [parser]

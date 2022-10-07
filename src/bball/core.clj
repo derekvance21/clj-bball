@@ -51,6 +51,10 @@
               :db/valueType :db.type/boolean
               :db/cardinality :db.cardinality/one
               :db/doc "whether or not the shot was offensive rebounded"}
+             {:db/ident :shot/blocker
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number player of the blocker of the shot attempt"}
 
              ;; turnover
              {:db/ident :turnover/stealer
