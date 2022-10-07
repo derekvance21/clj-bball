@@ -9,23 +9,21 @@
 
 (defn append-action
   [parser]
-  (if (:action parser)
-    (-> parser
-        (update-in [:possession :possession/action]
+  (cond-> parser
+    (:action parser)
+    (-> (update-in [:possession :possession/action]
                    (fnil #(conj % (assoc (:action parser) :action/order (-> % count long)))
                          []))
-        (dissoc :action))
-    parser))
+        (dissoc :action))))
 
 (defn append-possession
   [parser]
-  (if (:possession parser)
-    (-> parser
-        (update-in [:game :game/possession]
+  (cond-> parser
+    (:possession parser)
+    (-> (update-in [:game :game/possession]
                    (fnil #(conj % (assoc (:possession parser) :possession/order (-> % count long)))
                          []))
-        (dissoc :possession))
-    parser))
+        (dissoc :possession))))
 
 (defn team
   [parser team-keyword]
@@ -53,19 +51,24 @@
       (assoc-in [:action :ft/made] made)
       (assoc-in [:action :ft/attempted] attempted)))
 
-(defn- possession-change?
+(defn possession-change?
   [parser]
   (not= (get-in parser [:possession :possession/team])
         (:team parser)))
 
+(defn check-possession-change
+  [parser]
+  (cond-> parser
+    (possession-change? parser) (-> append-possession
+                                    (assoc-in [:possession :possession/team] (:team parser)))))
+
 (defn next-action
   [parser action-type]
-  (cond-> parser
-    :always append-action
-    (possession-change? parser) append-possession
-    (possession-change? parser) (assoc-in [:possession :possession/team] (:team parser))
-    :always (assoc-in [:action :player/number] (:number parser))
-    :always (assoc-in [:action :action/type] action-type)))
+  (-> parser
+      append-action
+      check-possession-change
+      (assoc-in [:action :player/number] (:number parser))
+      (assoc-in [:action :action/type] action-type)))
 
 (defn turnover
   [parser]
@@ -117,11 +120,14 @@
 
 (defn reducer
   [parser command]
-  (cond (keyword? command) (team parser command)
-        (number? command) (number parser command)
-        (symbol? command) (action parser command)
-        (list? command) (action-form parser command)))
+  (cond-> parser
+    (keyword? command) (team command)
+    (number? command) (number command)
+    (symbol? command) (action command)
+    (list? command) (action-form command)))
 
 (defn parse
   [[init-parser commands]]
-  (:game (reduce reducer init-parser commands)))
+  (as-> (reduce reducer init-parser commands) parser
+    (assoc-in parser [:game :game/teams] (-> parser :teams vals vec))
+    (get parser :game)))

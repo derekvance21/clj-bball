@@ -52,6 +52,12 @@
               :db/cardinality :db.cardinality/one
               :db/doc "whether or not the shot was offensive rebounded"}
 
+             ;; turnover
+             {:db/ident :turnover/stealer
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number player of the stealer of the turnover"}
+
              ;; possession
              {:db/ident :possession/action
               :db/valueType :db.type/ref
@@ -77,6 +83,14 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number of minutes this game lasted"}
+             {:db/ident :game/teams
+              :db/valueType :db.type/ref
+              :db/cardinality :db.cardinality/many
+              :db/doc "the teams playing in this game"}
+             {:db/ident :game/datetime
+              :db/valueType :db.type/instant
+              :db/cardinality :db.cardinality/one
+              :db/doc "the datetime this game started"}
 
              ;; team
              {:db/ident :team/name
@@ -101,7 +115,7 @@
                     [(ft-points ?a ?points)
                      [(missing? $ ?a :ft/made)]
                      [(ground 0) ?points]]
-                    
+
                     [(fg-points ?a ?points)
                      [?a :shot/make? true]
                      [?a :shot/value ?points]]
@@ -111,7 +125,7 @@
                     [(fg-points ?a ?points)
                      [(missing? $ ?a :shot/make?)]
                      [(ground 0) ?points]]
-                    
+
                     [(points ?a ?points)
                      (ft-points ?a ?ft-points)
                      (fg-points ?a ?fg-points)
