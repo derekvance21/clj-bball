@@ -1,7 +1,7 @@
 [{:teams {:V {:team/name "Las Vegas Aces"}
           :S {:team/name "Seattle Storm"}}
   :game {:game/minutes 40
-         :game/datetime #inst "2022-09-07T01"}}
+         :game/datetime #inst "2022-09-06T18:00-07:00"}}
  [:V 10 two make
   :S 30 two miss
   :V 41 reb 10 two make
