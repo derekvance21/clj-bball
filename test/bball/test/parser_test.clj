@@ -15,7 +15,7 @@
               :S 30 reb 10 three make
               period]])
 
-(def transact-1 {:game/teams [{:team/name "Vegas"} {:team/name "Seattle"}]
+(def parsed-1 {:game/teams [{:team/name "Vegas"} {:team/name "Seattle"}]
                  :game/minutes 40
                  :game/datetime #inst "2022-09-06T07:00:00.000-00:00"
                  :game/possession
@@ -84,4 +84,4 @@
                    :possession/order 4}]})
 
 (deftest game-interpreter
-  (is (= (parse edn-1) transact-1)))
+  (is (= parsed-1 (parse edn-1))))

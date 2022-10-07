@@ -136,7 +136,6 @@
                      (fg-points ?a ?fg-points)
                      [(+ ?ft-points ?fg-points) ?points]]])
 
-; all games in the database and their scores
 (->> (d/q '[:find ?g (pull ?t [:team/name]) (sum ?points)
             :in $ %
             :with ?a
@@ -160,7 +159,6 @@
 (def wnba-game-eid 25)
 (def hs-game-eid 358)
 
-; all (team player points) tuples for the given game
 (defn box-score
   [game-eid]
   (->> (d/q '[:find (pull ?t [:team/name]) ?number (sum ?points)
