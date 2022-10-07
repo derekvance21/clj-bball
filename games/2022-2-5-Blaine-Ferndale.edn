@@ -1,0 +1,130 @@
+[{:teams {:B {:team/name "Blaine Borderites"}
+          :F {:team/name "Ferndale Golden Eagles"}}
+  :game {:game/minutes 32
+         :game/datetime #inst "2022-02-05T19:15-07:00"}}
+ [:B 3 three miss
+  :F 3 reb two miss
+  :B 12 reb turnover
+  :F 24 three miss
+  :B 10 reb two make
+  :F 13 two miss
+  :B 21 reb three make
+  :F 13 three miss 15 reb 3 three make
+  :B 10 two make
+  :F 23 turnover
+  :B 12 steal two make
+  :F 13 three miss 21 reb two make
+  :B 21 two make
+  :F 25 two miss :B 10 block
+  :B 12 reb 1 two make (ft 0 1)
+  :F 23 reb 24 turnover
+  :B 1 steal 10 three make
+  :F 23 two miss
+  :B 10 reb two miss 1 reb 12 three miss (ft 3 3)
+  :F 24 turnover
+  :B 12 steal two make
+  :F 23 turnover
+  :B 35 steal two make
+  :F 13 three miss 24 reb 13 three miss 23 reb two miss (ft 1 2)
+  :B 12 two miss (ft 1 2)
+  :F 13 three make
+  :B 1 two miss
+  :F 23 reb 24 three miss 25 reb 13 three make
+  period
+  :F 24 two make
+  :B 3 three make
+  :F 21 two make
+  :B 3 two make
+  :F 21 turnover
+  :B 4 steal 35 two make
+  :F 23 bonus (ft 2 2)
+  :B 35 three miss 10 reb 12 three miss
+  :F 25 reb 24 two miss 25 reb 21 two make
+  :B 1 three miss
+  :F 24 reb two miss (ft 2 2)
+  :B 12 two make
+  :F 24 turnover
+  :B 35 three miss 22 reb 12 three miss
+  :F 25 reb turnover
+  :B 1 three make
+  :F 24 turnover
+  :B 10 two make
+  :F 23 turnover
+  :B 10 three make
+  :F 3 three miss 25 reb two miss (ft miss make)
+  :B 1 three miss 4 reb 10 three miss 1 reb turnover
+  :F 23 steal bonus (ft make make)
+  :B 4 two miss 1 reb two miss
+  :F 23 reb 21 bonus (ft miss miss) :F reb 0 turnover
+  :B 10 steal bonus (ft make miss)
+  :F reb 21 bonus (ft miss make)
+  :B 12 bonus (ft make miss)
+  :F 23 reb 0 three miss
+  :B 22 reb 4 two miss
+  period
+  :F 13 three miss 21 reb two miss (ft make miss)
+  :B 10 reb 35 turnover
+  :F 23 steal 24 three miss
+  :B 3 reb 1 three miss
+  :F 24 reb 25 two make
+  :B 10 two miss
+  :F 23 reb 13 three miss 25 reb two miss
+  :B 12 reb 3 three miss
+  :F 23 reb 24 three miss
+  :B 10 reb 1 three make
+  :F 3 turnover
+  :B 12 steal 35 two miss
+  :F 13 reb 21 two make
+  :B 12 turnover
+  :F 13 three miss
+  :B reb 10 two make
+  :F 3 three miss
+  :B 35 reb 3 two miss
+  :F 24 reb 21 two make
+  :B 12 three miss
+  :F reb 13 three miss
+  :B 3 reb 4 two miss
+  :F 24 reb 13 three make
+  :B 3 three miss 4 reb 10 two miss 3 reb two make
+  :F 23 turnover
+  :B 35 three miss 1 reb 12 two miss (ft miss make)
+  :F 25 turnover
+  :B 12 steal 1 turnover
+  :F 0 turnover
+  :B 1 technical (ft make make) 35 two miss 22 reb 12 three miss
+  :F 25 reb 13 three miss
+  :B 22 reb 12 three miss 22 reb 35 three miss
+  period
+  :B 12 turnover
+  :F 24 three miss 21 reb two miss 23 reb two miss 25 reb two miss
+  :B 10 reb 35 three miss
+  :F 25 reb 24 three make
+  :B 21 three miss
+  :F 23 reb three make
+  :B 35 three make
+  :F 13 three make
+  :B 12 two miss 3 reb two miss
+  :F 24 reb 13 three make
+  :B 35 two miss
+  :F 25 reb 23 two make (ft make)
+  :B 1 three make
+  :F 23 turnover
+  :B 1 turnover
+  :F 25 two make
+  :B 1 turnover
+  :F 24 three miss
+  :B 35 reb 1 two make
+  :F 23 two miss
+  :B 10 reb two miss 21 reb bonus (ft miss)
+  :F 21 reb 13 three miss :F reb 13 three miss
+  :B 1 reb turnover
+  :F 23 steal 25 two make
+  :B 35 three make
+  :F 24 three miss :F reb 24 two miss 23 reb 25 two make
+  :B 12 bonus (ft miss)
+  :F 13 reb 23 three make
+  :B 12 bonus (ft miss)
+  :F 13 reb three make
+  :B 35 bonus (ft miss make)
+  :F 23 three miss
+  period]]
