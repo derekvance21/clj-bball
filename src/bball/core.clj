@@ -110,9 +110,10 @@
 
 (def conn (d/connect config))
 
-(def game (-> "games/9-6-2022-Vegas-Seattle.edn" slurp read-string parse))
+(def wnba-game (-> "games/2022-09-06-Vegas-Seattle.edn" slurp read-string parse))
+(def hs-game (-> "games/2022-02-05-Blaine-Ferndale.edn" slurp read-string parse))
 
-(d/transact conn [game])
+(d/transact conn [wnba-game hs-game])
 
 (def points-rules '[[(ft-points ?a ?points)
                      [?a :ft/made ?points]]
@@ -135,42 +136,80 @@
                      (fg-points ?a ?fg-points)
                      [(+ ?ft-points ?fg-points) ?points]]])
 
-(d/q '[:find ?team (sum ?points)
-       :in $ % [?team ...]
-       :with ?a
-       :where
-       [?p :possession/team ?team]
-       [?p :possession/action ?a]
-       (points ?a ?points)]
-     @conn
-     points-rules
-     [[:team/name "Las Vegas Aces"] [:team/name "Seattle Storm"]])
-;; => [[[:team/name "Las Vegas Aces"] 97] [[:team/name "Seattle Storm"] 92]]
+; all games in the database and their scores
+(->> (d/q '[:find ?g (pull ?t [:team/name]) (sum ?points)
+            :in $ %
+            :with ?a
+            :where
+            [?g :game/possession ?p]
+            [?p :possession/team ?t]
+            [?p :possession/action ?a]
+            (points ?a ?points)]
+          @conn
+          points-rules)
+     (map #(update % 1 :team/name))
+     (sort-by last >)
+     (sort-by first)
+     (into [[:game :team :points]]))
+;; => [[:game :team :points]
+;;     [25 "Las Vegas Aces" 97]
+;;     [25 "Seattle Storm" 92]
+;;     [358 "Blaine Borderites" 65]
+;;     [358 "Ferndale Golden Eagles" 63]]
 
-(d/q '[:find ?team ?number (sum ?points)
-       :in $ % [?team ...]
-       :with ?a
-       :where
-       [?p :possession/team ?team]
-       [?p :possession/action ?a]
-       [?a :player/number ?number]
-       (points ?a ?points)]
-     @conn
-     points-rules
-     [[:team/name "Las Vegas Aces"] [:team/name "Seattle Storm"]])
-;; => [[[:team/name "Seattle Storm"] 5 8]
-;;     [[:team/name "Seattle Storm"] 20 0]
-;;     [[:team/name "Seattle Storm"] 10 8]
-;;     [[:team/name "Seattle Storm"] 31 2]
-;;     [[:team/name "Las Vegas Aces"] 22 23]
-;;     [[:team/name "Las Vegas Aces"] 10 15]
-;;     [[:team/name "Las Vegas Aces"] 41 4]
-;;     [[:team/name "Seattle Storm"] 24 29]
-;;     [[:team/name "Seattle Storm"] 7 3]
-;;     [[:team/name "Seattle Storm"] 30 42]
-;;     [[:team/name "Seattle Storm"] 13 0]
-;;     [[:team/name "Las Vegas Aces"] 2 6]
-;;     [[:team/name "Las Vegas Aces"] 5 0]
-;;     [[:team/name "Las Vegas Aces"] 12 31]
-;;     [[:team/name "Las Vegas Aces"] 0 18]]
+(def wnba-game-eid 25)
+(def hs-game-eid 358)
 
+; all (team player points) tuples for the given game
+(defn box-score
+  [game-eid]
+  (->> (d/q '[:find (pull ?t [:team/name]) ?number (sum ?points)
+              :in $ % ?g
+              :with ?a
+              :where
+              [?g :game/possession ?p]
+              [?p :possession/team ?t]
+              [?p :possession/action ?a]
+              [?a :player/number ?number]
+              (points ?a ?points)]
+            @conn
+            points-rules
+            game-eid)
+       (sort-by last >)
+       (map #(update % 0 :team/name))
+       (into [[:team :player :points]])))
+
+(box-score wnba-game-eid)
+;; => [[:team :player :points]
+;;     ["Seattle Storm" 30 42]
+;;     ["Las Vegas Aces" 12 31]
+;;     ["Seattle Storm" 24 29]
+;;     ["Las Vegas Aces" 22 23]
+;;     ["Las Vegas Aces" 0 18]
+;;     ["Las Vegas Aces" 10 15]
+;;     ["Seattle Storm" 10 8]
+;;     ["Seattle Storm" 5 8]
+;;     ["Las Vegas Aces" 2 6]
+;;     ["Las Vegas Aces" 41 4]
+;;     ["Seattle Storm" 7 3]
+;;     ["Seattle Storm" 31 2]
+;;     ["Las Vegas Aces" 5 0]
+;;     ["Seattle Storm" 13 0]
+;;     ["Seattle Storm" 20 0]]
+
+(box-score hs-game-eid)
+;; => [[:team :player :points]
+;;     ["Ferndale Golden Eagles" 13 18]
+;;     ["Blaine Borderites" 10 15]
+;;     ["Blaine Borderites" 1 15]
+;;     ["Ferndale Golden Eagles" 23 14]
+;;     ["Ferndale Golden Eagles" 21 12]
+;;     ["Blaine Borderites" 12 12]
+;;     ["Blaine Borderites" 35 11]
+;;     ["Ferndale Golden Eagles" 25 9]
+;;     ["Ferndale Golden Eagles" 24 7]
+;;     ["Blaine Borderites" 3 7]
+;;     ["Blaine Borderites" 21 5]
+;;     ["Ferndale Golden Eagles" 3 3]
+;;     ["Ferndale Golden Eagles" 0 0]
+;;     ["Blaine Borderites" 4 0]]

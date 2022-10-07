@@ -1,3 +1,4 @@
+; :V 97 :S 92 
 [{:teams {:V {:team/name "Las Vegas Aces"}
           :S {:team/name "Seattle Storm"}}
   :game {:game/minutes 40

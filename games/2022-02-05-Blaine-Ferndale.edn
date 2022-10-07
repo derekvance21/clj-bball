@@ -1,3 +1,4 @@
+; :B 65 :F 63
 [{:teams {:B {:team/name "Blaine Borderites"}
           :F {:team/name "Ferndale Golden Eagles"}}
   :game {:game/minutes 32

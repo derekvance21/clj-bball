@@ -50,13 +50,14 @@
   (let [number-form? (and (= 2 (count args))
                           (every? number? args))
         made (if number-form?
-               (nth args 0)
+               (-> args first long)
                (->> args
                     (filter #(= % 'make))
-                    count))
+                    count
+                    long))
         attempted (if number-form?
-                    (nth args 1)
-                    (count args))]
+                    (-> args second long)
+                    (-> args count long))]
     (-> parser
         (assoc-in [:action :ft/made] made)
         (assoc-in [:action :ft/attempted] attempted))))
