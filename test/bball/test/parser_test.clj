@@ -1,7 +1,8 @@
 (ns bball.test.parser-test
   (:require [clojure.test :as t :refer [is deftest]]
-            [bball.parser :refer [parse]]
-            [clojure.data :refer [diff]]))
+            [bball.parser :refer [parse]]))
+
+;; clojure.data/diff can be used for manually debugging test failures
 
 (def edn-1 '[{:teams {:V {:team/name "Vegas"}
                       :S {:team/name "Seattle"}}
