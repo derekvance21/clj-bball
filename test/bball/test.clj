@@ -6,5 +6,4 @@
 (defn run
   [& opts]
   (t/run-tests 'bball.test.parser-test
-               'bball.test.query-test
-               ))
+               'bball.test.query-test))

@@ -6,11 +6,11 @@
               [?p :possession/team ?t]
               [?p :possession/action ?a]]
 
-             [(ft-pts ?a ?pts)
-              [?a :ft/made ?pts]]
-             [(ft-pts ?a ?pts)
-              [(missing? $ ?a :ft/made)]
-              [(ground 0) ?pts]]
+             [(fts ?a ?count)
+              [?a :ft/made ?count]]
+             [(fts ?a ?count)
+              (not [?a :ft/made])
+              [(ground 0) ?count]]
 
              [(fg-pts ?a ?pts)
               [?a :shot/make? true]
@@ -19,22 +19,22 @@
               [?a :shot/make? false]
               [(ground 0) ?pts]]
              [(fg-pts ?a ?pts)
-              [(missing? $ ?a :shot/make?)]
+              (not [?a :shot/make?])
               [(ground 0) ?pts]]
 
              [(poss-pts ?p ?pts)
               [(bball.query/poss-pts $ ?p) ?pts]]
 
              [(pts ?a ?pts)
-              (ft-pts ?a ?ft-pts)
+              (fts ?a ?fts)
               (fg-pts ?a ?fg-pts)
-              [(+ ?ft-pts ?fg-pts) ?pts]]
+              [(+ ?fts ?fg-pts) ?pts]]
 
              [(off-rebs ?a ?count)
               [?a :shot/off-reb? true]
               [(ground 1) ?count]]
              [(off-rebs ?a ?count)
-              [?a :shot/off-reb? false]
+              (not [?a :shot/off-reb? true])
               [(ground 0) ?count]]
 
              [(tos ?a ?count)
@@ -43,6 +43,10 @@
              [(tos ?a ?count)
               (not [?a :action/type :action.type/turnover])
               [(ground 0) ?count]]
+             
+             ;; TODO: predicate for possession ending (should be equivalent to *containing*) in turnover
+             [(poss-to? ?p)
+              ]
 
              [(fga? ?a)
               [?a :action/type :action.type/shot]
@@ -64,7 +68,7 @@
               [?a :shot/make? true]
               [(ground 1) ?count]]
              [(fgs ?a ?count)
-              [?a :shot/make? false]
+              (not [?a :shot/make? true])
               [(ground 0) ?count]]
 
              [(efgs ?a ?count)
@@ -77,12 +81,6 @@
               [(ground 1) ?count]]
              [(efgs ?a ?count)
               (not [?a :shot/make? true])
-              [(ground 0) ?count]]
-
-             [(fts ?a ?count)
-              [?a :ft/made ?count]]
-             [(fts ?a ?count)
-              [(missing? $ ?a :ft/made)]
               [(ground 0) ?count]]
 
              [(game-team-fts ?g ?t ?fts)
@@ -115,3 +113,20 @@
          (actions ?g ?t ?p ?a)
          (fga? ?a)]
        db rules g t))
+
+(defn box-score
+  [db game-eid]
+  (->> (d/q '[:find (pull ?t [:team/name]) ?number (sum ?pts)
+              :in $ % ?g
+              :with ?a
+              :where
+              (actions ?g ?t ?p ?a)
+              [?a :player/number ?number]
+              (pts ?a ?pts)]
+            db
+            rules
+            game-eid)
+       (map #(update % 0 :team/name))
+       (sort-by last >)
+       (sort-by first)
+       (into [[:team :player :points]])))

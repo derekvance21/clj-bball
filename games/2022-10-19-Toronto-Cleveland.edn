@@ -1,0 +1,59 @@
+; :T 28 :C 22 (1Q)
+[{:teams {:T {:team/name "Toronto Raptors"}
+          :C {:team/name "Cleveland Cavaliers"}}
+  :game {:game/minutes 12
+         :game/datetime #inst "2022-10-19T16:30-07:00"}}
+ [:C 45 two miss
+  :T 3 reb three miss 43 reb two make
+  :C 4 three miss
+  :T 3 reb 33 turnover
+  :C 4 three make
+  :T 4 two make
+  :C 3 two miss 31 reb 4 two miss (ft make miss)
+  :T 43 reb 3 two miss
+  :C 31 reb 10 two miss
+  :T 43 reb two miss (ft miss make)
+  :C 4 two miss 31 reb 10 turnover
+  :T 33 three make
+  :C 10 turnover
+  :T 23 steal 43 turnover
+  :C 10 turnover 45 two make
+  :T 4 two miss
+  :C 45 reb two make
+  :T 43 two make
+  :C 10 two make
+  :T 33 three make
+  :C 10 two miss 31 reb two miss
+  :T 4 reb two miss 33 reb 4 two miss :C 4 block
+  :C reb 45 three miss
+  :T 43 reb turnover
+  :C 3 three make
+  :T 23 two miss
+  :C 3 reb 32 two make
+  :T 5 three miss
+  :C reb 35 turnover
+  :T 23 steal two miss (ft make make)
+  :C 0 three miss
+  :T 33 reb two miss (ft miss make)
+  :C 10 turnover
+  :T 43 steal 5 two miss :C 32 block :T reb 33 three miss
+  :C 4 reb 10 two miss :T 35 block
+  :T 35 reb 45 two miss (ft make make)
+  :C 10 three miss
+  :T 35 reb 43 turnover
+  :C 10 two miss
+  :T 5 reb bonus (ft make miss)
+  :C 0 reb three make
+  :T 3 turnover
+  :C 4 two make
+  :T 23 two make
+  :C 4 bonus (ft make make)
+  :T 3 three miss :T reb 35 bonus (ft make miss)
+  :C reb 4 turnover
+  :T 23 three make
+  :C 10 two miss
+  :T 35 reb 23 three miss
+  :C 0 reb turnover
+  :T 4 steal three make
+  :C 35 three miss
+  period]]
