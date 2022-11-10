@@ -22,14 +22,14 @@
                  :game/possession
                  [{:possession/team {:team/name "Vegas"}
                    :possession/action
-                   [{:player/number 12
+                   [{:action/player 12
                      :action/type :action.type/shot
                      :shot/value 3
                      :shot/make? false
                      :shot/rebounder 22
                      :shot/off-reb? true
                      :action/order 0}
-                    {:player/number 22
+                    {:action/player 22
                      :action/type :action.type/shot
                      :shot/value 2
                      :shot/make? true
@@ -37,18 +37,18 @@
                    :possession/order 0}
                   {:possession/team {:team/name "Seattle"}
                    :possession/action
-                   [{:player/number 30
+                   [{:action/player 30
                      :action/type :action.type/shot
                      :shot/value 3
                      :shot/make? false
                      :shot/rebounder 30
                      :shot/off-reb? true
                      :action/order 0}
-                    {:player/number 24 :action/type :action.type/turnover :action/order 1 :turnover/stealer 10}]
+                    {:action/player 24 :action/type :action.type/turnover :action/order 1 :turnover/stealer 10}]
                    :possession/order 1}
                   {:possession/team {:team/name "Seattle"}
                    :possession/action
-                   [{:player/number 24,
+                   [{:action/player 24,
                      :action/type :action.type/shot,
                      :shot/value 2,
                      :shot/make? true,
@@ -58,14 +58,14 @@
                    :possession/order 2}
                   {:possession/team {:team/name "Vegas"}
                    :possession/action
-                   [{:player/number 41
+                   [{:action/player 41
                      :action/type :action.type/shot
                      :shot/value 2
                      :shot/make? false
                      :shot/off-reb? true
                      :shot/blocker 13
                      :action/order 0}
-                    {:player/number 22
+                    {:action/player 22
                      :action/type :action.type/shot
                      :shot/value 2
                      :shot/make? false
@@ -77,7 +77,7 @@
                    :possession/order 3}
                   {:possession/team {:team/name "Seattle"}
                    :possession/action
-                   [{:player/number 10
+                   [{:action/player 10
                      :action/type :action.type/shot
                      :shot/value 3
                      :shot/make? true

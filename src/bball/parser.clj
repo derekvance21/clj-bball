@@ -7,6 +7,10 @@
 ; - technical
 ; when a new action is started, check for possession change (where team selector doesn't match :possession/team)
 
+(defn raise
+  [parser msg]
+  (throw (Exception. (str msg "\nparser: " parser))))
+
 (defn append-action
   [parser]
   (cond-> parser
@@ -26,14 +30,24 @@
         (dissoc :possession))))
 
 (defn team
-  [parser team-keyword]
+  [parser team]
   (-> parser
-      (assoc :team (get-in parser [:teams team-keyword]))
+      (assoc :team team)
       (dissoc :number)))
 
 (defn number
   [parser number]
   (assoc parser :number number))
+
+(defn in
+  [parser & numbers]
+  (update-in parser [:players (:team parser)] (fnil #(into (if (= 5 (count numbers)) #{} %)
+                                       numbers)
+                                #{})))
+
+(defn out
+  [parser & numbers]
+  (update-in parser [:players (:team parser)] (fnil #(->> % (remove (set numbers)) set) #{})))
 
 (defn action
   [parser action]
@@ -65,21 +79,33 @@
 (defn possession-change?
   [parser]
   (not= (get-in parser [:possession :possession/team])
-        (:team parser)))
+        (get-in parser [:teams (:team parser)])))
 
 (defn check-possession-change
   [parser]
   (cond-> parser
     (possession-change? parser) (-> append-possession
-                                    (assoc-in [:possession :possession/team] (:team parser)))))
+                                    (assoc-in [:possession :possession/team] (get-in parser [:teams (:team parser)])))))
 
 (defn next-action
   [parser action-type]
-  (-> parser
-      append-action
-      check-possession-change
-      (assoc-in [:action :player/number] (:number parser))
-      (assoc-in [:action :action/type] action-type)))
+  (let [offense (get-in parser [:players (:team parser)])
+        defense (get-in parser [:players (->> (:teams parser) keys (remove #{(:team parser)}) first)])]
+    (-> parser
+        append-action
+        check-possession-change
+        (assoc-in [:action :action/player] (:number parser))
+
+        (assoc-in [:action :action/type] action-type)
+        (cond->
+         offense (assoc-in [:action :offense/players] (let [offense (get-in parser [:players (:team parser)])]
+                                                        (when-not (= 5 (count offense))
+                                                          (raise parser (str "number of offensive players is not five: " offense "\naction-type: " action-type)))
+                                                        (vec offense)))
+         defense (assoc-in [:action :defense/players] (let [defense (get-in parser [:players (->> (:teams parser) keys (remove #{(:team parser)}) first)])]
+                                                        (when-not (= 5 (count defense))
+                                                          (raise parser (str "number of defensive players is not five: " defense "\naction-type: " action-type)))
+                                                        (vec defense)))))))
 
 (defn turnover
   [parser]

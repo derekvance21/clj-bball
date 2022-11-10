@@ -9,10 +9,10 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the order this action happened in its possession"}
-             {:db/ident :player/number
+             {:db/ident :action/player
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
-              :db/doc "the number of the player"}
+              :db/doc "the number of the player performing the action"}
              {:db/ident :ft/made
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
@@ -53,6 +53,17 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number player of the blocker of the shot attempt"}
+
+             {:db/ident :offense/players
+              :db/valueType :db.type/tuple
+              :db/tupleTypes [:db.type/long :db.type/long :db.type/long :db.type/long :db.type/long]
+              :db/cardinality :db.cardinality/one
+              :db/doc "the numbers of the offensive players on the floor"}
+             {:db/ident :defense/players
+              :db/valueType :db.type/tuple
+              :db/tupleTypes [:db.type/long :db.type/long :db.type/long :db.type/long :db.type/long]
+              :db/cardinality :db.cardinality/one
+              :db/doc "the numbers of the defensive players on the floor"}
 
              ;; turnover
              {:db/ident :turnover/stealer
