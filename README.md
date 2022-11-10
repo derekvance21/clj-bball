@@ -36,6 +36,5 @@ Here are the statistics that the system should be able to provide. Each statisti
 These are explicit non-goals of the system:
 
 - assists
-- individual defensive statistics (foul rate, block rate, steal rate, etc.)
 - date-based queries on games
 - in-game timing information (minutes a certain lineup was in, etc.)
