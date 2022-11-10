@@ -1,0 +1,234 @@
+[{:teams {:V {:team/name "Las Vegas Aces"}
+          :S {:team/name "Seattle Storm"}}
+  :game {:game/minutes 45
+         :game/datetime #inst "2022-09-04T19:00-07:00"}}
+ [:S (in 5 10 24 30 31)
+  :V (in 0 12 10 22 41)
+  :S 10 three miss
+  :V 12 reb 22 two miss (ft make make)
+  :S 24 three miss
+  :V 0 reb 12 two make
+  :S 10 three miss
+  :V 10 reb turnover
+  :S 30 steal two miss reb turnover
+  :V 22 two miss
+  :S 30 reb two miss
+  :V 12 reb 41 two make
+  :S 10 two make
+  :V 0 two miss 10 reb turnover
+  :S 31 three make
+  :V 22 two miss
+  :S 31 block reb :S 24 three miss
+  :V 22 reb two make (ft make)
+  :S 31 two make
+  :V 10 three make
+  :S 30 two miss
+  :V 41 reb 12 two make
+  :S 24 two miss
+  :V reb (in 2) (out 41) 22 two make ; THIS ONE IS ERRORING!
+  :S 31 turnover
+  :V 12 steal 22 two make
+  :S 30 two make
+  :V 22 two make
+  :S 10 three make
+  :V 12 three make
+  :S 30 three miss
+  :V 10 reb 0 turnover
+  :S (out 31 24 5) (in 13 11 7) 13 two make (ft make)
+  :V (out 12) (in 5) 22 two miss
+  :S 7 reb 10 three miss
+  :V 22 reb 2 three miss
+  :S 13 reb two make (ft make)
+  :V 10 two make
+  :S 30 two miss
+  :V 2 reb 10 two miss
+  :S reb (out 10) (in 20) 30 bonus (ft make make)
+  :V 10 three miss
+  :S 30 reb two miss
+  :V 22 reb 0 two make (ft make)
+  :S 7 two miss
+  period
+  :S (in 20 30 11 13 7)
+  :V (in 12 5 22 2 0) 2 two miss
+  :S 7 reb 11 turnover
+  :V 2 three miss
+  :S 20 reb 11 three miss
+  :V 5 reb 12 two miss
+  :S 7 reb 13 two make
+  :S (in 31 24 7 10 13)
+  :V (in 0 41 22 12 10) 0 two miss
+  :S reb 7 two miss
+  :V 0 reb 12 three make
+  :S 31 turnover
+  :V 22 steal 41 two miss reb two make
+  :S 31 three miss
+  :V 0 reb 41 two miss 22 reb 12 three miss
+  :V (out 0) (in 2)
+  :S (out 13) (in 30)
+  :S reb 7 turnover
+  :V 22 steal 12 three make
+  :S (out 7) (in 5)
+  :V (out 2) (in 0)
+  :S 10 three make
+  :V 12 turnover
+  :S 5 steal three miss
+  :V 41 reb 22 three miss
+  :S 30 reb 10 three miss
+  :V 41 reb 22 two make
+  :S 5 turnover
+  :V 12 steal 22 two make
+  :S 31 three miss
+  :V 12 reb two miss
+  :S 30 reb two miss reb 24 two make
+  :V (out 12) (in 2)
+  :S (out 5) (in 7)
+  :V 22 two make
+  :S 31 two make
+  :V 10 three miss
+  :S 30 reb 31 two miss (ft make make)
+  :V (out 41) (in 12)
+  :V 10 two make
+  :S 24 two miss 31 reb two make
+  :V 22 two make (ft make)
+  :S 24 two make
+  :V 10 three miss
+  :S 7 reb 31 two make
+  :V (in 0 10 12 22 41)
+  :S (in 7 10 24 30 31)
+  :V 10 bonus (ft make miss)
+  :S 30 reb 24 three make
+  :V 10 three miss 41 reb
+  period
+  ;; Half: :V 48 :S 40
+  :S (in 5 10 24 30 31)
+  :V (in 0 10 12 22 41)
+  :V 22 two miss
+  :S 5 reb 10 two miss
+  :V 22 reb turnover
+  :S 31 two miss
+  :V 0 reb turnover
+  :S 5 steal two make
+  :V 12 two make
+  :S 24 three miss
+  :V 22 reb 0 two miss
+  :S reb 24 two make
+  :V 12 three miss
+  :S 30 reb 31 two miss (ft make miss)
+  :V 41 reb 12 three miss 10 reb two miss 22 reb two make
+  :S 30 two make
+  :V 10 two miss
+  :S 30 reb 10 three make
+  :V (in 0 2 10 12 22)
+  :S (in 5 10 24 30 31)
+  :V 10 two miss
+  :S 31 reb 30 two make
+  :V 12 two miss
+  :S 31 reb two make
+  :V 22 turnover
+  :V (in 41) (out 0)
+  :S 5 two make
+  :V 10 two make (ft make)
+  :S 5 two make
+  :V 12 two make
+  :S 30 two make
+  :V 2 three make
+  :S 31 two miss
+  :V 2 reb 41 two make
+  :S 24 two make
+  :V 2 three make
+  :S 31 three miss
+  :V 10 reb three miss
+  :S 31 reb 24 two miss (ft make make)
+  :V (in 0) (out 10)
+  :S (in 13) (out 31)
+  :V 0 three make
+  :S 24 two miss 5 reb
+  period
+  ;; 3Q: :V 68 :S 64
+  :V (in 0 2 12 22 41)
+  :S (in 7 10 13 24 30)
+  :S 30 turnover
+  :V 41 steal 22 two miss (ft make make)
+  :S 30 two miss
+  :V 41 reb 12 two miss 41 reb 0 two miss
+  :S 30 reb
+  :V (in 10) (out 12)
+  :S 7 three make (ft make)
+  :V 2 two make
+  :S 10 two miss
+  :V 41 reb 10 two miss
+  :S 30 reb 10 three make
+  :V 22 two make
+  :S 7 two make
+  :V 10 turnover
+  :V (in 12) (out 41)
+  :S 24 turnover
+  :V 2 three miss
+  :S 24 reb three miss
+  :V 12 reb two make
+  :S 24 two miss 13 reb two make
+  :V 22 two make
+  :S 7 three make
+  :V 22 two miss :S 13 block :V 10 reb three miss
+  :S 24 reb
+  :V (in 2 10 12 22 41)
+  :S (in 7 10 13 24 30)
+  :S 24 two miss
+  :V 41 reb 12 two miss
+  :S 30 reb 7 three make
+  :V 2 three make
+  :S 30 two make
+  :V 22 two make
+  :S 30 two make
+  :V 12 two make
+  :S 30 two make
+  :V 10 three miss
+  :S 30 reb two miss :S reb
+  :V (in 0) (out 10)
+  :S 24 bonus (ft make make)
+  :V (in 10) (out 41)
+  :V 2 three make
+  :V (in 0 2 12 22 41)
+  :S (in 31) (out 13)
+  :S 31 bonus (ft miss miss)
+  :V 2 reb
+  :V (in 0 2 10 12 22)
+  :S (in 5 13 10 24 30)
+  :V 22 two make
+  :S (in 5 10 24 30 31)
+  :V (in 41 2 0 12 22)
+  :S 10 three make
+  :V (in 2 10 12 0 22)
+  :S (in 5 13 24 10 30)
+  :V 0 two make
+  period
+  ;; 4Q: :V 92 :S 92
+  :V (in 0 10 12 22 41)
+  :S (in 5 10 14 30 31)
+  :S 30 two make (ft miss)
+  :V 10 reb 0 two miss
+  :S 30 reb 24 two miss :V 41 block :S reb 24 three miss
+  :V 22 reb 10 two make (ft make)
+  :S 30 two miss
+  :V 12 reb
+  :V (in 2) (out 41)
+  :V 2 three miss 22 reb two make
+  :S 30 two make (ft miss)
+  :V 2 reb 10 two make
+  :S 30 two miss
+  :V 2 reb 12 three make
+  :S 5 turnover
+  :V 22 steal 12 two make
+  :V (in 41) (out 10)
+  :S (in 13 7) (out 31 5)
+  :S 24 two make
+  :V 12 three make
+  :S 24 three miss
+  :V 41 reb three make
+  :S 7 three miss
+  :V 22 reb 12 three miss
+  :S 13 reb 10 two miss
+  :V 41 reb
+  period
+  ]]
+  ;; Final: :V 110 :S 98
