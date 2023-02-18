@@ -7,27 +7,6 @@
 
 (def ^:dynamic *conn*)
 
-(binding [*conn* (let [client (d/client db/dev-config)
-                       db {:db-name "clj-bball-db-test"}]
-                   (d/delete-database client db)
-                   (d/create-database client db)
-                   (d/connect client db))]
-
-  (d/transact *conn* {:tx-data db/schema})
-  (d/transact *conn* {:tx-data [(-> "games/2022-09-06-Vegas-Seattle.edn" slurp read-string parse)]})
-  (->> (d/q '[:find ?t (sum ?fgs) (count ?fgs) (avg ?fgs)
-              :in $ %
-              :with ?a
-              :where
-              (actions ?g ?t ?p ?a)
-              (fga? ?a)
-              [?a :shot/value 3]
-              (fgs ?a ?fgs)]
-            (d/db *conn*)
-            q/rules)
-       (map #(subvec % 1))
-       set))
-
 (deftest game-query
   (binding [*conn* (let [client (d/client db/dev-config)
                          db {:db-name "clj-bball-db-test"}]
@@ -61,18 +40,19 @@
                        q/rules))
              #{[{:team/name "Las Vegas Aces"} 78 40]
                [{:team/name "Seattle Storm"} 78 40]})))
-      ;; (testing "FT/FGA"
-      ;;   (is (= (set (d/q '[:find (pull ?t [:team/name]) ?fts ?fgas ?ft-fgas
-      ;;                      :in $ %
-      ;;                      :where
-      ;;                      [?t :team/name]
-      ;;                      (game-team-fts ?g ?t ?fts)
-      ;;                      (game-team-fgas ?g ?t ?fgas)
-      ;;                      [(/ ?fts ?fgas) ?ft-fgas]]
-      ;;                    (d/db *conn*)
-      ;;                    q/rules))
-      ;;          #{[{:team/name "Las Vegas Aces"} 15 63 15/63]
-      ;;            [{:team/name "Seattle Storm"} 19 70 19/70]})))
+      (testing "FT/FGA"
+        (is (= (set (d/q '[:find ?team (sum ?fts) (sum ?fgas)
+                           :in $ %
+                           :with ?a
+                           :where
+                           (actions ?g ?t ?p ?a)
+                           (fts ?a ?fts)
+                           (fgas ?a ?fgas)
+                           [?t :team/name ?team]]
+                         (d/db *conn*)
+                         q/rules))
+               #{["Las Vegas Aces" 15 63]
+                 ["Seattle Storm" 19 70]})))
     (testing "eFG%"
       (is (= (set (d/q '[:find (pull ?t [:team/name]) (avg ?efgs)
                          :in $ %
@@ -97,40 +77,43 @@
              #{[{:team/name "Seattle Storm"} 9 78]
                [{:team/name "Las Vegas Aces"} 12 78]})))
     (testing "3Pt%"
-      (is (= (set (d/q '[:find (pull ?t [:team/name]) (sum ?3fgs) (count ?3fgs) (avg ?3fgs)
+      (is (= (set (d/q '[:find ?team (sum ?3fgs) (count ?3fgs) (avg ?3fgs)
                          :in $ %
                          :with ?a
                          :where
                          (actions ?g ?t ?p ?a)
                          (fga? ?a)
                          [?a :shot/value 3]
-                         (fgs ?a ?3fgs)]
+                         (fgs ?a ?3fgs)
+                         [?t :team/name ?team]]
                        (d/db *conn*)
                        q/rules))
-             #{[{:team/name "Las Vegas Aces"} 10 24 10/24]
-               [{:team/name "Seattle Storm"} 11 26 11/26]})))
+             #{["Las Vegas Aces" 10 24 0.4166666666666667]
+               ["Seattle Storm" 11 26 0.4230769230769231]})))
     (testing "OffReb%"
-      (is (= (set (d/q '[:find (pull ?t [:team/name]) (sum ?off-rebs) (count ?off-rebs) (avg ?off-rebs)
+      (is (= (set (d/q '[:find ?team (sum ?off-rebs) (count ?off-rebs) (avg ?off-rebs)
                          :in $ %
                          :with ?a
                          :where
                          (actions ?g ?t ?p ?a)
                          [?a :shot/rebounder]
-                         (off-rebs ?a ?off-rebs)]
+                         (off-rebs ?a ?off-rebs)
+                         [?t :team/name ?team]]
                        (d/db *conn*)
                        q/rules))
-             #{[{:team/name "Las Vegas Aces"} 5 29 5/29]
-               [{:team/name "Seattle Storm"} 11 40 11/40]})))
+             #{["Las Vegas Aces" 5 29 0.1724137931034483]
+               ["Seattle Storm" 11 40 0.275]})))
     (testing "OffRtg"
-      (is (= (set (d/q '[:find (pull ?t [:team/name]) (sum ?pts) (count-distinct ?p) (avg ?pts)
+      (is (= (set (d/q '[:find ?team (sum ?pts) (count-distinct ?p)
                          :in $ %
                          :where
-                         (actions ?g ?t ?p)
-                         (poss-pts ?p ?pts)]
+                         (actions ?g ?t ?p ?a)
+                         (pts ?a ?pts)
+                         [?t :team/name ?team]]
                        (d/db *conn*)
                        q/rules))
-             #{[{:team/name "Seattle Storm"} 92 78 92/78]
-               [{:team/name "Las Vegas Aces"} 97 78 97/78]})))
+             #{["Seattle Storm" 92 78]
+               ["Las Vegas Aces" 97 78]})))
     (testing "Box Score"
       (is (= (set (d/q '[:find (pull ?t [:team/name]) ?number (sum ?pts)
                          :in $ %
