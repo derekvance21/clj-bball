@@ -76,4 +76,3 @@
      #{10 24 30} ; all unique lineups with 10, 24, and 30 in them
      [:offense/players :defense/players]
      )
-

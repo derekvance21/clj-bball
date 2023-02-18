@@ -1,8 +1,6 @@
 {:paths ["src/clj" "src/cljs"]
- :deps {io.replikativ/datahike {:mvn/version "0.5.1511"}
-        com.datomic/dev-local {:mvn/version "1.0.243"}
-        com.cognitect/transit-clj {:mvn/version "1.0.329"}
-        instaparse/instaparse {:mvn/version "1.4.12"}}
+ :deps {com.datomic/dev-local {:mvn/version "1.0.243"}
+        com.cognitect/transit-clj {:mvn/version "1.0.329"}}
  :aliases {:dev {:jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED"
                             "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]}
            :test {:extra-paths ["test"]
