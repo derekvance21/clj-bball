@@ -112,8 +112,9 @@
               :db/unique :db.unique/identity
               :db/doc "the name of the team"}])
 
-(def dev-config {:store {:backend :mem :id "default"}
-                 :initial-tx schema})
+(def dev-config {:server-type :dev-local
+                 :storage-dir :mem
+                 :system "ci"})
 
 (def test-config {:store {:backend :mem :id "testdb"}
                   :initial-tx schema})

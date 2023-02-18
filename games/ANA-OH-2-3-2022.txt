@@ -1,0 +1,136 @@
+A
+O
+
+O 3 TO
+A 15 Mid Miss OR
+A 14 Mid Miss OR
+A 10 Three Miss
+O 3 TO
+A 14 Rim Make
+O 3 Three Miss OR
+O 20 TO
+A 10 Three Miss
+O 21 Three Miss
+A 14 TO
+O 1 TO
+A 10 Three Miss
+O 20 Three Make
+A 14 Three Miss
+O 21 Three Miss OR
+O 3 Three Miss
+A 15 TO
+O 3 TO
+A 24 Three Miss
+O 3 Mid Make
+A 24 TO
+O 21 Rim Miss
+A 14 TO
+O 20 Three Miss
+A 21 Three Make
+O 3 TO
+A 14 TO
+O 20 Three Make
+A 14 Three Miss
+O 20 Three Make
+1Q
+A 24 Three Make
+O 2 TO
+A 15 TO
+O 3 Rim Miss OR
+O 1 Rim Make FT 1/1
+A 34 Three Miss OR
+A 10 Three Miss
+O 3 TO
+A 34 TO
+O 1 Rim Make
+A 24 Three Miss OR
+A 12 Mid Make
+O 2 Three Miss
+A 34 TO
+O 21 Three Miss
+A 21 TO
+O 20 Rim Make
+A 10 Three Make
+O 20 Mid Miss
+A 15 Three Make
+O 4 TO
+A 10 Three Miss
+O 1 Mid Miss OR
+O 1 Mid Make
+A 15 Three Miss OR
+A 15 Rim Miss OR
+A 10 Three Make
+O 21 Three Make
+A 33 Rim Miss FT 1/2 DR
+O 20 Three Make
+A 14 Three Miss
+O 20 Mid Miss
+A 15 Rim Miss OR
+A 14 Three Make
+2Q
+A 10 Three Miss OR
+A 33 Rim Make
+O 20 Mid Miss
+A 14 Three Miss
+O 1 Three Make
+A 33 Rim Make
+O 1 TO
+A 33 Rim Make
+O 20 Three Make
+A 34 Three Miss OR
+A 10 Three Miss OR
+A 10 Three Miss OR
+A 33 TO
+O 2 Rim Miss
+A 15 Rim Make
+O 20 Three Miss OR
+O 1 Three Miss
+A 10 Rim Make
+O 3 TO
+A 10 Three Make
+O 3 TO
+A 10 Three Miss
+O 20 Three Make
+A 15 TO
+O 21 Three Miss OR
+O 3 Rim Miss
+A 10 Three Miss
+O 3 Three Miss OR
+O 21 TO
+A 15 TO
+O 4 TO
+A 10 Three Make
+O 1 TO
+A 10 Three Make
+3Q
+O 2 TO
+A 10 Three Make
+O 2 Mid Make
+A 15 Three Miss
+O 20 Three Make
+A 10 Three Miss
+O 3 TO
+A 10 TO
+O 20 Three Miss
+A 10 Three Miss
+O 20 Three Miss
+A 21 TO
+O 21 TO
+A 34 Rim Miss FT 1/2 DR
+O 20 Three Miss
+A 33 Rim Make
+O 1 Rim Make
+A 10 Three Miss OR
+A 15 Mid Make
+O 3 Rim Make
+A 10 Three Make
+O 4 Mid Make
+A 33 Rim Miss FT 2/2
+O 21 TO
+A 33 Rim Make
+O 20 Three Miss OR
+O 2 Mid Miss OR
+O 3 Rim Miss OR
+O 1 Rim Make
+A 10 TO
+4Q (A 57 O 48)

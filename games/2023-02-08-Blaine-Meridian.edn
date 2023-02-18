@@ -1,0 +1,177 @@
+[{:teams {:B {:team/name "Blaine Borderites"}
+          :M {:team/name "Meridian Trojans"}}
+  :game {:game/minutes 32
+         :game/datetime #inst "2023-02-08T19:30-07:00"}}
+ [:B (in 1 3 4 25 42)
+  :M (in 1 5 12 24 42)
+  :B 3 two '7 miss reb two '4 make
+  :M 5 two '13 miss
+  :B 3 reb turnover
+  :M 12 steal turnover
+  :B 4 steal 1 turnover ; charge on :B 1, drawn by :M 42
+  :M 24 turnover
+  :B 42 steal two '1 make
+  :M 1 turnover
+  :B 42 steal three '20 miss
+  :M 42 reb 5 three '26 make
+  :B 1 three '20 miss
+  :M 5 reb three '26 make
+  :B 4 three '21 miss 35 reb 42 turnover
+  :M 24 steal 5 turnover
+  :B 35 steal 1 two '13 miss
+  :M 1 reb 42 turnover
+  :B 3 two '5 miss reb two '5 miss
+  :M 5 reb 1 turnover
+  :B 3 steal 1 three '22 miss
+  :M 1 reb
+  :M (out 12 42) (in 21 10)
+  :B (out 4) (in 2)
+  :M 5 two '15 miss
+  :B reb 2 turnover
+  :M 24 steal turnover
+  :B 42 two '1 miss
+  :M reb 5 turnover
+  :B 1 steal 42 two '1 miss
+  :M 10 reb turnover
+  :B (out 42) (in 4)
+  :B 1 three '11 miss 4 reb 2 two '3 miss (ft miss make)
+  :M (out 5) (in 3)
+  :M 3 turnover
+  :B 35 steal 4 two '2 miss
+  :M 10 reb 1 three '24 miss 24 reb two '2 miss (ft make make)
+  :M (out 1) (in 23)
+  :B 3 two '3 make (ft miss) :B reb 2 three '21 miss 35 reb three '22 miss
+  period
+  :M (in 1 5 12 24 42)
+  :B (in 1 2 3 4 35)
+  :B 1 three '22 miss 4 reb 35 two '11 make (ft miss)
+  :M 5 reb 12 turnover
+  :B 4 steal two '1 make
+  :M 5 two '9 miss
+  :B 3 reb turnover
+  :M 24 steal 5 turnover
+  :B 4 steal 2 two '2 make
+  :B (out 2) (in 42)
+  :M 42 two '3 miss
+  :B 35 reb 1 three '20 make
+  :M 5 turnover
+  :M (out 24) (in 21)
+  :B 42 turnover
+  :M 5 three '23 miss
+  :B reb 1 three '22 make
+  :M (out 12) (in 24)
+  :M 24 two '3 make
+  :B 3 turnover
+  :M 1 turnover
+  :B (out 42) (in 2)
+  :B 1 two '16 make
+  :M 21 three '21 miss 1 reb 24 two '3 miss (ft miss make)
+  :B (out 35) (in 42)
+  :M (out 42) (in 10)
+  :B 3 two '5 miss :B reb 3 two '5 make
+  :M 10 turnover
+  :B 2 steal 4 turnover
+  :M 5 steal 1 three '21 make
+  :B 42 two '1 miss reb two '1 miss (ft make miss)
+  :M 24 reb 5 two '13 miss :M reb 1 bonus (ft miss)
+  :M (out 21) (in 3)
+  :B 3 reb 42 two '1 make
+  :M 3 three '21 miss
+  :B 3 reb two '9 miss
+  :M 1 reb 3 turnover
+  :B 3 steal 2 turnover
+  :M 1 steal 5 turnover
+  :B 2 steal 3 two '1 make
+  period
+  :B (in 1 3 4 35 42)
+  :M (in 1 5 21 24 42)
+  :M 24 two '8 miss
+  :B 3 reb 42 two '2 miss
+  :M reb 21 turnover
+  :B 35 steal 3 two '6 make
+  :M 5 two '13 make
+  :B 3 turnover
+  :M 1 three '24 make
+  :B 4 three '21 miss
+  :M 5 reb three '24 miss
+  :B 35 reb turnover
+  :M 5 steal two '2 miss (ft miss make)
+  :B 42 three '20 miss
+  :M reb
+  :B (out 35) (in 2)
+  :M 24 two '2 miss
+  :B 3 reb two '5 miss
+  :M 1 three '23 make
+  :B 42 turnover
+  :M 5 steal 24 two '2 make
+  :B 4 two '8 make
+  :M 24 two '4 miss
+  :B 4 reb 3 turnover
+  :M 24 two '7 miss
+  :B 3 reb 42 three '20 miss
+  :M 24 reb 5 three '25 miss
+  :B 4 reb 1 two '3 make
+  :M (out 21 42) (in 10 3)
+  :B (out 42) (in 35)
+  :M 5 turnover
+  :B 1 steal two '2 make
+  :M 1 three '22 miss 24 reb 5 three '23 miss 24 reb 10 two '4 miss
+  :B 3 reb 1 two '2 make
+  :B (out 35) (in 42)
+  :M 1 two '8 miss (ft make miss) 10 reb 1 three '21 miss 3 reb two '9 miss
+  :B 3 reb 4 three '22 miss
+  :M 5 reb 1 turnover
+  :B 1 steal 2 three '22 miss 1 reb
+  :M (out 1) (in 23)
+  :B (out 3) (in 20)
+  :B 1 three '21 make
+  :M 5 three '21 make
+  :B 2 turnover
+  :M 3 steal
+  period
+  :B (in 1 2 4 20 42)
+  :M (in 1 5 10 21 24)
+  :B 1 three '21 make
+  :M 24 two '8 make (ft miss)
+  :B 42 reb 20 two '2 miss
+  :M 10 reb 1 three '22 make
+  :B 42 two '1 miss (ft miss make)
+  :B (out 2 20) (in 3 35)
+  :M (out 10) (in 42)
+  :M 5 bonus (ft make make)
+  :B 3 two '4 miss
+  :M reb 1 technical (ft make make)
+  :M 1 three '22 miss
+  :B 35 reb two '14 miss
+  :M 24 reb 1 turnover
+  :B 4 steal 1 two '4 miss (ft miss make)
+  :M 24 two '1 miss :B 35 block :M reb 21 turnover
+  :B 4 steal 1 two '3 miss 42 reb turnover
+  :M 24 two '1 miss :B 3 block :M 24 reb two '2 make
+  :B 42 two '2 miss
+  :M 24 reb 42 two '1 make
+  :B 3 two '2 miss (ft make make)
+  :M 42 two '2 make
+  :B 35 three '21 make
+  :M 5 bonus (ft make make)
+  :B 35 three '25 miss 3 reb two '2 make
+  :M 21 two '13 miss reb 1 three '22 miss
+  :B 3 reb turnover
+  :M 24 steal two '3 miss (ft make make)
+  :B 1 three '23 make
+  :M 24 two '2 (ft make make)
+  :B (out 42) (in 2)
+  :B 1 turnover
+  :M 21 turnover
+  :B 35 bonus (ft make make)
+  :B (out 35) (in 42)
+  :M 24 turnover
+  :B 1 turnover
+  :M 1 technical (ft make make)
+  :M 1 three '22 miss
+  :B reb
+  :B (out 42) (in 35)
+  :B 35 bonus (ft make miss) 2 reb 35 bonus (ft make make)
+  :B (out 35) (in 42)
+  :M 24 two '1 miss (ft make make)
+  period]]

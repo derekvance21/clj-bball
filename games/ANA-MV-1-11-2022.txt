@@ -1,0 +1,135 @@
+A
+MV
+
+MV 00 Three Miss
+A 33 Rim Make
+MV 00 Rim Miss
+A 33 Rim Make
+MV 00 Three Miss
+A 31 Three Make
+MV 00 Three Miss OR
+MV 00 Rim Make FT 1/1
+A 12 Rim Make
+MV 00 TO
+A 12 Rim Make
+MV 00 Rim Miss
+A 31 Three Miss
+MV 00 Rim Miss
+A 33 Rim Make
+MV 00 Three Make
+A 21 TO
+MV 00 Mid Miss
+A 31 Rim Miss
+MV 00 Mid Make
+A 21 Rim Miss
+MV 00 Rim Miss FT 0/2
+A 33 Rim Miss
+MV 00 Rim Make
+A 10 Three Make
+MV 00 TO
+A 15 Mid Miss OR
+A 15 Rim Make
+MV 00 TO
+A 15 Three Miss OR
+A 31 Rim Make
+MV 00 Mid Miss
+A 31 Three Make
+1Q (A 23 MV 10)
+A 31 Three Miss FT 3/3
+MV 00 Mid Make
+A 12 Mid Miss
+MV 00 Three Make
+A 12 TO
+MV 00 Mid Miss OR
+MV 00 Rim Miss FT 1/2
+A 10 TO
+MV 00 Three Miss
+A 10 Rim Miss
+MV 00 Rim Make FT 1/1
+A 34 Three Miss
+MV 00 Rim Miss
+A 15 Three Miss
+MV 00 Rim Make
+A 31 Three Miss OR
+A 15 Rim Miss OR
+A 34 Three Make
+MV 00 TO
+A 15 Three Miss OR
+A 21 Rim Miss
+MV 00 Three Miss
+A 33 TO
+MV 00 Mid Miss
+A 10 Three Miss OR
+A 20 Three Miss
+MV 00 Three Miss
+A 33 Rim Miss
+MV 00 Rim Make
+2Q (A 26 MV 21)
+MV 00 Three Make
+A 33 Rim Miss
+MV 00 Rim Miss
+A 21 TO
+MV 00 Rim Make
+A 21 Mid Miss OR
+A 21 Rim Make
+MV 00 Rim Miss
+A 20 Three Miss
+MV 00 TO
+A 31 TO
+MV 00 Rim Miss OR
+MV 00 Rim Make
+A 15 TO
+MV 00 Rim Make
+A 22 Mid Miss
+MV 00 Mid Make FT 1/1
+A 12 Rim Make
+MV 00 Rim Miss OR
+MV 00 Mid Miss OR
+MV 00 Mid Miss
+A 15 Rim Miss
+MV 00 Rim Miss
+A 12 TO
+MV 00 Rim Miss FT 1/2
+A 10 Mid Miss
+A 14 Rim Make
+MV 00 Three Make
+3Q (A 35 MV 39)
+MV 00 TO
+A 12 TO
+MV 00 Three Make
+A 14 TO
+MV 00 Rim Make
+A 33 Rim Miss
+MV 00 Three Make
+A 14 Bonus FT 2/2
+MV 00 Mid Miss
+A 33 Bonus FT 0/1
+MV 00 Three Miss
+A 44 Bonus FT 0/1
+MV 00 TO
+A 34 Three Miss
+MV 00 Rim Miss OR
+MV 00 Rim Miss OR
+MV 00 Rim Make
+A 44 Three Miss OR
+A 33 Rim Miss OR
+A 31 Three Make
+MV 00 TO
+A 34 Bonus FT 1/2
+MV 00 Rim Miss FT 2/2
+A 33 Rim Make
+MV 00 TO
+A 33 Bonus FT 2/2
+MV 00 Rim Make
+A 31 Rim Miss OR
+A 33 Rim Miss
+MV 00 Rim Make
+A 44 Mid Miss
+MV 00 Rim Make
+A 14 Three Make
+MV 00 TO
+A 33 Rim Miss OR
+A 33 Rim Miss OR
+A 31 Three Miss
+4Q (A 48 MV 57)
+(A: 52 poss, MV: 52 poss)

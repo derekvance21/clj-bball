@@ -58,9 +58,13 @@
               [(ground 0) ?count]]
 
              [(efgs ?a ?count)
-              [?a :shot/value ?value]
               [?a :shot/make? true]
-              [(/ ?value 2) ?count]]
+              [?a :shot/value 2]
+              [(ground 1) ?count]]
+             [(efgs ?a ?count)
+              [?a :shot/make? true]
+              [?a :shot/value 3]
+              [(ground 1.5) ?count]]
              [(efgs ?a ?count)
               (not [?a :shot/make? true])
               [(ground 0) ?count]]

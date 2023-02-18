@@ -1,0 +1,157 @@
+A
+S
+
+S 10 Three Make
+A 34 Three Make
+S 11 TO
+A 15 Rim Miss
+S 10 TO
+A 14 Rim Miss OR
+A 33 Rim Miss FT 0/2 DR
+S 11 Three Miss
+A 15 Three Make
+S 14 TO
+A 34 Rim Miss OR
+A 34 Mid Make
+S 23 Three Miss
+A 33 Rim Miss FT 1/2
+S 13 TO
+A 10 Three Make
+S 10 Rim Miss FT 1/2
+A 10 Three Miss
+S 23 Mid Miss
+A 15 Rim Miss OR
+A 33 Rim Make
+S 13 Rim Miss
+A 15 Three Make
+S 13 TO
+A 21 TO
+S 24 Three Make
+A 21 Three Make
+S 23 Three Miss
+A 15 Three Make
+S 10 Mid Make
+A 12 Mid Miss
+1Q (A 23 S 9)
+A 15 TO
+S 24 Three Miss
+A 21 Rim Miss
+S 10 Rim Make
+A 12 TO
+S 10 Three Make
+A 34 Rim Miss OR
+A 14 Three Miss
+S 13 TO
+A 10 Three Miss
+S 10 Rim Make
+A 14 Rim Make
+S 13 Three Miss
+A 14 Rim Make
+S 23 Rim Make FT 0/1 DR
+A 33 Rim Make
+S 23 Rim Miss FT 1/2
+A 33 Rim Make FT 1/1
+S 24 Three Make FT 0/1 DR
+A 33 Rim Miss
+S 14 TO
+A 33 Bonus FT 0/1 DR
+S 24 Three Make
+A 33 Rim Miss
+S 15 Three Make
+A 10 Three Miss
+S 23 Rim Miss FT 1/2
+A 15 Rim Miss
+S 10 Rim Miss
+A 34 Rim Make
+S 10 Rim Miss
+A 15 Three Miss
+S 14 Mid Miss
+A 34 Rim Make
+S 23 TO
+A 15 Bonus FT 1/2
+2Q (A 37 S 29)
+S 10 Three Make
+A 15 TO
+S 10 Three Miss OR
+S 23 Mid Miss
+A 33 Rim Miss
+S 11 TO
+A 34 Rim Miss
+S 11 Three Miss OR
+S 11 TO
+A 14 Rim Miss
+S 10 Mid Miss
+A 15 Three Make
+S 54 TO
+A 10 Rim Miss FT 2/2
+S 15 Three Miss OR
+S 33 Rim Make
+A 15 Three Miss OR
+A 10 Rim Miss
+S 10 TO
+A 15 TO
+S 33 Rim Make FT 0/1
+A 21 Three Miss
+S 10 Rim Miss OR
+S 10 Three Miss
+A 10 Three Miss
+S 13 Rim Make
+A 21 Rim Make
+S 10 Rim Make
+A 21 TO
+S 15 Rim Miss
+A 14 Rim Make
+S 15 TO
+A 14 TO
+S 24 Three Make
+A 14 Rim Make
+3Q (A 48 S 43)
+A 10 Three Miss OR
+A 15 Rim Make
+S 24 Mid Make
+A 15 Rim Miss
+S 24 Three Miss
+A 33 Rim Miss
+S 14 TO
+A 33 Rim Miss OR
+A 14 Rim Make
+S 24 Three Make
+A 33 TO
+S 54 Rim Make
+A 15 Rim Make
+S 23 Three Miss
+A 33 Rim Make
+S 54 Rim Make
+A 33 Rim Miss
+S 10 Three Make
+A 33 Three Miss
+S 24 Rim Make
+A 10 Three Make
+S 14 Three Miss
+A 14 Rim Miss OR
+A 15 Rim Miss
+S 24 Three Make
+A 33 Rim Make FT 0/1 DR
+S 10 TO
+A 10 Three Make
+S 24 Three Miss OR
+S 10 Three Make
+A 15 TO
+S 10 Bonus FT 1/2
+A 34 TO
+4Q (A 64 S 64)
+S 54 Rim Miss OR
+S 14 Three Miss OR
+S 10 Mid Miss
+A 12 Rim Make
+S 24 Three Make
+A 15 Rim Make
+S 14 Rim Miss OR
+S 10 Three Make
+A 15 Rim Miss
+S 14 Three Miss
+A 10 Three Miss
+S 10 Bonus FT 0/1 DR
+A 14 Mid Miss
+OT (A 68 S 70)
+(A: 67 poss, S: 65 poss)

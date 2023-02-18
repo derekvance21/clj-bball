@@ -49,16 +49,6 @@
   [parser & numbers]
   (update-in parser [:players (:team parser)] (fnil #(->> % (remove (set numbers)) set) #{})))
 
-(defn action
-  [parser action]
-  ((ns-resolve (find-ns 'bball.parser) action) parser))
-
-(defn action-form
-  [parser [fn-symbol & args]]
-  (apply (ns-resolve (find-ns 'bball.parser) fn-symbol)
-         parser
-         args))
-
 (defn ft
   [parser & args]
   (let [number-form? (and (= 2 (count args))
@@ -101,11 +91,11 @@
          offense (assoc-in [:action :offense/players] (let [offense (get-in parser [:players (:team parser)])]
                                                         (when-not (= 5 (count offense))
                                                           (raise parser (str "number of offensive players is not five: " offense "\naction-type: " action-type)))
-                                                        (vec offense)))
+                                                        (-> offense sort vec)))
          defense (assoc-in [:action :defense/players] (let [defense (get-in parser [:players (->> (:teams parser) keys (remove #{(:team parser)}) first)])]
                                                         (when-not (= 5 (count defense))
                                                           (raise parser (str "number of defensive players is not five: " defense "\naction-type: " action-type)))
-                                                        (vec defense)))))))
+                                                        (-> defense sort vec)))))))
 
 (defn turnover
   [parser]
@@ -123,17 +113,29 @@
   [parser]
   (next-action parser :action.type/shot))
 
+(defn distance
+  [parser dist]
+  (assoc-in parser [:action :shot/distance] dist))
+
 (defn three
-  [parser]
-  (-> parser
-      shot
-      (assoc-in [:action :shot/value] 3)))
+  ([parser]
+   (-> parser
+       shot
+       (assoc-in [:action :shot/value] 3)))
+  ([parser dist]
+   (-> parser
+       three
+       (distance dist))))
 
 (defn two
-  [parser]
-  (-> parser
-      shot
-      (assoc-in [:action :shot/value] 2)))
+  ([parser]
+   (-> parser
+       shot
+       (assoc-in [:action :shot/value] 2)))
+  ([parser dist]
+   (-> parser
+       two
+       (distance dist))))
 
 (defn make
   [parser]
@@ -162,6 +164,17 @@
   (-> parser
       append-action
       append-possession))
+
+(defn action
+  [parser action]
+  ((ns-resolve (find-ns 'bball.parser) action) parser))
+
+(defn action-form
+  [parser [fn-symbol & args]]
+  (apply (if (= fn-symbol 'quote)
+           distance
+           (ns-resolve (find-ns 'bball.parser) fn-symbol))
+         parser args))
 
 (defn reducer
   [parser command]
