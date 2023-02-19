@@ -14,7 +14,7 @@
 #_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn main-panel []
   (let [name (re-frame/subscribe [::subs/name])]
-    [:div
-     [:h1
-      "Hello frog " @name]
+    [:div.container.mx-4.my-2
+     [:h1.text-2xl
+      "Hello frog " [:span.font-bold @name]]
      [text-input]]))

@@ -38,3 +38,10 @@ These are explicit non-goals of the system:
 - assists
 - date-based queries on games
 - in-game timing information (minutes a certain lineup was in, etc.)
+
+## Getting Started
+
+To enable tailwindcss:
+```sh
+npx tailwindcss -i ./src/app/input.css -o ./resources/public/css/output.css --watch
+```
