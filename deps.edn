@@ -1,8 +1,7 @@
-{:paths ["src/clj" "src/cljs"]
+{:paths ["src"]
  :deps {com.datomic/dev-local {:mvn/version "1.0.243"}
         com.cognitect/transit-clj {:mvn/version "1.0.329"}}
  :aliases {:dev {:jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED"
                             "--add-opens=java.base/sun.nio.ch=ALL-UNNAMED"]}
            :test {:extra-paths ["test"]
                   :exec-fn bball.test/run}}}
- 

@@ -1,10 +1,10 @@
-(ns bball-ui.core
+(ns app.core
   (:require
    [reagent.dom :as rdom]
    [re-frame.core :as re-frame]
-   [bball-ui.events :as events]
-   [bball-ui.views :as views]
-   [bball-ui.config :as config]
+   [app.events :as events]
+   [app.views :as views]
+   [app.config :as config]
    ))
 
 
