@@ -9,7 +9,9 @@
 
 (defn raise
   [parser msg]
-  (throw (Exception. (str msg "\nparser: " parser))))
+  (let [error (str msg "\nparser: " parser)]
+    (throw #?(:cljs (js/Error error)
+              :clj (Exception. error)))))
 
 (defn append-action
   [parser]
@@ -165,9 +167,24 @@
       append-action
       append-possession))
 
+(def actions {'period period
+              'block block
+              'steal steal
+              'reb reb
+              'miss miss
+              'make make
+              'two two
+              'three three
+              'technical technical
+              'bonus bonus
+              'turnover turnover
+              'ft ft
+              'in in
+              'out out})
+
 (defn symbol->fn
   [action]
-  (ns-resolve (find-ns 'bball.parser) action))
+  (get actions action ()))
 
 (defn apply-symbol
   [parser action]
