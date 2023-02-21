@@ -5,7 +5,7 @@ output.calva-repl
 
 /out/
 /resources/public/js/compiled/
-resources/public/css/
+/resources/public/css/compiled/
 /target/
 /*-init.clj
 /*.log

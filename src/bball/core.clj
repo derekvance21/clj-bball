@@ -59,6 +59,5 @@
      (d/db conn)
      q/rules
      wnba-game-2-eid
-    ;;  #{} ; all unique lineups
      #{10 24 30} ; all unique lineups with 10, 24, and 30 in them
      [:offense/players :defense/players])

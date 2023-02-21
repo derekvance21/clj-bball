@@ -43,5 +43,5 @@ These are explicit non-goals of the system:
 
 To enable tailwindcss:
 ```sh
-npx tailwindcss -i ./src/app/input.css -o ./resources/public/css/output.css --watch
+npx tailwindcss -i ./src/app/input.css -o ./resources/public/css/compiled/output.css --watch
 ```
