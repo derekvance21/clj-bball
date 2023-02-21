@@ -41,9 +41,10 @@
 
 (defn in
   [parser & numbers]
-  (update-in parser [:players (:team parser)] (fnil #(into (if (= 5 (count numbers)) #{} %)
-                                       numbers)
-                                #{})))
+  (update-in parser [:players (:team parser)]
+             (fnil #(into (if (= 5 (count numbers)) #{} %)
+                          numbers)
+                   #{})))
 
 (defn out
   [parser & numbers]
@@ -85,17 +86,16 @@
         append-action
         check-possession-change
         (assoc-in [:action :action/player] (:number parser))
-
         (assoc-in [:action :action/type] action-type)
         (cond->
-         offense (assoc-in [:action :offense/players] (let [offense (get-in parser [:players (:team parser)])]
-                                                        (when-not (= 5 (count offense))
-                                                          (raise parser (str "number of offensive players is not five: " offense "\naction-type: " action-type)))
-                                                        (-> offense sort vec)))
-         defense (assoc-in [:action :defense/players] (let [defense (get-in parser [:players (->> (:teams parser) keys (remove #{(:team parser)}) first)])]
-                                                        (when-not (= 5 (count defense))
-                                                          (raise parser (str "number of defensive players is not five: " defense "\naction-type: " action-type)))
-                                                        (-> defense sort vec)))))))
+         offense (assoc-in [:action :offense/players]
+                           (if-not (= 5 (count offense))
+                             (raise parser (str "number of offensive players is not five: " offense "\naction-type: " action-type))
+                             (-> offense sort vec)))
+         defense (assoc-in [:action :defense/players]
+                           (if-not (= 5 (count defense))
+                             (raise parser (str "number of defensive players is not five: " defense "\naction-type: " action-type))
+                             (-> defense sort vec)))))))
 
 (defn turnover
   [parser]
@@ -165,24 +165,25 @@
       append-action
       append-possession))
 
-(defn action
-  [parser action]
-  ((ns-resolve (find-ns 'bball.parser) action) parser))
+(defn symbol->fn
+  [action]
+  (ns-resolve (find-ns 'bball.parser) action))
 
-(defn action-form
-  [parser [fn-symbol & args]]
-  (apply (if (= fn-symbol 'quote)
-           distance
-           (ns-resolve (find-ns 'bball.parser) fn-symbol))
-         parser args))
+(defn apply-symbol
+  [parser action]
+  ((symbol->fn action) parser))
+
+(defn apply-list
+  [parser [action & args]]
+  (apply (if (= action 'quote) distance (symbol->fn action)) parser args))
 
 (defn reducer
   [parser command]
   (cond-> parser
     (keyword? command) (team command)
     (number? command) (number command)
-    (symbol? command) (action command)
-    (list? command) (action-form command)))
+    (symbol? command) (apply-symbol command)
+    (list? command) (apply-list command)))
 
 (defn parse
   [[init-parser commands]]

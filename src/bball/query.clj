@@ -1,5 +1,4 @@
-(ns bball.query
-  (:require [datomic.client.api :as d]))
+(ns bball.query)
 
 (def rules '[;; FILTER
              [(fta? ?a)
@@ -13,7 +12,7 @@
              [(fga? ?a)
               [?a :action/type :action.type/shot]
               [?a :shot/make? true]]
-             
+
              [(in? ?p ?a ?t ?number)
               [?p :possession/team ?t]
               [?a :offense/players ?number]]
@@ -21,8 +20,15 @@
               (not [?p :possession/team ?t])
               [?a :defense/players ?number]]
 
-             ;; TODO: predicate for possession ending (should be equivalent to *containing*) in turnover
-             [(poss-to? ?p)]
+             [(subset? ?sub ?set)
+              [(clojure.set/subset? ?sub ?set)]]
+
+             [(floor? ?a ?players)
+              (lineup ?a :offense/players ?lineup)
+              (subset? ?players ?lineup)]
+             [(floor? ?a ?players)
+              (lineup ?a :defense/players ?lineup)
+              (subset? ?players ?lineup)]
 
              ;; MAP
              [(actions ?g ?t ?p ?a)
@@ -87,29 +93,7 @@
              [(tos ?a ?count)
               (not [?a :action/type :action.type/turnover])
               [(ground 0) ?count]]
-             ])
 
-(defn poss-pts [db p]
-  (ffirst (d/q '[:find (sum ?pts)
-                 :in $ % ?p
-                 :where
-                 [?p :possession/action ?a]
-                 (pts ?a ?pts)]
-               db rules p)))
-
-(defn game-team-fts [db g t]
-  (ffirst (d/q '[:find (sum ?fts)
-                 :in $ % ?g ?t
-                 :with ?a
-                 :where
-                 (actions ?g ?t ?p ?a)
-                 [?a :ft/made ?fts]]
-               db rules g t)))
-
-(defn game-team-fgas [db g t]
-  (ffirst (d/q '[:find (count ?a)
-                 :in $ % ?g ?t
-                 :where
-                 (actions ?g ?t ?p ?a)
-                 (fga? ?a)]
-               db rules g t)))
+             [(lineup ?a ?type ?lineup)
+              [?a ?type ?ps]
+              [(set ?ps) ?lineup]]])

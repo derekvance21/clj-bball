@@ -37,17 +37,16 @@
      (sort-by first)
      (into [[:game :datetime :minutes :team :points]]))
 ;; => [[:game :datetime :minutes :team :points]
-;;     [79164837199967 #inst "2022-09-07T01:00:00.000-00:00" 40 "Las Vegas Aces" 97]
-;;     [79164837199967 #inst "2022-09-07T01:00:00.000-00:00" 40 "Seattle Storm" 92]
-;;     [79164837200300 #inst "2022-02-06T02:15:00.000-00:00" 32 "Blaine Borderites" 65]
-;;     [79164837200300 #inst "2022-02-06T02:15:00.000-00:00" 32 "Ferndale Golden Eagles" 63]
-;;     [79164837200577 #inst "2022-09-05T02:00:00.000-00:00" 45 "Las Vegas Aces" 110]
-;;     [79164837200577 #inst "2022-09-05T02:00:00.000-00:00" 45 "Seattle Storm" 98]]
-
+;;     [<gameid1> #inst "2022-09-07T01:00:00.000-00:00" 40 "Las Vegas Aces" 97]
+;;     [<gameid1> #inst "2022-09-07T01:00:00.000-00:00" 40 "Seattle Storm" 92]
+;;     [<gameid2> #inst "2022-02-06T02:15:00.000-00:00" 32 "Blaine Borderites" 65]
+;;     [<gameid2> #inst "2022-02-06T02:15:00.000-00:00" 32 "Ferndale Golden Eagles" 63]
+;;     [<gameid3> #inst "2022-09-05T02:00:00.000-00:00" 45 "Las Vegas Aces" 110]
+;;     [<gameid3> #inst "2022-09-05T02:00:00.000-00:00" 45 "Seattle Storm" 98]]
 
 (def wnba-game-eid 79164837199967)
 (def hs-game-eid 79164837200300)
-(def wnba-game-2-eid 96757023244993)
+(def wnba-game-2-eid 101155069756097)
 
 (d/q '[:find (pull ?t [:team/name]) ?type ?lineup (sum ?pts) (count-distinct ?p)
        :in $ % ?g ?players [?type ...]
@@ -55,24 +54,11 @@
        :where
        (actions ?g ?t ?p ?a)
        (pts ?a ?pts)
-       (lineup? ?a ?type ?players)
        (lineup ?a ?type ?lineup)
-       ]
+       (subset? ?players ?lineup)]
      (d/db conn)
-     (conj q/rules
-           '[(lineup? ?a ?type ?players)
-             [?a ?type ?ps]
-             [(set ?ps) ?lineup]
-             [(clojure.set/subset? ?players ?lineup)]]
-           '[(lineup ?a ?type ?lineup)
-             [?a ?type ?ps]
-             [(set ?ps) ?lineup]]
-           '[(floor? ?a ?players)
-             (lineup? ?a :offense/players ?players)]
-           '[(floor? ?a ?players)
-             (lineup? ?a :defense/players ?players)])
+     q/rules
      wnba-game-2-eid
     ;;  #{} ; all unique lineups
      #{10 24 30} ; all unique lineups with 10, 24, and 30 in them
-     [:offense/players :defense/players]
-     )
+     [:offense/players :defense/players])
