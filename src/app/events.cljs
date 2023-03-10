@@ -26,7 +26,7 @@
          (try (-> (:game-input db) edn/read-string p/parse)
               (catch js/Object e e))]
      (d/reset-conn! conn db/empty-db)
-     (when (coll? game-object)
+     (when (sequential? game-object)
        (d/transact! conn [game-object]))
      {:db (assoc db
                  :game-object game-object
