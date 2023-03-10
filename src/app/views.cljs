@@ -31,7 +31,7 @@
 
 (defn main-panel []
   [:div.container.w-96.mx-4.my-2.flex.flex-col
+   [game-score]
    [game-input]
    [update-game]
-   [game-object]
-   [game-score]])
+   [game-object]])
