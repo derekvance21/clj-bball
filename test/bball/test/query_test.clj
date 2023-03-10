@@ -1,8 +1,8 @@
 (ns bball.test.query-test
   (:require [clojure.test :as t :refer [is deftest testing]]
             [bball.query :as q]
-            [bball.parser :refer [parse]]
             [bball.db :as db]
+            [bball.core :refer [file->tx]]
             [datomic.client.api :as d]))
 
 (def ^:dynamic *conn*)
@@ -15,7 +15,7 @@
                      (d/connect client db))]
 
     (d/transact *conn* {:tx-data db/schema})
-    (d/transact *conn* {:tx-data [(-> "games/2022-09-06-Vegas-Seattle.edn" slurp read-string parse)]})
+    (d/transact *conn* {:tx-data [(file->tx "games/2022-09-06-Vegas-Seattle.edn")]})
 
     (testing "FT%"
       (is (= (-> '[:find (pull ?t [:team/name]) (sum ?fts) (sum ?ftas)
@@ -40,19 +40,19 @@
                        q/rules))
              #{[{:team/name "Las Vegas Aces"} 78 40]
                [{:team/name "Seattle Storm"} 78 40]})))
-      (testing "FT/FGA"
-        (is (= (set (d/q '[:find ?team (sum ?fts) (sum ?fgas)
-                           :in $ %
-                           :with ?a
-                           :where
-                           (actions ?g ?t ?p ?a)
-                           (fts ?a ?fts)
-                           (fgas ?a ?fgas)
-                           [?t :team/name ?team]]
-                         (d/db *conn*)
-                         q/rules))
-               #{["Las Vegas Aces" 15 63]
-                 ["Seattle Storm" 19 70]})))
+    (testing "FT/FGA"
+      (is (= (set (d/q '[:find ?team (sum ?fts) (sum ?fgas)
+                         :in $ %
+                         :with ?a
+                         :where
+                         (actions ?g ?t ?p ?a)
+                         (fts ?a ?fts)
+                         (fgas ?a ?fgas)
+                         [?t :team/name ?team]]
+                       (d/db *conn*)
+                       q/rules))
+             #{["Las Vegas Aces" 15 63]
+               ["Seattle Storm" 19 70]})))
     (testing "eFG%"
       (is (= (set (d/q '[:find (pull ?t [:team/name]) (avg ?efgs)
                          :in $ %

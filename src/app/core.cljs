@@ -6,7 +6,6 @@
    [app.views :as views]
    [app.config :as config]))
 
-
 (defn dev-setup []
   (when config/debug?
     (println "dev mode")))
@@ -18,6 +17,6 @@
     (rdom/render [views/main-panel] root-el)))
 
 (defn init []
-  (re-frame/dispatch-sync [::events/initialize-db])
+  (re-frame/dispatch-sync [::events/initialize])
   (dev-setup)
   (mount-root))

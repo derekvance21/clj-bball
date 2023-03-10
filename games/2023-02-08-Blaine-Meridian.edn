@@ -2,6 +2,8 @@
           :M {:team/name "Meridian Trojans"}}
   :game {:game/minutes 32
          :game/datetime #inst "2023-02-08T19:30-07:00"}}
+ ;; I NEED TO NOT USE QUOTES LIKE THIS FOR DISTANCE
+ ;; clojure.edn/read-string parses it into a symbol '12, rather than a list (quote 12)
  [:B (in 1 3 4 25 42)
   :M (in 1 5 12 24 42)
   :B 3 two '7 miss reb two '4 make

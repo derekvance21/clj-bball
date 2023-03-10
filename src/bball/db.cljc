@@ -112,9 +112,19 @@
               :db/unique :db.unique/identity
               :db/doc "the name of the team"}])
 
+(def ds-schema
+  (->> schema
+       (filter (fn [sch]
+                 (-> sch keys count (> 1)))) ;; removes enums
+       (map (fn [sch]
+              (cond-> sch
+                (-> sch :db/valueType #{:db.type/ref :db.type/tuple} not) (dissoc :db/valueType)
+                (-> sch :db/valueType (= :db.type/tuple) (and (-> sch :db/tupleAttrs not))) (dissoc :db/valueType :db/tupleTypes)
+                (-> sch :db/ident name (= "type")) (dissoc :db/valueType)))) ;; removes invalid :db/valueType's
+       (reduce (fn [schema sch]
+                 (assoc schema (:db/ident sch) (dissoc sch :db/ident)))
+               {}))) ;; transforms from vector to map
+
 (def dev-config {:server-type :dev-local
                  :storage-dir :mem
                  :system "ci"})
-
-(def test-config {:store {:backend :mem :id "testdb"}
-                  :initial-tx schema})

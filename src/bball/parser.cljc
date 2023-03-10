@@ -192,7 +192,7 @@
 
 (defn apply-list
   [parser [action & args]]
-  (apply (if (= action 'quote) distance (symbol->fn action)) parser args))
+  (apply (symbol->fn action) parser args))
 
 (defn reducer
   [parser command]
