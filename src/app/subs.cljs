@@ -1,19 +1,23 @@
 (ns app.subs
   (:require
-   [re-frame.core :as re-frame]
-   [cljs.pprint :as pp]))
+   [re-frame.core :as re-frame]))
 
 (re-frame/reg-sub
- ::game-input
+ ::actions
  (fn [db]
-   (:game-input db)))
+   (:actions db)))
 
 (re-frame/reg-sub
- ::game-object-string
+ ::action-input
  (fn [db]
-   (-> db :game-object pp/pprint with-out-str)))
+   (get db :action-input)))
 
 (re-frame/reg-sub
- ::game-score
+ ::teams
  (fn [db]
-   (:game-score db)))
+   (get-in db [:game :teams])))
+
+(re-frame/reg-sub
+ ::score
+ (fn [db]
+   (get-in db [:game :score])))
