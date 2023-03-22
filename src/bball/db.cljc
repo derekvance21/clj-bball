@@ -33,10 +33,6 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the distance from the hoop in feet the shot was attempted from"}
-             {:db/ident :shot/rebounder
-              :db/valueType :db.type/long
-              :db/cardinality :db.cardinality/one
-              :db/doc "the number player of the rebounder of the shot attempt"}
              {:db/ident :shot/value
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
@@ -45,6 +41,14 @@
               :db/valueType :db.type/boolean
               :db/cardinality :db.cardinality/one
               :db/doc "whether or not the shot was made"}
+             ;; TODO - probably renamespace rebounding related things to :rebound/off? and :rebound/player
+             ;;        b/c now, a fouled shot with an offensive rebound is :shot/off-reb? true, whereas it's really
+             ;;        an offensive rebound on the free-throw
+             ;;        also, keeping player-related names as "player", for :action/player, :rebound/player, :steal/player seems better
+             {:db/ident :shot/rebounder
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number player of the rebounder of the shot attempt"}
              {:db/ident :shot/off-reb?
               :db/valueType :db.type/boolean
               :db/cardinality :db.cardinality/one
@@ -96,7 +100,7 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number of minutes this game lasted"}
-             {:db/ident :game/teams
+             {:db/ident :game/teams ;; TODO - why is this named plurally? Also, might want to refactor into :game/team1 :game/team2. Or even a tuple
               :db/valueType :db.type/ref
               :db/cardinality :db.cardinality/many
               :db/doc "the teams playing in this game"}

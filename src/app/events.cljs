@@ -2,75 +2,162 @@
   (:require
    [re-frame.core :as re-frame]
    [app.db :as db]
-   [clojure.edn :as edn]
-   [bball.parser :as p]
    [datascript.core :as d]))
+
+(re-frame/reg-event-db
+ ::set-game-info
+ [re-frame/trim-v]
+ (fn [db [gtid {db-after :db-after tempids :tempids}]]
+   (let [g (get tempids gtid)
+         game (d/pull db-after [:db/id {:game/teams [:db/id :team/name]}] g)]
+     (assoc db :game game))))
 
 (re-frame/reg-event-fx
  ::initialize
  [(re-frame/inject-cofx ::db/datascript-conn)]
  (fn [{:keys [conn]} _]
-   (d/transact! conn [{:game/teams [{:team/name "Blaine"}
-                                    {:team/name "Zillah"}]}])
-   (let [{gid :db/id
-          teams :game/teams}
-         (d/pull @conn '[:db/id {:game/teams [:db/id :team/name]}]
-                 (d/q '[:find ?g .
-                        :where
-                        [?g :game/teams]]
-                      @conn))]
-     {:db {:game {:id gid
-                  :teams teams}}})))
+   (let [tempid -1]
+     {:transact {:conn conn
+                 :tx-data [{:db/id tempid
+                            :game/teams [{:team/name "Blaine"}
+                                         {:team/name "Zillah"}]}]
+                 :on-transact [::set-game-info tempid]}})))
 
-(defn parse-input
-  [input]
-  (try (-> input edn/read-string p/parse)
-       (catch js/Object e e)))
+(re-frame/reg-event-db
+ ::set-action-player
+ [(re-frame/path [:action :action/player])
+  re-frame/trim-v]
+ (fn [_ [player]]
+   player))
 
-(defn last-poss
-  [db g]
-  (let [o (d/q '[:find (max ?o) .
-                 :in $ ?g
-                 :where
-                 [?g :game/possession ?p]
-                 [?p :possession/order ?o]]
-               db g)
-        p (d/q '[:find ?p .
-                 :in $ ?g ?o
-                 :where
-                 [?g :game/possession ?p]
-                 [?p :possession/order ?o]]
-               db g o)]
-    (if p (d/pull db '[*] p) nil)))
+(re-frame/reg-event-db
+ ::set-action-shot
+ [(re-frame/path [:action])]
+ (fn [action _]
+   (-> action
+       (assoc :action/type :action.type/shot)
+       (dissoc :turnover/stealer))))
+
+(re-frame/reg-event-db
+ ::set-action-turnover
+ [(re-frame/path [:action])]
+ (fn [action _]
+   (-> action
+       (assoc :action/type :action.type/turnover)
+       (dissoc :shot/make? :shot/off-reb? :shot/value :shot/rebounder :ft/made :ft/attempted :shot/foul?))))
+
+(re-frame/reg-event-db
+ ::set-stealer
+ [(re-frame/path [:action])
+  re-frame/trim-v]
+ (fn [action [stealer]]
+   (if stealer
+     (assoc action :turnover/stealer stealer)
+     (dissoc action :turnover/stealer))))
+
+(def fta-interceptor
+  (re-frame/on-changes
+   (fn [value make? foul?]
+     (if foul?
+       (if make? 1 value)
+       0))
+   [:action :ft/attempted] [:action :shot/value] [:action :shot/make?] [:action :shot/foul?]))
+
+(re-frame/reg-event-db
+ ::set-shot-make?
+ [fta-interceptor
+  (re-frame/path [:action :shot/make?])
+  re-frame/trim-v]
+ (fn [_ [make?]]
+   make?))
+
+(re-frame/reg-event-db
+ ::set-shot-foul?
+ [fta-interceptor
+  (re-frame/path [:action])
+  re-frame/trim-v]
+ (fn [action [foul?]]
+   (cond-> action
+     true (assoc :shot/foul? foul?)
+     (not foul?) (dissoc :ft/attempted :ft/made :shot/foul?))))
+
+(re-frame/reg-event-db
+ ::set-shot-value
+ [fta-interceptor
+  re-frame/trim-v
+  (re-frame/path [:action :shot/value])]
+ (fn [_ [value]]
+   value))
+
+(re-frame/reg-event-db
+ ::set-ft-made
+ [(re-frame/path [:action :ft/made])
+  re-frame/trim-v]
+ (fn [_ [ftm]]
+   ftm))
+
+(re-frame/reg-event-db
+ ::set-rebounder
+ [(re-frame/path [:action :shot/rebounder])
+  re-frame/trim-v]
+ (fn [_ [rebounder]]
+   rebounder))
+
+(re-frame/reg-event-db
+ ::set-off-reb?
+ [(re-frame/path [:action :shot/off-reb?])
+  re-frame/trim-v]
+ (fn [_ [off-reb?]]
+   off-reb?))
+
+(re-frame/reg-event-db
+ ::select-team
+ [(re-frame/path :team)
+  re-frame/trim-v]
+ (fn [_ [team]]
+   team))
+
+(re-frame/reg-event-fx
+ ::update-query-results
+ [re-frame/trim-v]
+ (fn [{db :db} [{db-after :db-after}]]
+   (let [g (get-in db [:game :db/id])
+         score (db/score db-after g)
+         possessions (db/possessions db-after g)]
+     {:db (update db :game assoc :score score :game/possession possessions)})))
+
+(re-frame/reg-fx
+ :transact
+ (fn [{conn :conn tx-data :tx-data on-transact :on-transact}]
+   (let [tx-report (d/transact! conn tx-data)]
+     (re-frame/dispatch (conj on-transact tx-report)))))
 
 (re-frame/reg-event-fx
  ::add-action
  [(re-frame/inject-cofx ::db/datascript-conn)]
  (fn [{:keys [conn db]} _]
-   (let [action (edn/read-string (:action-input db))
-         team (:team db)
-         g (get-in db [:game :id])
-         poss (last-poss @conn g)
-         cteam (:possession/team poss)
-         cop? (not= (:db/id team) (:db/id cteam))
-         tx (if cop?
-              {:db/id g
-               :game/possession [{:possession/order (inc (or (:possession/order poss) -1))
-                                  :possession/team {:team/name (:team/name team)}
-                                  :possession/action [action]}]}
-              {:db/id (:db/id poss)
-               :possession/action [action]})]
-     (println tx)
-     (d/transact! conn [tx])
-     {:db (assoc-in db [:game :score]
-                    (d/q db/q-score @conn db/rules))})))
+   (let [{action :action game :game} db
+         last-possession (apply max-key :possession/order (:game/possession game))
+         t (get-in db [:team :db/id])
+         add-action? (= t (get-in last-possession [:possession/team :db/id]))
+         tx (if add-action?
+              (let [last-action (apply max-key :action/order (:possession/action last-possession))
+                    order (inc (get last-action :action/order 0))]
+                {:db/id (:db/id last-possession)
+                 :possession/action [(assoc action :action/order order)]})
+              (let [order (inc (get last-possession :possession/order 0))]
+                {:db/id (:db/id game)
+                 :game/possession [{:possession/order order
+                                    :possession/team t
+                                    :possession/action [(assoc action :action/order 1)]}]}))]
 
-(re-frame/reg-event-db
- ::select-team
- (fn [db [_ team]]
-   (assoc db :team team)))
-
-(re-frame/reg-event-db
- ::set-action
- (fn [db [_ action-input]]
-   (assoc db :action-input action-input)))
+     {:transact {:conn conn
+                 :tx-data [tx]
+                 :on-transact [::update-query-results]}
+      :db (cond-> db
+            true (dissoc :action)
+            (not (or (:shot/off-reb? action)
+                     (= :action.type/technical (:action/type action))))
+            (assoc :team (->> (get-in db [:game :game/teams])
+                              (filter #(not= (:db/id %) (get-in db [:team :db/id])))
+                              first)))})))

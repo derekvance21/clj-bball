@@ -45,3 +45,7 @@ To enable tailwindcss:
 ```sh
 npx tailwindcss -i ./resources/input.css -o ./resources/public/css/compiled/output.css --watch
 ```
+
+## Bugs
+
+If there is a made shot with a missed free throw and a team defensive rebound, that might not be counted easily, because now you have to check if :ft/made is 0 where :ft/attempted is > 0. Also, for non-made shots with at least one missed free throw and at least one made free throw, who's to say whether it ended with a miss and was a team defensive rebound, or it ended with a make and no rebound either way.
