@@ -1,6 +1,8 @@
 # Description
 
-This is a system to track basketball games and provide useful statistics about players, games and teams.
+This is a system to track basketball games and provide useful statistics about players, games and teams. It is very much still in development.
+
+Here is a prototype of the game logger UI: ![A gif of a game being tracked](demo.gif) 
 
 # Goals
 
