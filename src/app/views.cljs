@@ -3,15 +3,28 @@
             [app.subs :as subs]
             [re-frame.core :as re-frame]))
 
+;; TODO - use this more
+(def <sub  (comp deref re-frame/subscribe))
+
+(defn team-score
+  [name score possession?]
+  [:div.flex.flex-col.items-center.border-y-4 {:class [(if possession? "border-solid" "border-transparent")]}
+   [:h2.text-xl {:class [(when possession? nil)]} name]
+   (when score [:code.text-3xl.font-bold score])])
+
 (defn score []
-  (let [[[team1 score1] [team2 score2]] @(re-frame/subscribe [::subs/score])
-        {team :team/name} @(re-frame/subscribe [::subs/team])
-        team1? (= team team1)
-        team2? (= team team2)]
-    [:div.grid.gap-x-2.grid-cols-2.self-center.my-4.justify-items-center
-     [:h2.text-xl {:class [(when team1? "underline")]} team1]
-     [:h2.text-xl {:class [(when team2? "underline")]} team2]
-     [:code.text-3xl.font-bold score1] [:code.text-3xl.font-bold score2]]))
+  (let [[team1 team2] @(re-frame/subscribe [::subs/teams])
+        score-map (when-let [[[t1 score1]
+                              [t2 score2]]
+                             @(re-frame/subscribe [::subs/score])]
+                    {t1 score1 t2 score2})
+        score1 (get score-map (:db/id team1) 0)
+        score2 (get score-map (:db/id team2) 0)
+        team1-possession? (re-frame/subscribe [::subs/team-has-possession? (:db/id team1)])
+        team2-possession? (re-frame/subscribe [::subs/team-has-possession? (:db/id team2)])]
+    [:div.flex.gap-x-2
+     [team-score (:team/name team1) score1 @team1-possession?]
+     [team-score (:team/name team2) score2 @team2-possession?]]))
 
 (defn shot-input []
   (let [value (re-frame/subscribe [::subs/shot-value])
@@ -103,18 +116,18 @@
        "Turnover"]
       (when (= @type :action.type/turnover)
         [turnover-input])
-      [:button {:type "submit"}
+      [:button.self-start {:type "submit"}
        "Add"]]]))
 
 (defn render-shot
   [action]
   (let [{make? :shot/make? value :shot/value off-reb? :shot/off-reb? rebounder :shot/rebounder fta :ft/attempted ftm :ft/made} action]
-     [:span
-      (str value " PT " (if make? "make" "miss")
-           (when (and fta (> fta 0))
-             (str " " ftm "/" fta " FTs"))
-           (when rebounder
-             (str " " (if rebounder (str "#" rebounder) "Team") " " (if off-reb? "OffReb" "DefReb"))))]))
+    [:span
+     (str value " PT " (if make? "make" "miss")
+          (when (and fta (> fta 0))
+            (str " " ftm "/" fta " FTs"))
+          (when rebounder
+            (str " " (if rebounder (str "#" rebounder) "Team") " " (if off-reb? "OffReb" "DefReb"))))]))
 
 (defn render-turnover
   [action]
@@ -123,8 +136,8 @@
 
 (defn render-action
   [action]
-  (let [{player :action/player type :action/type} action]
-    [:div
+  (let [{player :action/player type :action/type id :db/id} action]
+    [:div (comment {:on-click #(re-frame/dispatch [::events/set-action id])})
      [:span (str "#" player " ")]
      (case type
        :action.type/shot [render-shot action]
@@ -160,22 +173,24 @@
                       :value team1
                       :name :team
                       :checked (= @team team1)
-                      :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/select-team team1]))}]
+                      :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-team team1]))}]
       (:team/name team1)]
-     [:label.ml-2 [:input {:type "radio"
-                      :value team2
-                      :name :team
-                      :checked (= @team team2)
-                      :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/select-team team2]))}]
+     [:label.ml-2
+      [:input {:type "radio"
+               :value team2
+               :name :team
+               :checked (= @team team2)
+               :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-team team2]))}]
       (:team/name team2)]]))
 
 (defn main-panel []
   (let [possessions? (re-frame/subscribe [::subs/possessions])]
-    [:div.container.mx-4.my-2.flex.justify-around
+    [:div.container.mx-4.my-4.flex.justify-between
      {:class "w-1/2"}
-     [:div.flex.flex-col
-      [score]
-      (when-not @possessions?
+     [:div.flex.flex-col.flex-1
+      (when (empty? @possessions?)
         [team-selector])
       [action-input]]
-     [possessions]]))
+     [:div.flex.flex-col.flex-1
+      [score]
+      [possessions]]]))

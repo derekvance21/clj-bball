@@ -1,27 +1,29 @@
 (ns app.db
   (:require [bball.db :as db]
-            [bball.query :as q]
+            [bball.query :as query]
             [datascript.core :as d]
-            [re-frame.core :as re-frame]))
+            [re-frame.core :as re-frame]
+            [reagent.core :as reagent]))
 
-(def conn (d/create-conn db/ds-schema))
+(defn create-ratom-conn
+  ([]
+   (create-ratom-conn nil))
+  ([schema]
+   (reagent/atom (d/empty-db schema) :meta {:listeners (atom {})})))
 
-
-
-(def rules q/rules)
-
-(def q-score
-  '[:find ?team (sum ?pts)
-    :in $ % ?g
-    :with ?a
-    :where
-    (actions ?g ?t ?p ?a)
-    (pts ?a ?pts)
-    [?t :team/name ?team]])
+(def conn (create-ratom-conn db/ds-schema))
 
 (defn score
-  [db g]
-  (d/q q-score db rules g))
+  ([g]
+   (score g @conn))
+  ([g db]
+   (d/q '[:find ?t (sum ?pts)
+          :in $ % ?g
+          :with ?a
+          :where
+          (actions ?g ?t ?p ?a)
+          (pts ?a ?pts)]
+        db query/rules g)))
 
 (re-frame/reg-cofx
  ::datascript-conn
@@ -29,9 +31,17 @@
    (assoc cofx :conn conn)))
 
 (defn possessions
-  [db g]
-  (d/q '[:find [(pull ?p [{:possession/team [*]} *]) ...]
-         :in $ % ?g
-         :where
-         [?g :game/possession ?p]]
-       db q/rules g))
+  ([g]
+   (possessions g @conn))
+  ([g db]
+   (d/q '[:find [(pull ?p [* {:possession/team [:db/id :team/name]}]) ...]
+          :in $ ?g
+          :where
+          [?g :game/possession ?p]]
+        db g)))
+
+(defn last-possession
+  ([g]
+   (last-possession g @conn))
+  ([g db]
+   (apply max-key :possession/order (possessions g db))))
