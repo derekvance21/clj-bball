@@ -8,7 +8,7 @@
 
              [(fga? ?a)
               [?a :action/type :action.type/shot]
-              [?a :shot/make? false]
+              (not [?a :shot/make? true])
               (not (fta? ?a))]
              [(fga? ?a)
               [?a :action/type :action.type/shot]
@@ -32,6 +32,8 @@
               (subset? ?players ?lineup)]
 
              ;; MAP
+             ; this should probably be ?g ?p ?t ?a to help me remember better, mirroring the order below
+             ; TODO - rename these "plays"
              [(actions ?g ?t ?p ?a)
               [?g :game/possession ?p]
               [?p :possession/team ?t]

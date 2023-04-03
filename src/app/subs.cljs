@@ -17,13 +17,112 @@
    ::possessions
    (fn [_]
      [(re-frame/subscribe [::game-id])])
-   (fn [[g] ?event?]
+   (fn [[g] query-vec]
      (db/possessions @g))))
 (defn reg-sub-raw-10x
   ([id handler-fn]
    nil)
   ([id signals-fn comp-fn]
    nil))
+
+(re-frame/reg-sub
+ ::datascript-db
+ (fn [query-vec dynamic-vec]
+   db/conn)
+ (fn [datascript-db query-vec]
+   datascript-db))
+
+(re-frame/reg-sub
+ ::ppp
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] query-vec]
+   (->> (db/ppp db g)
+        (map (fn [[t pts nposs]]
+               [t (/ pts nposs)]))
+        (into {}))
+   ;;  (let [ppp-map (when-let [[[t1 & results1] [t2 & results2]] (db/ppp db g)]
+  ;;                  {t1 results1 t2 results2})
+  ;;        get-ppp (fn [team]
+  ;;                  (if-let [[pts nposs] (get ppp-map (:db/id team))]
+  ;;                    (/ pts nposs)
+  ;;                    ##NaN))
+  ;;        ppp1 (get-ppp team1)
+  ;;        ppp2 (get-ppp team2)]
+  ;;    {(:db/id team1) ppp1
+  ;;     (:db/id team2) ppp2})
+   ))
+
+(re-frame/reg-sub
+ ::team-ppp
+ :<- [::ppp]
+ (fn [ppp [_ t]]
+   (get ppp t)))
+
+(re-frame/reg-sub
+ ::efg
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (->> (db/efg db g)
+        (into {}))))
+
+(re-frame/reg-sub
+ ::team-efg
+ :<- [::efg]
+ (fn [efg [_ t]]
+   (get efg t)))
+
+(re-frame/reg-sub
+ ::off-reb-rate
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (->> (db/off-reb-rate db g)
+        (into {}))))
+
+(re-frame/reg-sub
+ ::team-off-reb-rate
+ :<- [::off-reb-rate]
+ (fn [rate [_ t]]
+   (get rate t)))
+
+(re-frame/reg-sub
+ ::turnover-rate
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (->> (db/turnover-rate db g)
+        (into {}))))
+
+(re-frame/reg-sub
+ ::team-turnover-rate
+ :<- [::turnover-rate]
+ (fn [rate [_ t]]
+   (get rate t)))
+
+(re-frame/reg-sub
+ ::pps
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (->> (db/pps db g)
+        (into {}))))
+
+(re-frame/reg-sub
+ ::team-pps
+ :<- [::pps]
+ (fn [pps [_ t]]
+   (get pps t)))
+
+(re-frame/reg-sub
+ ::box-score
+ :<- [::game-id]
+ :<- [::datascript-db]
+ (fn [[g db] query-vec]
+   (reduce (fn [box-score [t player pts]]
+               (update box-score t (fn [ppts] (conj ppts [player pts]))))
+             {} (db/box-score db g))))
 
 (re-frame/reg-sub
  ::game-id
@@ -45,28 +144,42 @@
 ;;        using make-reaction, trace/with-trace, and trace/merge-trace!
 ;;        This allows me to see the result of the sub in the re-frame 10x debug menu.
 ;;        Although, I am getting some wildly slow startup times for the app on refresh
-(re-frame/reg-sub-raw
+;; (re-frame/reg-sub-raw
+;;  ::possessions
+;;  (fn [app-db event]
+;;    (let [g (re-frame/subscribe [::game-id])
+;;          reaction-id (atom nil)
+;;          reaction (ratom/make-reaction
+;;                    (fn []
+;;                      (trace/with-trace
+;;                        {:operation (first event)
+;;                         :op-type :sub/run
+;;                         :tags {:query-v event
+;;                                :reaction @reaction-id}}
+;;                        (let [subscription (db/possessions @g)]
+;;                          (trace/merge-trace! {:tags {:value subscription}})
+;;                          subscription))))]
+;;      (reset! reaction-id (interop/reagent-id reaction))
+;;      reaction)))
+
+(re-frame/reg-sub
  ::possessions
- (fn [app-db event]
-   (let [g (re-frame/subscribe [::game-id])
-         reaction-id (atom nil)
-         reaction (ratom/make-reaction
-                   (fn []
-                     (trace/with-trace
-                       {:operation (first event)
-                        :op-type :sub/run
-                        :tags {:query-v event
-                               :reaction @reaction-id}}
-                       (let [subscription (db/possessions @g)]
-                         (trace/merge-trace! {:tags {:value subscription}})
-                         subscription))))]
-     (reset! reaction-id (interop/reagent-id reaction))
-     reaction)))
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (db/possessions db g)))
 
 (re-frame/reg-sub
  ::sorted-possessions
  :<- [::possessions]
- :-> (partial sort-by :possession/order))
+ :-> (partial sort-by :possession/order >))
+
+(re-frame/reg-sub
+ ::possessions?
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (db/possessions? db g)))
 
 (re-frame/reg-sub
  ::action-player
@@ -80,11 +193,24 @@
 
 ;; NOTE - the results of ALL (unmodified) reg-sub-raw subscriptions are not shown in re-frame 10x debugging menu
 ;;        they are always listed as "NOT-RUN", even if their subscriptions are successfully causing renders
-(re-frame/reg-sub-raw
+;; (re-frame/reg-sub
+;;  ::score
+;;  (fn [db event]
+;;    (let [g (re-frame/subscribe [::game-id])]
+;;      (reagent/reaction (db/score @g)))))
+
+(re-frame/reg-sub
  ::score
- (fn [db event]
-   (let [g (re-frame/subscribe [::game-id])]
-     (reagent/reaction (db/score @g)))))
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] query-vec]
+   (into {} (db/score db g))))
+
+(re-frame/reg-sub
+ ::team-score
+ :<- [::score]
+ (fn [score [_ t]]
+   (get score t 0)))
 
 (re-frame/reg-sub
  ::action-type

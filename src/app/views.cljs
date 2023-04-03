@@ -7,10 +7,11 @@
 (def <sub  (comp deref re-frame/subscribe))
 
 (defn team-score
-  [name score possession?]
+  [name score ppp possession?]
   [:div.flex.flex-col.items-center.border-y-4 {:class [(if possession? "border-solid" "border-transparent")]}
-   [:h2.text-xl {:class [(when possession? nil)]} name]
-   (when score [:code.text-3xl.font-bold score])])
+   [:h2.text-xl name]
+   (when score [:code.text-3xl.font-bold score])
+   (when-not (NaN? ppp) [:span (.toFixed ppp 2)])])
 
 (defn score []
   (let [[team1 team2] @(re-frame/subscribe [::subs/teams])
@@ -21,10 +22,46 @@
         score1 (get score-map (:db/id team1) 0)
         score2 (get score-map (:db/id team2) 0)
         team1-possession? (re-frame/subscribe [::subs/team-has-possession? (:db/id team1)])
-        team2-possession? (re-frame/subscribe [::subs/team-has-possession? (:db/id team2)])]
+        team2-possession? (re-frame/subscribe [::subs/team-has-possession? (:db/id team2)])
+
+        ppp (<sub [::subs/ppp])
+        ppp1 (get ppp (:db/id team1))
+        ppp2 (get ppp (:db/id team2))]
     [:div.flex.gap-x-2
-     [team-score (:team/name team1) score1 @team1-possession?]
-     [team-score (:team/name team2) score2 @team2-possession?]]))
+     [team-score (:team/name team1) score1 ppp1 @team1-possession?]
+     [team-score (:team/name team2) score2 ppp2 @team2-possession?]]))
+
+(defn stat
+  [label display-fn query1 query2]
+  [:div.flex
+   [:code.flex-1 (some-> (<sub query1)
+                         display-fn)]
+   [:p.flex-1.text-center label]
+   [:code.flex-1.text-right (some-> (<sub query2)
+                                    display-fn)]])
+
+(defn stats []
+  (let [[team1 team2] (<sub [::subs/teams])
+        t1 (:db/id team1)
+        t2 (:db/id team2)
+        team1-possession? (<sub [::subs/team-has-possession? t1])
+        team2-possession? (<sub [::subs/team-has-possession? t2])]
+    [:div
+     [:div.flex.justify-between
+      [:h2.text-xl.border-y-4
+       {:class [(if team1-possession? "border-solid" "border-transparent")]}
+       (:team/name team1)]
+      [:h2.text-xl.border-y-4
+       {:class [(if team2-possession? "border-solid" "border-transparent")]}
+       (:team/name team2)]]
+     [:div.flex.justify-between
+      [:code.text-3xl.font-bold (<sub [::subs/team-score t1])]
+      [:code.text-3xl.font-bold (<sub [::subs/team-score t2])]]
+     [stat "PPP" #(.toFixed % 2) [::subs/team-ppp t1] [::subs/team-ppp t2]]
+     [stat "PPS" #(.toFixed % 2) [::subs/team-pps t1] [::subs/team-pps t2]]
+     [stat "eFG%" #(-> % (* 100) .toFixed) [::subs/team-efg t1] [::subs/team-efg t2]]
+     [stat "OffReb%" #(-> % (* 100) .toFixed) [::subs/team-off-reb-rate t1] [::subs/team-off-reb-rate t2]]
+     [stat "TO%" #(-> % (* 100) .toFixed) [::subs/team-turnover-rate t1] [::subs/team-turnover-rate t2]]]))
 
 (defn shot-input []
   (let [value (re-frame/subscribe [::subs/shot-value])
@@ -73,7 +110,8 @@
                        :value @rebounder
                        :min 0
                        :max 99
-                       :required true}]
+                       ;; :required true ; shouldn't be required, b/c could be a miss then make free throw trip
+                       }]
          "Rebounder"]])]))
 
 (defn turnover-input []
@@ -137,7 +175,8 @@
 (defn render-action
   [action]
   (let [{player :action/player type :action/type id :db/id} action]
-    [:div (comment {:on-click #(re-frame/dispatch [::events/set-action id])})
+    [:div
+     (comment {:on-click #(re-frame/dispatch [::events/set-action id])}) ;; TODO - action edit and update
      [:span (str "#" player " ")]
      (case type
        :action.type/shot [render-shot action]
@@ -145,23 +184,25 @@
        [:span type])]))
 
 (defn render-possession
-  [possession]
-  (let [{actions :possession/action t :possession/team order :possession/order} possession
-        {team :team/name} t]
+  [possession team-map]
+  (let [{actions :possession/action {t :db/id} :possession/team order :possession/order} possession
+        team (get-in team-map [t :team/name])]
     [:div
-     [:p.font-bold (str "#" order " | " team)]
+     [:p.font-bold (str order ". " team)]
      [:ul.ml-8
       (for [action actions]
         [:li {:key (:db/id action)} [render-action action]])]]))
 
 (defn possessions
   []
-  (let [possessions (re-frame/subscribe [::subs/sorted-possessions])]
+  (let [possessions (<sub [::subs/sorted-possessions])
+        [team1 team2] (<sub [::subs/teams])
+        team-map {(:db/id team1) team1 (:db/id team2) team2}]
     [:div.my-4
      [:h2.text-xl "Possessions"]
-     [:ul
-      (for [possession @possessions]
-        [:li {:key (:db/id possession)} [render-possession possession]])]]))
+     [:ol.max-h-64.overflow-auto
+      (for [possession possessions]
+        [:li {:key (:db/id possession)} [render-possession possession team-map]])]]))
 
 (defn team-selector
   []
@@ -183,14 +224,23 @@
                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-team team2]))}]
       (:team/name team2)]]))
 
+(defn box-score []
+  (let [box-score (<sub [::subs/box-score])
+        teams (<sub [::subs/teams])]
+    [:div
+     (for [team teams]
+       [:div {:key (:db/id team)}
+        [:p (:team/name team)]
+        (for [[player pts] (get box-score (:db/id team))]
+          [:p {:key (str (:db/id team) "#" player)} (str "#" player ": " pts " pts")])])]))
+
 (defn main-panel []
-  (let [possessions? (re-frame/subscribe [::subs/possessions])]
-    [:div.container.mx-4.my-4.flex.justify-between
-     {:class "w-1/2"}
-     [:div.flex.flex-col.flex-1
-      (when (empty? @possessions?)
-        [team-selector])
-      [action-input]]
-     [:div.flex.flex-col.flex-1
-      [score]
-      [possessions]]]))
+  [:div.container.mx-4.my-4.flex.justify-between
+   {:class "w-1/2"}
+   [:div.flex.flex-col.flex-1
+    (when (<sub [::subs/possessions?])
+      [team-selector])
+    [action-input]]
+   [:div.flex.flex-col.flex-1
+    [stats]
+    [possessions]]])
