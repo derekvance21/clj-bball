@@ -89,6 +89,10 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the order this possession happened in its game"}
+             {:db/ident :possession/period
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the period of the game this possession happened in"}
 
              ;; game
              {:db/ident :game/possession

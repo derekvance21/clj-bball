@@ -5,13 +5,16 @@
             [re-frame.core :as re-frame]
             [reagent.core :as reagent]))
 
+
 (defn create-ratom-conn
   ([]
    (create-ratom-conn nil))
   ([schema]
    (reagent/atom (d/empty-db schema) :meta {:listeners (atom {})})))
 
+
 (def conn (create-ratom-conn db/ds-schema))
+
 
 (defn ppp
   ([g]
@@ -26,6 +29,7 @@
         db query/rules g)
    ))
 
+
 (defn score
   ([g]
    (score @conn g))
@@ -38,10 +42,12 @@
           (pts ?a ?pts)]
         db query/rules g)))
 
+
 (re-frame/reg-cofx
  ::datascript-conn
  (fn [cofx _]
    (assoc cofx :conn conn)))
+
 
 (defn possessions
   ([g]
@@ -53,6 +59,7 @@
           [?g :game/possession ?p]]
         db g)))
 
+
 (defn possessions?
   [db g]
   (->> (d/q '[:find ?g
@@ -62,11 +69,13 @@
             db g)
        empty?))
 
+
 (defn last-possession
   ([g]
    (last-possession @conn g))
   ([db g]
    (apply max-key :possession/order (possessions db g))))
+
 
 (defn box-score
   ([g]
@@ -81,6 +90,7 @@
           (pts ?a ?pts)]
         db query/rules g)))
 
+
 (defn efg
   ([g]
    (efg @conn g))
@@ -94,6 +104,7 @@
           (efgs ?a ?efgs)]
         db query/rules g)))
 
+
 (defn off-reb-rate
   ([g]
    (off-reb-rate @conn g))
@@ -106,6 +117,7 @@
           [?a :shot/rebounder]
           (off-rebs ?a ?off-rebs)]
         db query/rules g)))
+
 
 (defn turnover-rate
   ([g]
@@ -121,6 +133,7 @@
         (map (fn [[t tos nposs]]
                [t (/ tos nposs)])))))
 
+
 (defn pps
   ([g]
    (pps @conn g))
@@ -133,3 +146,33 @@
           [?a :action/type :action.type/shot]
           (pts ?a ?pts)]
         db query/rules g)))
+
+
+(defn ft-rate
+  ([g]
+   (ft-rate @conn g))
+  ([db g]
+   (->> (d/q '[:find ?t (sum ?fts) (sum ?fgas)
+               :in $ % ?g
+               :with ?a
+               :where
+               (actions ?g ?t ?p ?a)
+               (fts ?a ?fts)
+               (fgas ?a ?fgas)]
+             db query/rules g)
+        (map (fn [[t fts fgas]]
+               [t (/ fts fgas)])))))
+
+
+(comment
+  (d/q '[:find (pull ?a [*])
+         :where
+         [?g :game/possession ?p]
+         [?p :possession/action ?a]
+         [?a :offense/players ?o-players]
+         [?a :defense/players ?d-players]
+         [?p :possession/team 3]
+         [(set ?o-players) ?o-players-set]
+         [(contains? ?o-players-set 11)]]
+       @conn)
+  )
