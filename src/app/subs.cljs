@@ -1,25 +1,7 @@
 (ns app.subs
   (:require
    [re-frame.core :as re-frame]
-   [re-frame.trace :as trace]
-   [re-frame.interop :as interop]
-   [reagent.core :as reagent]
-   [reagent.ratom :as ratom]
    [app.db :as db]))
-
-
-;; TODO - this would require some work but would be cool
-;;        it would be a function similar to reg-sub which would allow you to define
-;;        input signals and such, then wrap it with make-reaction and with-trace
-;;        to make it visible in re-frame-10x
-;; I want to be able to write it like:
-(comment
-  (reg-sub-raw-10x
-   ::possessions
-   (fn [_]
-     [(re-frame/subscribe [::game-id])])
-   (fn [[g] query-vec]
-     (db/possessions @g))))
 
 
 (defn reg-sub-raw-10x
@@ -141,14 +123,14 @@
  :<- [::datascript-db]
  (fn [[g db] query-vec]
    (reduce (fn [box-score [t player pts]]
-               (update box-score t (fn [ppts] (conj ppts [player pts]))))
-             {} (db/box-score db g))))
+             (update box-score t (fn [ppts] (conj ppts [player pts]))))
+           {} (db/box-score db g))))
 
 
 (re-frame/reg-sub
  ::game-id
  (fn [db _]
-   (get-in db [:game :db/id])))
+   (:game-id db)))
 
 
 (re-frame/reg-sub
@@ -161,30 +143,13 @@
 
 (re-frame/reg-sub
  ::team
- :-> :team)
-
-
-;; HERE - I've copied the logic in re-frame.subs/reg-sub, attempting to match it's call to register-handler it makes
-;;        using make-reaction, trace/with-trace, and trace/merge-trace!
-;;        This allows me to see the result of the sub in the re-frame 10x debug menu.
-;;        Although, I am getting some wildly slow startup times for the app on refresh
-;; (re-frame/reg-sub-raw
-;;  ::possessions
-;;  (fn [app-db event]
-;;    (let [g (re-frame/subscribe [::game-id])
-;;          reaction-id (atom nil)
-;;          reaction (ratom/make-reaction
-;;                    (fn []
-;;                      (trace/with-trace
-;;                        {:operation (first event)
-;;                         :op-type :sub/run
-;;                         :tags {:query-v event
-;;                                :reaction @reaction-id}}
-;;                        (let [subscription (db/possessions @g)]
-;;                          (trace/merge-trace! {:tags {:value subscription}})
-;;                          subscription))))]
-;;      (reset! reaction-id (interop/reagent-id reaction))
-;;      reaction)))
+ :<- [::datascript-db]
+ :<- [::game-id]
+ :<- [::init-team]
+ (fn [[db g init-team]]
+   (if (some? init-team)
+     init-team
+     (db/team-possession db g))))
 
 
 (re-frame/reg-sub
@@ -198,7 +163,10 @@
 (re-frame/reg-sub
  ::sorted-possessions
  :<- [::possessions]
- :-> (partial sort-by :possession/order >))
+ (fn [possessions _]
+   (->> possessions
+        (sort-by :possession/order >)
+        (map #(update % :possession/action (partial sort-by :action/order >))))))
 
 
 (re-frame/reg-sub
@@ -217,8 +185,11 @@
 
 (re-frame/reg-sub
  ::teams
- (fn [db]
-   (get-in db [:game :game/teams])))
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (when (some? g) ;; can't issue datascript pull with nil entity id, so wait for game-id to be populated
+     (db/teams db g))))
 
 
 ;; NOTE - the results of ALL (unmodified) reg-sub-raw subscriptions are not shown in re-frame 10x debugging menu
@@ -322,7 +293,13 @@
 
 (re-frame/reg-sub
  ::period
- :-> :period)
+ :<- [::datascript-db]
+ :<- [::game-id]
+ :<- [::init-period]
+ (fn [[db g init-period] _]
+   (if (some? init-period)
+     init-period
+     (:possession/period (db/last-possession db g)))))
 
 
 (re-frame/reg-sub
@@ -356,3 +333,24 @@
  :<- [::team]
  (fn [[players {t :db/id}] _]
    (filter some? (get players t []))))
+
+
+(re-frame/reg-sub
+ ::init
+ (fn [db _]
+   (get db :init)))
+
+
+(re-frame/reg-sub
+ ::init-team
+ :<- [::init]
+ (fn [init _]
+   (get init :init/team)))
+
+
+(re-frame/reg-sub
+ ::init-period
+ :<- [::init]
+ (fn [init _]
+   (get init :init/period)))
+

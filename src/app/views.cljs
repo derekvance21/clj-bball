@@ -4,7 +4,6 @@
             [re-frame.core :as re-frame]))
 
 
-;; TODO - use this more
 (def <sub  (comp deref re-frame/subscribe))
 
 
@@ -28,8 +27,8 @@
   (let [[team1 team2] (<sub [::subs/teams])
         t1 (:db/id team1)
         t2 (:db/id team2)
-        team1-possession? (<sub [::subs/team-has-possession? t1])
-        team2-possession? (<sub [::subs/team-has-possession? t2])
+        team1-possession? (comment (<sub [::subs/team-has-possession? t1]))
+        team2-possession? (comment (<sub [::subs/team-has-possession? t2]))
         period (<sub [::subs/period])]
     [:div
      [:div.flex.justify-between
@@ -53,8 +52,10 @@
      [stat "FT/FGA" #(.toFixed % 2) [::subs/team-ft-rate t1] [::subs/team-ft-rate t2]]]))
 
 
+;; TODO - think of a better way to have inputs here
+;;        maybe keyword arguments?
 (defn player-input
-  [offense? player-sub player-event label]
+  [offense? player-sub player-event label required?]
   (let [player (re-frame/subscribe player-sub)
         players (<sub [(if offense? ::subs/offense-players ::subs/defense-players)])
         on-player-change (fn [e]
@@ -63,7 +64,7 @@
     [:label
      [:select.w-12 {:on-change on-player-change
                     :value (or @player "")
-                    :required true}
+                    :required required?}
       (when-not @player [:option {:value ""} ""])
       (for [[i p] (zipmap (range) players)]
         [:option {:key i :value p} (str p)])]
@@ -78,7 +79,9 @@
                :on-change #(re-frame/dispatch [::events/set-off-reb? (-> % .-target .-checked)])
                :checked (boolean @off-reb?)}]
       "Off-Reb?"]
-     [player-input @off-reb? [::subs/rebounder] ::events/set-rebounder "Rebounder"]]))
+     [player-input @off-reb? [::subs/rebounder] ::events/set-rebounder "Rebounder"
+      true ;; this isn't guaranteed to be true if after a foul shot
+      ]]))
 
 
 (defn foul-input []
@@ -131,7 +134,7 @@
 
 
 (defn turnover-input []
-  [player-input false [::subs/stealer] ::events/set-stealer "Stealer"])
+  [player-input false [::subs/stealer] ::events/set-stealer "Stealer" false])
 
 
 (defn bonus-input []
@@ -187,7 +190,7 @@
   (let [type (re-frame/subscribe [::subs/action-type])]
     [:form {:on-submit submit-action-input}
      [:div.flex.flex-col
-      [player-input true [::subs/action-player] ::events/set-player "Player"]
+      [player-input true [::subs/action-player] ::events/set-player "Player" true]
       [:label
        [:input {:type "radio"
                 :value :action.type/shot
@@ -312,25 +315,27 @@
 
 
 (defn team-selector
-  [disabled?]
-  (let [teams (re-frame/subscribe [::subs/teams])
-        [team1 team2] @teams
-        team (re-frame/subscribe [::subs/team])]
+  []
+  (let [[team1 team2] (<sub [::subs/teams])
+        team (<sub [::subs/team])
+        init? (nil? (<sub [::subs/init]))]
     [:div.flex
      [:label [:input {:type "radio"
                       :value team1
                       :name :team
-                      :checked (= @team team1)
-                      :disabled disabled?
-                      :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-team team1]))}]
+                      :checked (= team team1)
+                      :disabled init?
+                      :required true
+                      :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-init-team team1]))}]
       (:team/name team1)]
      [:label.ml-2
       [:input {:type "radio"
                :value team2
                :name :team
-               :checked (= @team team2)
-               :disabled disabled?
-               :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-team team2]))}]
+               :checked (= team team2)
+               :disabled init?
+               :required true
+               :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-init-team team2]))}]
       (:team/name team2)]]))
 
 
@@ -338,7 +343,7 @@
   [:div.container.mx-4.my-4.flex.justify-between
    {:class "w-1/2"}
    [:div.flex.flex-col.flex-1
-    [team-selector (not (<sub [::subs/possessions?]))]
+    [team-selector]
     [action-input]]
    [:div.flex.flex-col.flex-1
     [stats]

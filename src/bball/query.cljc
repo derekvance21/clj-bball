@@ -1,6 +1,6 @@
 (ns bball.query)
 
- ;; TODO: DATASCRIPT MAY NOT SUPPORT NOT CLAUSE
+
 (def rules '[;; FILTER
              [(fta? ?a)
               [?a :ft/attempted ?ftas]
