@@ -70,7 +70,8 @@
               :where
               [?g :game/possession]]
             db g)
-       empty?))
+       empty?
+       not))
 
 
 (defn last-possession
@@ -206,18 +207,18 @@
 
 
 ;; TODO - see if you can do :_game/possession and :_possession/action easily (in this case, for db.cardinality/many)
-(defn append-action-tx-map
+(defn append-action-tx-data
   [db g action players init]
   (let [last-possession (last-possession db g)
         last-action     (last-action last-possession)
-        period          (if-some [{init-period :init/period} init]
-                          init-period
+        period          (if (some? init)
+                          (get init :init/period 1)
                           (:possession/period last-possession))
         poss-change?    (if (some? init)
                           true
                           (action-change-possession? last-action))
-        team-id         (if-some [{init-team :init/team} init]
-                          (:db/id init-team)
+        team-id         (if (some? init)
+                          (get-in init [:init/team :db/id])
                           (let [last-team-id (get-in last-possession [:possession/team :db/id])]
                             (if poss-change?
                               (:db/id (other-team-db db g last-team-id))
@@ -226,14 +227,14 @@
                                :action/order (if poss-change? 1 (inc (get last-action :action/order 0)))
                                :offense/players (get players team-id)
                                :defense/players (val (first (dissoc players team-id))))]
-    (if poss-change?
-      {:db/id g
-       :game/possession [{:possession/order (inc (get last-possession :possession/order 0))
-                          :possession/team team-id
-                          :possession/period period
-                          :possession/action [action]}]}
-      {:db/id (:db/id last-possession)
-       :possession/action [action]})))
+    [(if poss-change?
+       {:db/id g
+        :game/possession [{:possession/order (inc (get last-possession :possession/order 0))
+                           :possession/team team-id
+                           :possession/period period
+                           :possession/action [action]}]}
+       {:db/id (:db/id last-possession)
+        :possession/action [action]})]))
 
 
 (defn save-db
@@ -247,4 +248,18 @@
        (.setAttribute "href" url)
        (.click))
      (.revokeObjectURL js/URL url))))
+
+
+(defn undo-last-action-tx-data
+  [db g]
+  (let [last-possession (last-possession db g)
+        actions (:possession/action last-possession)
+        one-action? (= 1 (count actions))
+        entid (:db/id
+               (if one-action?
+                 last-possession
+                 (last-action last-possession)))]
+    [(if (nil? entid)
+       nil
+       [:db/retractEntity entid])]))
 

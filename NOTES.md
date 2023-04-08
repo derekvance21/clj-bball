@@ -12,19 +12,19 @@
     - Ex: offensive rebound, then clock expires
         - lose possession - end of possession? YES
         - keep possession - end or continuation of possession? END OF POSSESSION
-- [ ] Save new db to local/session storage on add action
-- [ ] Start new game
-    - supporting custom teams, datetime, other info
-- [ ] Implement undo action
+- [X] Implement undo action
     - pops the last action off the datascript db
     - if action is only one in possession, pops the possession, too
     - could result in period backtracking, which is good with the way I have it
+- [ ] Save new db to local/session storage on add action
+- [ ] Start new game
+    - supporting custom teams, datetime, other info
 - [ ] Use return maps in datascript queries
 - [ ] Edit actions
     - use `(:_component-ref (entity db entid))` (check the datascript docs under `core/entity`)
 - [ ] Add clojure/spec to app-db
 - [ ] Support logging team rebounds
-    - could just have a rebound/team? boolean schema
+    - could just have a rebound/team? boolean
 - [ ] lineup stats
 - [ ] individual stats
-
+- [ ] default play numbers in :players map

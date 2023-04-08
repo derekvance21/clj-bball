@@ -138,17 +138,17 @@
  (fn [_]
    (re-frame/subscribe [::team]))
  (fn [team [_ t]]
-   (and t (= (:db/id team) t))))
+   (and (some? t) (= (:db/id team) t))))
 
 
 (re-frame/reg-sub
  ::team
  :<- [::datascript-db]
  :<- [::game-id]
- :<- [::init-team]
- (fn [[db g init-team]]
-   (if (some? init-team)
-     init-team
+ :<- [::init]
+ (fn [[db g init]]
+   (if (some? init)
+     (get init :init/team)
      (db/team-possession db g))))
 
 
@@ -342,15 +342,16 @@
 
 
 (re-frame/reg-sub
- ::init-team
- :<- [::init]
- (fn [init _]
-   (get init :init/team)))
-
-
-(re-frame/reg-sub
  ::init-period
  :<- [::init]
  (fn [init _]
    (get init :init/period)))
+
+
+(re-frame/reg-sub
+ ::mid-period?
+ :<- [::init]
+ :<- [::possessions?]
+ (fn [[init possessions?]]
+   (and (nil? init) possessions?)))
 

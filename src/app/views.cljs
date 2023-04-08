@@ -231,6 +231,9 @@
       (when (<sub [::subs/reboundable?])
         [rebound-input])
       [players-input]
+      [:button.self-start {:type "button"
+                           :on-click #(re-frame/dispatch [::events/undo-last-action])}
+       "Undo"]
       [:button.self-start {:type "submit"}
        "Add"]]]))
 
@@ -318,13 +321,13 @@
   []
   (let [[team1 team2] (<sub [::subs/teams])
         team (<sub [::subs/team])
-        init? (nil? (<sub [::subs/init]))]
+        mid-period? (<sub [::subs/mid-period?])]
     [:div.flex
      [:label [:input {:type "radio"
                       :value team1
                       :name :team
                       :checked (= team team1)
-                      :disabled init?
+                      :disabled mid-period?
                       :required true
                       :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-init-team team1]))}]
       (:team/name team1)]
@@ -333,7 +336,7 @@
                :value team2
                :name :team
                :checked (= team team2)
-               :disabled init?
+               :disabled mid-period?
                :required true
                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-init-team team2]))}]
       (:team/name team2)]]))

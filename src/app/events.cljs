@@ -191,11 +191,19 @@
  ::add-action
  [(re-frame/inject-cofx ::db/datascript-conn)]
  (fn [{:keys [conn db]} _]
-   (let [{:keys [action game-id players init]} db
-         tx-map (db/append-action-tx-map @conn game-id action players init)]
+   (let [{:keys [action game-id players init]} db]
      {:transact {:conn conn
-                 :tx-data [tx-map]}
-      :db (dissoc db :action :init)})))
+                 :tx-data [[:db.fn/call db/append-action-tx-data game-id action players init]]}
+      :db (dissoc db :action :init) ;; TODO - only dissoc :action and :init if transaction was successful?
+      })))
+
+
+(re-frame/reg-event-fx
+ ::undo-last-action
+ [(re-frame/inject-cofx ::db/datascript-conn)]
+ (fn [{:keys [conn db]} _]
+   {:transact {:conn conn
+               :tx-data [[:db.fn/call db/undo-last-action-tx-data (get db :game-id)]]}}))
 
 
 #_(re-frame/reg-event-fx
