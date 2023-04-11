@@ -3,7 +3,6 @@
 output.calva-repl
 .lsp
 
-/out/
 /resources/public/js/compiled/
 /resources/public/css/compiled/
 /target/
@@ -19,3 +18,5 @@ output.calva-repl
 
 # shadow-cljs cache, port files
 /.shadow-cljs/
+
+deploy.sh

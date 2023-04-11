@@ -1,14 +1,6 @@
 (ns app.subs
-  (:require
-   [re-frame.core :as re-frame]
-   [app.db :as db]))
-
-
-(defn reg-sub-raw-10x
-  ([id handler-fn]
-   nil)
-  ([id signals-fn comp-fn]
-   nil))
+  (:require [re-frame.core :as re-frame]
+            [app.db :as db]))
 
 
 (re-frame/reg-sub
@@ -192,15 +184,6 @@
      (db/teams db g))))
 
 
-;; NOTE - the results of ALL (unmodified) reg-sub-raw subscriptions are not shown in re-frame 10x debugging menu
-;;        they are always listed as "NOT-RUN", even if their subscriptions are successfully causing renders
-;; (re-frame/reg-sub
-;;  ::score
-;;  (fn [db event]
-;;    (let [g (re-frame/subscribe [::game-id])]
-;;      (reagent/reaction (db/score @g)))))
-
-
 (re-frame/reg-sub
  ::score
  :<- [::datascript-db]
@@ -235,9 +218,12 @@
 
 
 (re-frame/reg-sub
- ::shot-distance
+ ::shot-location
  (fn [db]
-   (get-in db [:action :shot/distance])))
+   (let [angle (get-in db [:action :shot/angle])
+         distance (get-in db [:action :shot/distance])]
+     (when (and (some? angle) (some? distance))
+       [angle distance]))))
 
 
 (re-frame/reg-sub

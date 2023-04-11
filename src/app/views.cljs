@@ -1,6 +1,8 @@
 (ns app.views
   (:require [app.events :as events]
             [app.subs :as subs]
+            [cljs.math :as math]
+            [clojure.string :as string]
             [re-frame.core :as re-frame]))
 
 
@@ -102,27 +104,30 @@
         make? (re-frame/subscribe [::subs/shot-make?])
         foul? (re-frame/subscribe [::subs/foul?])]
     [:div.flex.flex-col.ml-4
-     [:label
-      [:input.w-12 {:type "number"
-                    :on-change #(re-frame/dispatch [::events/set-shot-value (-> % .-target .-value parse-long)])
-                    :value @value
-                    :min 2
-                    :max 3
-                    :required true}]
-      "Value"]
-     [:label
-      [:input.w-12 {:type "number"
-                    :on-change #(re-frame/dispatch [::events/set-shot-distance (-> % .-target .-value parse-long)])
-                    :value (<sub [::subs/shot-distance])
-                    :min (if (= @value 3) 19 0)
-                    :max (if (= @value 2) 19 90)
-                    :required true}]
-      "Distance"]
-     [:label
-      [:input {:type "checkbox"
-               :on-change #(re-frame/dispatch [::events/set-shot-make? (-> % .-target .-checked)])
-               :checked (boolean @make?)}]
-      "Make?"]
+     (comment
+       ;; I'm probably going to remove the manual
+       ;; value, distance, and make? input controls
+       [:label
+        [:input.w-12 {:type "number"
+                      :on-change #(re-frame/dispatch [::events/set-shot-value (-> % .-target .-value parse-long)])
+                      :value @value
+                      :min 2
+                      :max 3
+                      :required true}]
+        "Value"]
+       [:label
+        [:input.w-12 {:type "number"
+                      :on-change #(re-frame/dispatch [::events/set-shot-distance-ft (-> % .-target .-value parse-long)])
+                      :value (<sub [::subs/shot-distance-ft])
+                      :min (if (= @value 3) 20 0)
+                      :max (if (= @value 2) 19 90)
+                      :required true}]
+        "Distance"]
+       [:label
+        [:input {:type "checkbox"
+                 :on-change #(re-frame/dispatch [::events/set-shot-make? (-> % .-target .-checked)])
+                 :checked (boolean @make?)}]
+        "Make?"])
      [:label
       [:input {:type "checkbox"
                :on-change #(re-frame/dispatch [::events/set-shot-foul? (-> % .-target .-checked)])
@@ -186,56 +191,7 @@
   (re-frame/dispatch [::events/add-action]))
 
 
-(defn action-input []
-  (let [type (re-frame/subscribe [::subs/action-type])]
-    [:form {:on-submit submit-action-input}
-     [:div.flex.flex-col
-      [player-input true [::subs/action-player] ::events/set-player "Player" true]
-      [:label
-       [:input {:type "radio"
-                :value :action.type/shot
-                :name :action/type
-                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-shot]))
-                :checked (= @type :action.type/shot)}]
-       "Shot"]
-      [:label
-       [:input {:type "radio"
-                :value :action.type/turnover
-                :name :action/type
-                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-turnover]))
-                :checked (= @type :action.type/turnover)}]
-       "Turnover"]
 
-      [:label
-       [:input {:type "radio"
-                :value :action.type/bonus
-                :name :action/type
-                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-bonus]))
-                :checked (= @type :action.type/bonus)}]
-       "Bonus"]
-      [:label
-       [:input {:type "radio"
-                :value :action.type/technical
-                :name :action/type
-                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-technical]))
-                :checked (= @type :action.type/technical)}]
-       "Technical"]
-      (when (= @type :action.type/shot)
-        [shot-input])
-      (when (= @type :action.type/turnover)
-        [turnover-input])
-      (when (= @type :action.type/bonus)
-        [bonus-input])
-      (when (= @type :action.type/technical)
-        [foul-input])
-      (when (<sub [::subs/reboundable?])
-        [rebound-input])
-      [players-input]
-      [:button.self-start {:type "button"
-                           :on-click #(re-frame/dispatch [::events/undo-last-action])}
-       "Undo"]
-      [:button.self-start {:type "submit"}
-       "Add"]]]))
 
 
 (defn render-fts
@@ -250,10 +206,12 @@
 
 (defn render-shot
   [action]
-  (let [{make? :shot/make? value :shot/value distance :shot/distance off-reb? :shot/off-reb? rebounder :shot/rebounder fta :ft/attempted ftm :ft/made} action]
+  (let [{:keys [:shot/make? :shot/value :shot/distance :shot/off-reb? :shot/rebounder]
+         ftm :ft/made fta :ft/attempted} action
+        distance-ft (math/round (/ distance 12))]
     [:span
-     (str value " PT (" distance "') " (if make? "make " "miss "))
-     (when (and fta (> fta 0))
+     (str value " PT (" distance-ft "') " (if make? "make " "miss "))
+     (when (and (some? fta) (> fta 0))
        [render-fts ftm fta])
      (when rebounder
        [render-rebound rebounder off-reb?])]))
@@ -322,7 +280,7 @@
   (let [[team1 team2] (<sub [::subs/teams])
         team (<sub [::subs/team])
         mid-period? (<sub [::subs/mid-period?])]
-    [:div.flex
+    [:div.flex.justify-center
      [:label [:input {:type "radio"
                       :value team1
                       :name :team
@@ -342,13 +300,179 @@
       (:team/name team2)]]))
 
 
+(defn court-bounding-rect-xy
+  [court-id]
+  (let [bounding-client-rect (.getBoundingClientRect (.getElementById js/document court-id))]
+    [(.-left bounding-client-rect)
+     (.-top bounding-client-rect)]))
+
+
+(defn polar-hoop->eucl-court
+  [[hoop-x hoop-y] [turns radius]]
+  (let [radians (* turns 2 math/PI)]
+    [(-> radians math/sin (* radius) (+ hoop-x))
+     (-> radians math/cos (* radius) (+ hoop-y))]))
+
+
+(defn eucl-hoop->polar-hoop
+  [[x y]]
+  (let [turns (/ (math/atan2 x y) 2 math/PI)
+        radius (math/sqrt (+ (* x x) (* y y)))]
+    [turns radius]))
+
+
+(defn eucl-court->eucl-hoop
+  [[hoop-x hoop-y] [x y]]
+  [(- x hoop-x)
+   (- y hoop-y)])
+
+
+(defn client->eucl-court
+  [court-id [court-client-width court-client-height] [court-width court-height] [x y]]
+  (let [[rect-x rect-y] (court-bounding-rect-xy court-id)]
+    [(-> x (- rect-x) (/ court-client-width) (* court-width))
+     (-> y (- rect-y) (/ court-client-height) (* court-height))]))
+
+(defn client->polar-hoop
+  [court-id court-client-dimensions court-dimensions hoop-coordinates [x y]]
+  (->> [x y]
+       (client->eucl-court court-id court-client-dimensions court-dimensions)
+       (eucl-court->eucl-hoop hoop-coordinates)
+       (eucl-hoop->polar-hoop)))
+
+
+(defn svg-click-handler
+  [court-id court-client-dimensions court-dimensions hoop-coordinates make?]
+  (fn [e]
+    (let [[turns radius] (client->polar-hoop
+                          court-id court-client-dimensions court-dimensions hoop-coordinates
+                          [(.-clientX e) (.-clientY e)])]
+      (re-frame/dispatch [::events/set-action-shot-with-info turns (math/round radius) make?]))))
+
+
+(defn svg-right-click-handler
+  [court-id court-client-dimensions court-dimensions hoop-coordinates]
+  (fn [e]
+    (.preventDefault e)
+    ((svg-click-handler court-id court-client-dimensions court-dimensions hoop-coordinates true) e)))
+
+
+(defn svg-shot-miss
+  [attrs]
+  (let [{:keys [cx cy width height]} attrs
+        x (- cx (/ width 2))
+        y (- cy (/ height 2))
+        d [\M x y \l width height \m (- width) 0 \l width (- height)]]
+    [:path
+     (-> attrs
+         (dissoc :cx :cy :width :height)
+         (assoc :d (string/join " " d)))]))
+
+
+(defn court []
+  (let [scale 0.5
+        [court-width court-height :as court-dimensions] [(* 12 50) (* 12 42)]
+        court-client-dimensions [(* scale court-width) (* scale court-height)]
+        hoop-coordinates [(/ court-width 2) 63]
+        shot-location (<sub [::subs/shot-location])
+        line-width 2
+        [svg-width svg-height] (map #(* scale (+ % (* 2 line-width))) court-dimensions)
+        court-id "court"]
+    [:svg
+     {:xmlns "http://www.w3.org/2000/svg" :version "1.1"
+      :width svg-width
+      :height svg-height
+      :view-box (string/join " " [(- line-width) (- line-width) (+ court-width (* 2 line-width)) (+ court-height (* 2 line-width))])
+      :on-context-menu (svg-right-click-handler court-id court-client-dimensions court-dimensions hoop-coordinates)
+      :on-click (svg-click-handler court-id court-client-dimensions court-dimensions hoop-coordinates false)}
+     [:rect {:id court-id :x 0 :y 0 :width court-width :height court-height :fill (or "none" "#dfbb85")}]
+     [:g {:id "lines" :fill "none" :stroke-width line-width :stroke "black" :stroke-linecap "butt" :stroke-linejoin "miter"}
+      [:rect {:x (- (/ line-width 2)) :y (- (/ line-width 2))
+              :width (+ line-width court-width) :height (+ line-width court-height)}]
+      [:path {:d "M 63 0 L 63 63 a 237 237 0 0 0 474 0 l 0 -63"}] ;; 3 point arc
+      [:circle {:cx 300 :cy 63 :r 9}] ;; hoop
+      [:line {:x1 269 :y1 48 :x2 331 :y2 48}] ;; backboard
+      [:polyline {:points "228 0 228 228 370 228 370 0"}] ;; paint
+      [:path {:d "M 228 228 A 71 71 0 0 0 370 228"}] ;; top of key
+      [:path {:d "M 228 504 a 71 71 0 0 1 142 0"}] ;; halfcourt circle
+      [:path {:d "M 227 94 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0"}] ; left lane markings
+      [:path {:d "M 371 94 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0"}] ; right lane markings
+      ]
+     (when (some? shot-location)
+       (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
+             icon-size (* 10)]
+         (if (<sub [::subs/shot-make?])
+           [:circle
+            {:r icon-size :cx x :cy y
+             :fill "none"
+             :stroke "green"
+             :stroke-width 2}]
+           [svg-shot-miss (let [length (* 2 (/ icon-size (math/sqrt 2)))]
+                            {:cx x :cy y :width length :height length
+                             :stroke "red" :stroke-width 2})])))]))
+
+
+(defn action-input []
+  (let [type (re-frame/subscribe [::subs/action-type])]
+    [:form {:on-submit submit-action-input}
+     [:div.flex.flex-col
+      [court]
+      [player-input true [::subs/action-player] ::events/set-player "Player" true]
+      [:label
+       [:input {:type "radio"
+                :value :action.type/shot
+                :name :action/type
+                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-shot]))
+                :checked (= @type :action.type/shot)}]
+       "Shot"]
+      [:label
+       [:input {:type "radio"
+                :value :action.type/turnover
+                :name :action/type
+                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-turnover]))
+                :checked (= @type :action.type/turnover)}]
+       "Turnover"]
+
+      [:label
+       [:input {:type "radio"
+                :value :action.type/bonus
+                :name :action/type
+                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-bonus]))
+                :checked (= @type :action.type/bonus)}]
+       "Bonus"]
+      [:label
+       [:input {:type "radio"
+                :value :action.type/technical
+                :name :action/type
+                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-technical]))
+                :checked (= @type :action.type/technical)}]
+       "Technical"]
+      (when (= @type :action.type/shot)
+        [shot-input])
+      (when (= @type :action.type/turnover)
+        [turnover-input])
+      (when (= @type :action.type/bonus)
+        [bonus-input])
+      (when (= @type :action.type/technical)
+        [foul-input])
+      (when (<sub [::subs/reboundable?])
+        [rebound-input])
+      [players-input]
+      [:button.self-start {:type "button"
+                           :on-click #(re-frame/dispatch [::events/undo-last-action])}
+       "Undo"]
+      [:button.self-start {:type "submit"}
+       "Add"]]]))
+
+
 (defn main-panel []
-  [:div.container.mx-4.my-4.flex.justify-between
-   {:class "w-1/2"}
-   [:div.flex.flex-col.flex-1
-    [team-selector]
-    [action-input]]
-   [:div.flex.flex-col.flex-1
-    [stats]
-    [possessions]]])
+  [:div
+   [:div.container.mx-4.my-4.flex.justify-between
+    {:class "w-1/2"}
+    [:div.flex.flex-col.flex-1
+     [team-selector]
+     [action-input]]
+    [:div.flex.flex-col.flex-1
+     [stats]
+     [possessions]]]])
 

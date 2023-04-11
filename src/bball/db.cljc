@@ -33,6 +33,10 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the distance from the hoop in feet the shot was attempted from"}
+             {:db/ident :shot/angle
+              :db/valueType :db.type/float
+              :db/cardinality :db.cardinality/one
+              :db/doc "the angle in turns from the center of the court the shot was attempted from"}
              {:db/ident :shot/value
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
