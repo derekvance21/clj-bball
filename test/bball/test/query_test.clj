@@ -96,7 +96,7 @@
                          :with ?a
                          :where
                          (actions ?g ?t ?p ?a)
-                         [?a :shot/rebounder]
+                         (rebound? ?a)
                          (off-rebs ?a ?off-rebs)
                          [?t :team/name ?team]]
                        (d/db *conn*)

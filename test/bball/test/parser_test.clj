@@ -27,8 +27,8 @@
                  :action/type :action.type/shot
                  :shot/value 3
                  :shot/make? false
-                 :shot/rebounder 22
-                 :shot/off-reb? true
+                 :rebound/player 22
+                 :rebound/off? true
                  :action/order 0
                  :offense/players [0 10 12 22 41]
                  :defense/players [5 10 13 24 30]}
@@ -46,12 +46,12 @@
                  :action/type :action.type/shot
                  :shot/value 3
                  :shot/make? false
-                 :shot/rebounder 30
-                 :shot/off-reb? true
+                 :rebound/player 30
+                 :rebound/off? true
                  :action/order 0
                  :offense/players [5 10 13 24 30]
                  :defense/players [0 10 12 22 41]}
-                {:action/player 24 :action/type :action.type/turnover :action/order 1 :turnover/stealer 10
+                {:action/player 24 :action/type :action.type/turnover :action/order 1 :steal/player 10
                  :offense/players [5 10 13 24 30]
                  :defense/players [0 10 12 22 41]}]
                :possession/order 1}
@@ -73,8 +73,8 @@
                  :action/type :action.type/shot
                  :shot/value 2
                  :shot/make? false
-                 :shot/off-reb? true
-                 :shot/blocker 13
+                 :rebound/off? true
+                 :block/player 13
                  :action/order 0
                  :offense/players [0 10 12 22 41]
                  :defense/players [5 10 13 24 30]}
@@ -82,8 +82,8 @@
                  :action/type :action.type/shot
                  :shot/value 2
                  :shot/make? false
-                 :shot/rebounder 30
-                 :shot/off-reb? false
+                 :rebound/player 30
+                 :rebound/off? false
                  :ft/made 1
                  :ft/attempted 2
                  :action/order 1

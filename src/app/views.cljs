@@ -51,7 +51,8 @@
      [stat "eFG%" #(-> % (* 100) .toFixed) [::subs/team-efg t1] [::subs/team-efg t2]]
      [stat "OffReb%" #(-> % (* 100) .toFixed) [::subs/team-off-reb-rate t1] [::subs/team-off-reb-rate t2]]
      [stat "TOV%" #(-> % (* 100) .toFixed) [::subs/team-turnover-rate t1] [::subs/team-turnover-rate t2]]
-     [stat "FT/FGA" #(.toFixed % 2) [::subs/team-ft-rate t1] [::subs/team-ft-rate t2]]]))
+     [stat "FT/FGA" #(.toFixed % 2) [::subs/team-ft-rate t1] [::subs/team-ft-rate t2]]
+     [stat "FT/Shot" #(.toFixed % 2) [::subs/team-fts-per-shot t1] [::subs/team-fts-per-shot t2]]]))
 
 
 ;; TODO - think of a better way to have inputs here
@@ -74,19 +75,26 @@
 
 
 (defn rebound-input []
-  (let [off-reb? (re-frame/subscribe [::subs/off-reb?])]
+  (let [off-reb? (<sub [::subs/off-reb?])
+        team-reb? (<sub [::subs/team-reb?])]
     [:div.flex.flex-col
      [:label
       [:input {:type "checkbox"
                :on-change #(re-frame/dispatch [::events/set-off-reb? (-> % .-target .-checked)])
-               :checked (boolean @off-reb?)}]
+               :checked (boolean off-reb?)}]
       "Off-Reb?"]
-     [player-input @off-reb? [::subs/rebounder] ::events/set-rebounder "Rebounder"
-      true ;; this isn't guaranteed to be true if after a foul shot
-      ]]))
+     [:label
+      [:input {:type "checkbox"
+               :on-change #(re-frame/dispatch [::events/set-team-reb? (-> % .-target .-checked)])
+               :checked (boolean team-reb?)}]
+      "Team Reb?"]
+     (when-not team-reb?
+       [player-input off-reb? [::subs/rebounder] ::events/set-rebounder "Rebounder"
+        true ;; this isn't guaranteed to be true if after a foul shot
+        ])]))
 
 
-(defn foul-input []
+(defn ftm-input []
   (let [ftm (re-frame/subscribe [::subs/ft-made])
         fta (re-frame/subscribe [::subs/ft-attempted])]
     [:label
@@ -99,35 +107,10 @@
      (str "/ " @fta " FTs")]))
 
 
-(defn shot-input []
+(defn foul-input []
   (let [value (re-frame/subscribe [::subs/shot-value])
-        make? (re-frame/subscribe [::subs/shot-make?])
         foul? (re-frame/subscribe [::subs/foul?])]
-    [:div.flex.flex-col.ml-4
-     (comment
-       ;; I'm probably going to remove the manual
-       ;; value, distance, and make? input controls
-       [:label
-        [:input.w-12 {:type "number"
-                      :on-change #(re-frame/dispatch [::events/set-shot-value (-> % .-target .-value parse-long)])
-                      :value @value
-                      :min 2
-                      :max 3
-                      :required true}]
-        "Value"]
-       [:label
-        [:input.w-12 {:type "number"
-                      :on-change #(re-frame/dispatch [::events/set-shot-distance-ft (-> % .-target .-value parse-long)])
-                      :value (<sub [::subs/shot-distance-ft])
-                      :min (if (= @value 3) 20 0)
-                      :max (if (= @value 2) 19 90)
-                      :required true}]
-        "Distance"]
-       [:label
-        [:input {:type "checkbox"
-                 :on-change #(re-frame/dispatch [::events/set-shot-make? (-> % .-target .-checked)])
-                 :checked (boolean @make?)}]
-        "Make?"])
+    [:div.flex.flex-col
      [:label
       [:input {:type "checkbox"
                :on-change #(re-frame/dispatch [::events/set-shot-foul? (-> % .-target .-checked)])
@@ -135,7 +118,7 @@
                :checked (boolean @foul?)}]
       "Foul?"]
      (when @foul?
-       [foul-input])]))
+       [ftm-input])]))
 
 
 (defn turnover-input []
@@ -200,36 +183,41 @@
 
 
 (defn render-rebound
-  [rebounder off-reb?]
-  [:span (if rebounder (str " #" rebounder) " Team") " " (if off-reb? "OffReb" "DefReb")])
+  [{rebounder :rebound/player off-reb? :rebound/off? team-reb? :rebound/team?}]
+  [:span
+   (when (some? rebounder) (str " #" rebounder))
+   (when (true? team-reb?) " team")
+   " "
+   (if off-reb? "OffReb" "DefReb")])
 
 
 (defn render-shot
   [action]
-  (let [{:keys [:shot/make? :shot/value :shot/distance :shot/off-reb? :shot/rebounder]
+  (let [{:keys [:shot/make? :shot/value :shot/distance]
          ftm :ft/made fta :ft/attempted} action
         distance-ft (math/round (/ distance 12))]
     [:span
      (str value " PT (" distance-ft "') " (if make? "make " "miss "))
      (when (and (some? fta) (> fta 0))
        [render-fts ftm fta])
-     (when rebounder
-       [render-rebound rebounder off-reb?])]))
+     (when-not make?
+       [render-rebound action])]))
 
 
 (defn render-turnover
   [action]
-  (let [{stealer :turnover/stealer} action]
+  (let [{stealer :steal/player} action]
     [:span (str "turnover" (when stealer (str " #" stealer " Steal")))]))
 
 
 (defn render-bonus
   [action]
-  (let [{ftm :ft/made fta :ft/attempted rebounder :shot/rebounder off-reb? :shot/off-reb?} action]
+  (let [{ftm :ft/made fta :ft/attempted
+         rebounder :rebound/player team-reb? :rebound/team?} action]
     [:span "bonus "
      [render-fts ftm fta]
-     (when rebounder
-       [render-rebound rebounder off-reb?])]))
+     (when (or (some? rebounder) (true? team-reb?))
+       [render-rebound action])]))
 
 
 (defn render-technical
@@ -420,13 +408,6 @@
       [player-input true [::subs/action-player] ::events/set-player "Player" true]
       [:label
        [:input {:type "radio"
-                :value :action.type/shot
-                :name :action/type
-                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-shot]))
-                :checked (= @type :action.type/shot)}]
-       "Shot"]
-      [:label
-       [:input {:type "radio"
                 :value :action.type/turnover
                 :name :action/type
                 :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-turnover]))
@@ -448,13 +429,13 @@
                 :checked (= @type :action.type/technical)}]
        "Technical"]
       (when (= @type :action.type/shot)
-        [shot-input])
+        [foul-input])
       (when (= @type :action.type/turnover)
         [turnover-input])
       (when (= @type :action.type/bonus)
         [bonus-input])
       (when (= @type :action.type/technical)
-        [foul-input])
+        [ftm-input])
       (when (<sub [::subs/reboundable?])
         [rebound-input])
       [players-input]

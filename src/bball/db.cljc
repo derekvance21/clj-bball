@@ -45,22 +45,24 @@
               :db/valueType :db.type/boolean
               :db/cardinality :db.cardinality/one
               :db/doc "whether or not the shot was made"}
-             ;; TODO - probably renamespace rebounding related things to :rebound/off? and :rebound/player
-             ;;        b/c now, a fouled shot with an offensive rebound is :shot/off-reb? true, whereas it's really
-             ;;        an offensive rebound on the free-throw
-             ;;        also, keeping player-related names as "player", for :action/player, :rebound/player, :steal/player seems better
-             {:db/ident :shot/rebounder
-              :db/valueType :db.type/long
-              :db/cardinality :db.cardinality/one
-              :db/doc "the number player of the rebounder of the shot attempt"}
-             {:db/ident :shot/off-reb?
-              :db/valueType :db.type/boolean
-              :db/cardinality :db.cardinality/one
-              :db/doc "whether or not the shot was offensive rebounded"}
-             {:db/ident :shot/blocker
+             {:db/ident :block/player
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number player of the blocker of the shot attempt"}
+
+             ;; rebound
+             {:db/ident :rebound/player
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number player of the rebounder"}
+             {:db/ident :rebound/off?
+              :db/valueType :db.type/boolean
+              :db/cardinality :db.cardinality/one
+              :db/doc "whether or not the rebound was an offensive rebound"}
+             {:db/ident :rebound/team?
+              :db/valueType :db.type/boolean
+              :db/cardinality :db.cardinality/one
+              :db/doc "whether or not the rebound was a team offensive rebound"}
 
              {:db/ident :offense/players
               :db/valueType :db.type/tuple
@@ -74,10 +76,14 @@
               :db/doc "the numbers of the defensive players on the floor"}
 
              ;; turnover
-             {:db/ident :turnover/stealer
+             {:db/ident :steal/player
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number player of the stealer of the turnover"}
+             {:db/ident :charge/player
+              :db/valueType :db.type/long
+              :db/cardinality :db.cardinality/one
+              :db/doc "the number player of the charge taker for the turnover"}
 
              ;; possession
              {:db/ident :possession/action

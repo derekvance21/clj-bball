@@ -12,7 +12,17 @@
               (not (fta? ?a))]
              [(fga? ?a)
               [?a :action/type :action.type/shot]
-              [?a :shot/make? true]]
+              [?a :shot/make? true]] 
+             ;; below works in datascript, having everything in one rule, using or and and
+             #_[(fga? ?a)
+              [?a :action/type :action.type/shot]
+              (or [?a :shot/make? true]
+                  (and [?a :shot/make? false]
+                       (not (fta? ?a))))]
+             
+             [(rebound? ?a)
+              (or [?a :rebound/player]
+                  [?a :rebound/team? true])]
 
              [(in? ?p ?a ?t ?number)
               [?p :possession/team ?t]
@@ -84,10 +94,10 @@
               [(+ ?fts ?fg-pts) ?pts]]
 
              [(off-rebs ?a ?count)
-              [?a :shot/off-reb? true]
+              [?a :rebound/off? true]
               [(ground 1) ?count]]
              [(off-rebs ?a ?count)
-              (not [?a :shot/off-reb? true])
+              (not [?a :rebound/off? true])
               [(ground 0) ?count]]
 
              [(tos ?a ?count)

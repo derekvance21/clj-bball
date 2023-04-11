@@ -120,7 +120,7 @@
          :with ?a
          :where
          (actions ?g ?t ?p ?a)
-         [?a :shot/rebounder]
+         (rebound? ?a)
          (off-rebs ?a ?off-rebs)]
        db query/rules g))
 
@@ -165,6 +165,19 @@
               [t (/ fts fgas)]))))
 
 
+(defn fts-per-shot
+  [db g]
+  (->> (d/q '[:find ?t (avg ?fts)
+              :in $ % ?g
+              :with ?a
+              :where
+              (actions ?g ?t ?p ?a)
+              [?a :action/type :action.type/shot]
+              (fts ?a ?fts)
+              (fgas ?a ?fgas)]
+            db query/rules g)))
+
+
 (comment
   (d/q '[:find (pull ?a [*])
          :where
@@ -179,7 +192,7 @@
 
 
 (defn action-change-possession?
-  [{:keys [shot/off-reb? action/type]}]
+  [{:action/keys [type] off-reb? :rebound/off?}]
   (not (or off-reb? (= type :action.type/technical))))
 
 
@@ -259,7 +272,6 @@
                (if one-action?
                  last-possession
                  (last-action last-possession)))]
-    [(if (nil? entid)
-       nil
-       [:db/retractEntity entid])]))
+    (when (some? entid)
+      [[:db/retractEntity entid]])))
 

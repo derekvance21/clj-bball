@@ -150,16 +150,16 @@
 (defn reb
   [parser]
   (cond-> parser
-    (:number parser) (assoc-in [:action :shot/rebounder] (:number parser))
-    :always (assoc-in [:action :shot/off-reb?] (not (possession-change? parser)))))
+    (:number parser) (assoc-in [:action :rebound/player] (:number parser))
+    :always (assoc-in [:action :rebound/off?] (not (possession-change? parser)))))
 
 (defn steal
   [parser]
-  (assoc-in parser [:action :turnover/stealer] (:number parser)))
+  (assoc-in parser [:action :steal/player] (:number parser)))
 
 (defn block
   [parser]
-  (assoc-in parser [:action :shot/blocker] (:number parser)))
+  (assoc-in parser [:action :block/player] (:number parser)))
 
 (defn period
   [parser]

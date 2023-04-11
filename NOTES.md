@@ -2,22 +2,21 @@
 
 ## Todo
 
-- [ ] Refactor rebound from :shot/rebounder to :rebound/player and :rebound/off?
+- [ ] Fix bug where, after setting a rebound on a missed ft, made free throws is set to = attempted free throws, and thus no rebound should be possible. Maybe using a rebound interceptor, or something
+- [ ] Fix bug where you can add empty action by only selecting player. Would be nice to use a proper reagent form, using custom validators like the ol' Angular ReactiveForm has
 - [ ] Save new db to local/session storage on add action
 - [ ] Start new game
     - supporting custom teams, datetime, other info
-- [ ] Use return maps in datascript queries
-- [ ] Edit actions
-    - use `(:_component-ref (entity db entid))` (check the datascript docs under `core/entity`)
 - [ ] Add clojure/spec to app-db
-- [ ] Support logging team rebounds
-    - could just have a rebound/team? boolean
 - [ ] lineup stats
 - [ ] individual stats
-- [ ] default play numbers in :players map
 - [ ] the players map should have players in a set, to not allow duplicates
 - [ ] svg for the whole court, but then mask parts
 
+- [X] Refactor rebound from :shot/rebounder to :rebound/player and :rebound/off?
+- [X] Support logging team rebounds
+    - could just have a rebound/team? boolean
+- [X] default play numbers in :players map
 - [X] Refactor a lot of `::events/add-action` into `app.db`
 - [X] Make `::subs/team` dependent on `::subs/datascript-db`
     - find the last possession in the last action and determine if possession change

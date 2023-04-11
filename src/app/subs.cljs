@@ -110,6 +110,22 @@
 
 
 (re-frame/reg-sub
+ ::fts-per-shot
+ :<- [::datascript-db]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (->> (db/fts-per-shot db g)
+        (into {}))))
+
+
+(re-frame/reg-sub
+ ::team-fts-per-shot
+ :<- [::fts-per-shot]
+ (fn [fts-per-shot [_ t]]
+   (get fts-per-shot t)))
+
+
+(re-frame/reg-sub
  ::box-score
  :<- [::game-id]
  :<- [::datascript-db]
@@ -247,19 +263,25 @@
 (re-frame/reg-sub
  ::rebounder
  (fn [db]
-   (get-in db [:action :shot/rebounder])))
+   (get-in db [:action :rebound/player])))
 
 
 (re-frame/reg-sub
  ::off-reb?
  (fn [db]
-   (get-in db [:action :shot/off-reb?])))
+   (get-in db [:action :rebound/off?])))
+
+
+(re-frame/reg-sub
+ ::team-reb?
+ (fn [db]
+   (get-in db [:action :rebound/team?])))
 
 
 (re-frame/reg-sub
  ::stealer
  (fn [db]
-   (get-in db [:action :turnover/stealer])))
+   (get-in db [:action :steal/player])))
 
 
 (re-frame/reg-sub

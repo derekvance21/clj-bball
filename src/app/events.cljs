@@ -86,9 +86,9 @@
  [(re-frame/path [:action])
   re-frame/trim-v]
  (fn [action [stealer]]
-   (if stealer
-     (assoc action :turnover/stealer stealer)
-     (dissoc action :turnover/stealer))))
+   (if (some? stealer)
+     (assoc action :steal/player stealer)
+     (dissoc action :steal/player))))
 
 
 (def fta-interceptor
@@ -151,7 +151,7 @@
    (assoc
     (if (= :action.type/shot (:action/type action))
       action
-      (dissoc action :turnover/stealer :ft/made :ft/attempted :shot/rebounder :shot/off-reb?))
+      (dissoc action :steal/player :ft/made :ft/attempted :rebound/player :rebound/team? :rebound/off?))
     :action/type :action.type/shot
     :shot/angle turns
     :shot/distance radius
@@ -187,7 +187,7 @@
 
 (re-frame/reg-event-db
  ::set-rebounder
- [(re-frame/path [:action :shot/rebounder])
+ [(re-frame/path [:action :rebound/player])
   re-frame/trim-v]
  (fn [_ [rebounder]]
    rebounder))
@@ -199,8 +199,17 @@
   re-frame/trim-v]
  (fn [action [off-reb?]]
    (-> action
-       (dissoc :shot/rebounder)
-       (assoc :shot/off-reb? off-reb?))))
+       (dissoc :rebound/player)
+       (assoc :rebound/off? off-reb?))))
+
+(re-frame/reg-event-db
+ ::set-team-reb?
+ [(re-frame/path [:action])
+  re-frame/trim-v]
+ (fn [action [team-reb?]]
+   (-> action
+       (dissoc :rebound/player)
+       (assoc :rebound/team? team-reb?))))
 
 
 (re-frame/reg-event-db
