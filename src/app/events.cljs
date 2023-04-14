@@ -12,6 +12,36 @@
        (re-frame/dispatch (conj on-transact tx-report))))))
 
 
+(def fta-interceptor
+  (re-frame/on-changes
+   (fn [value make? foul?]
+     (if foul?
+       (if make? 1 value)
+       0))
+   [:action :ft/attempted]
+   [:action :shot/value] [:action :shot/make?] [:action :shot/foul?]))
+
+
+(def shot-value-interceptor
+  (re-frame/on-changes
+   (fn [distance angle]
+     (when (and (some? distance) (some? angle))
+       (let [three-point-distance (+ (* 12 19) 10)
+             three? (if (> (abs angle) 0.25) ;; if below 3 point arc break
+                      (>= (abs (* (math/sin (* angle 2 math/PI)) distance)) three-point-distance) ;; 
+                      (>= distance three-point-distance))]
+         (if three? 3 2))))
+   [:action :shot/value]
+   [:action :shot/distance] [:action :shot/angle]))
+
+
+(def rebound-interceptor
+  (re-frame/enrich
+   (fn [db event]
+     (when-not (db/reboundable? (:action db))
+       (update db :action dissoc :rebound/off? :rebound/player :rebound/team?)))))
+
+
 (re-frame/reg-event-db
  ::set-game-info
  [re-frame/trim-v]
@@ -91,32 +121,11 @@
      (dissoc action :steal/player))))
 
 
-(def fta-interceptor
-  (re-frame/on-changes
-   (fn [value make? foul?]
-     (if foul?
-       (if make? 1 value)
-       0))
-   [:action :ft/attempted]
-   [:action :shot/value] [:action :shot/make?] [:action :shot/foul?]))
-
-
-(def shot-value-interceptor
-  (re-frame/on-changes
-   (fn [distance angle]
-     (when (and (some? distance) (some? angle))
-       (let [three-point-distance (+ (* 12 19) 10)
-             three? (if (> (abs angle) 0.25) ;; if below 3 point arc break
-                      (>= (abs (* (math/sin (* angle 2 math/PI)) distance)) three-point-distance) ;; 
-                      (>= distance three-point-distance))]
-         (if three? 3 2))))
-   [:action :shot/value]
-   [:action :shot/distance] [:action :shot/angle]))
-
-
+;; will be used later, b/c on mobile, can't right-click to set a "make"
 (re-frame/reg-event-db
  ::set-shot-make?
- [fta-interceptor
+ [rebound-interceptor
+  fta-interceptor
   (re-frame/path [:action :shot/make?])
   re-frame/trim-v]
  (fn [_ [make?]]
@@ -124,38 +133,28 @@
 
 
 (re-frame/reg-event-db
- ::set-shot-value
- [fta-interceptor
-  re-frame/trim-v
-  (re-frame/path [:action :shot/value])]
- (fn [_ [value]]
-   value))
-
-
-(re-frame/reg-event-db
- ::set-shot-distance-ft
- [shot-value-interceptor
-  (re-frame/path [:action :shot/distance])
-  re-frame/trim-v]
- (fn [_ [distance]]
-   (* 12 distance)))
-
-
-(re-frame/reg-event-db
  ::set-action-shot-with-info
- [fta-interceptor
+ [rebound-interceptor
+  fta-interceptor
   shot-value-interceptor
   (re-frame/path [:action])
   re-frame/trim-v]
- (fn [action [turns radius make?]]
-   (assoc
-    (if (= :action.type/shot (:action/type action))
-      action
-      (dissoc action :steal/player :ft/made :ft/attempted :rebound/player :rebound/team? :rebound/off?))
-    :action/type :action.type/shot
-    :shot/angle turns
-    :shot/distance radius
-    :shot/make? make?)))
+ (fn [{:action/keys [type] :as action} [turns radius make?]]
+   (cond-> action
+     (not= type :action.type/shot)
+     (dissoc :steal/player
+             :ft/made
+             :ft/attempted
+             :rebound/player
+             :rebound/team?
+             :rebound/off?)
+     true
+     (assoc :action/type :action.type/shot
+            :shot/angle turns
+            :shot/distance radius
+            :shot/make? make?))))
+
+
 
 
 (re-frame/reg-event-db
@@ -171,7 +170,8 @@
 
 (re-frame/reg-event-db
  ::set-ft-made
- [(re-frame/path [:action :ft/made])
+ [rebound-interceptor
+  (re-frame/path [:action :ft/made])
   re-frame/trim-v]
  (fn [_ [ftm]]
    ftm))

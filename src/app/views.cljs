@@ -185,22 +185,22 @@
 (defn render-rebound
   [{rebounder :rebound/player off-reb? :rebound/off? team-reb? :rebound/team?}]
   [:span
-   (when (some? rebounder) (str " #" rebounder))
-   (when (true? team-reb?) " team")
-   " "
-   (if off-reb? "OffReb" "DefReb")])
+   (str (when (some? rebounder) (str " #" rebounder))
+        (when (true? team-reb?) " team")
+        (if off-reb? " OffReb" " DefReb"))])
 
 
 (defn render-shot
   [action]
-  (let [{:keys [:shot/make? :shot/value :shot/distance]
-         ftm :ft/made fta :ft/attempted} action
+  (let [{:shot/keys [make? value distance]
+         ftm :ft/made fta :ft/attempted
+         rebounder :rebound/player team-rebound? :rebound/team?} action
         distance-ft (math/round (/ distance 12))]
     [:span
      (str value " PT (" distance-ft "') " (if make? "make " "miss "))
      (when (and (some? fta) (> fta 0))
        [render-fts ftm fta])
-     (when-not make?
+     (when (or (some? rebounder) team-rebound?)
        [render-rebound action])]))
 
 

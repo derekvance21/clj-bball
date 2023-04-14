@@ -287,16 +287,13 @@
 (re-frame/reg-sub
  ::reboundable?
  (fn [_]
-   [(re-frame/subscribe [::shot-make?])
+   [(re-frame/subscribe [::action-type])
+    (re-frame/subscribe [::shot-make?])
     (re-frame/subscribe [::foul?])
-    (re-frame/subscribe [::ft-attempted])
     (re-frame/subscribe [::ft-made])
-    (re-frame/subscribe [::action-type])])
- (fn [[make? foul? fta ftm type] _]
-   (let [fts? (or foul? (= :action.type/bonus type))
-         shot? (= type :action.type/shot)]
-     (or (and fts? (< ftm fta))
-         (and shot? (not fts?) (not make?))))))
+    (re-frame/subscribe [::ft-attempted])])
+ (fn [[type make? foul? ftm fta] _]
+   (db/reboundable? type make? foul? ftm fta)))
 
 
 (re-frame/reg-sub

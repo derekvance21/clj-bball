@@ -2,7 +2,6 @@
 
 ## Todo
 
-- [ ] Fix bug where, after setting a rebound on a missed ft, made free throws is set to = attempted free throws, and thus no rebound should be possible. Maybe using a rebound interceptor, or something
 - [ ] Fix bug where you can add empty action by only selecting player. Would be nice to use a proper reagent form, using custom validators like the ol' Angular ReactiveForm has
 - [ ] Save new db to local/session storage on add action
 - [ ] Start new game
@@ -12,7 +11,9 @@
 - [ ] individual stats
 - [ ] the players map should have players in a set, to not allow duplicates
 - [ ] svg for the whole court, but then mask parts
+- [ ] refactor app-db type query operations into db.cljs, and potentially move the datascript db logic into a new file
 
+- [X] Fix bug where, after setting a rebound on a missed ft, made free throws is set to = attempted free throws, and thus no rebound should be possible. Maybe using a rebound interceptor, or something
 - [X] Refactor rebound from :shot/rebounder to :rebound/player and :rebound/off?
 - [X] Support logging team rebounds
     - could just have a rebound/team? boolean
