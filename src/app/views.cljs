@@ -19,7 +19,6 @@
 
 (defn period->string
   [period nperiods abbrev]
-
   (if (<= period nperiods)
     (str period abbrev)
     (str (- period nperiods) "OT")))
@@ -166,15 +165,6 @@
             :on-change #(re-frame/dispatch [::events/set-on-court-player
                                             (:db/id team) i
                                             (-> % .-target .-value parse-long)])}])]]))])
-
-
-(defn submit-action-input
-  [e]
-  (.preventDefault e)
-  (re-frame/dispatch [::events/add-action]))
-
-
-
 
 
 (defn render-fts
@@ -367,7 +357,8 @@
         [svg-width svg-height] (map #(* scale (+ % (* 2 line-width))) court-dimensions)
         court-id "court"]
     [:svg
-     {:xmlns "http://www.w3.org/2000/svg" :version "1.1"
+     {:xmlns "http://www.w3.org/2000/svg"
+      :version "1.1"
       :width svg-width
       :height svg-height
       :view-box (string/join " " [(- line-width) (- line-width) (+ court-width (* 2 line-width)) (+ court-height (* 2 line-width))])
@@ -388,7 +379,7 @@
       ]
      (when (some? shot-location)
        (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
-             icon-size (* 10)]
+             icon-size 10]
          (if (<sub [::subs/shot-make?])
            [:circle
             {:r icon-size :cx x :cy y
@@ -398,6 +389,12 @@
            [svg-shot-miss (let [length (* 2 (/ icon-size (math/sqrt 2)))]
                             {:cx x :cy y :width length :height length
                              :stroke "red" :stroke-width 2})])))]))
+
+
+(defn submit-action-input
+  [e]
+  (.preventDefault e)
+  (re-frame/dispatch [::events/add-action]))
 
 
 (defn action-input []

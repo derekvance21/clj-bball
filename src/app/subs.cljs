@@ -1,7 +1,7 @@
 (ns app.subs
   (:require
    [re-frame.core :as re-frame]
-   [app.ds :as ds]
+   [app.datascript :as ds]
    [app.db :as db]))
 
 
@@ -125,16 +125,6 @@
  :<- [::fts-per-shot]
  (fn [fts-per-shot [_ t]]
    (get fts-per-shot t)))
-
-
-(re-frame/reg-sub
- ::box-score
- :<- [::game-id]
- :<- [::datascript-db]
- (fn [[g db] query-vec]
-   (reduce (fn [box-score [t player pts]]
-             (update box-score t (fn [ppts] (conj ppts [player pts]))))
-           {} (ds/box-score db g))))
 
 
 (re-frame/reg-sub

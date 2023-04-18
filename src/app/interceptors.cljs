@@ -3,8 +3,8 @@
    [cljs.math :as math]
    [re-frame.core :as re-frame]
    [app.db :as db]
-   [app.fx :as fx]
-   [app.ds :as ds]))
+   [app.effects :as fx]
+   [app.datascript :as ds]))
 
 
 (def fta
@@ -41,8 +41,7 @@
   (re-frame/->interceptor
    :id ::ds->local-storage
    :after (fn [context]
-            (let [new-ds (re-frame/get-effect context ::fx/ds)]
-              (when (some? new-ds)
-                (ds/db->local-storage new-ds))
-              context))))
+            (when-some [new-ds (re-frame/get-effect context ::fx/ds)]
+              (ds/db->local-storage new-ds))
+            context)))
 

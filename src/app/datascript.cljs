@@ -1,4 +1,5 @@
-(ns app.ds
+;; TODO - rename to datascript?
+(ns app.datascript
   (:require
    [bball.db]
    [bball.query :as query]
@@ -69,13 +70,11 @@
 
 (defn possessions?
   [db g]
-  (->> (d/q '[:find ?g
-              :in $ ?g
-              :where
-              [?g :game/possession]]
-            db g)
-       empty?
-       not))
+  (not (empty? (d/q '[:find ?g
+                      :in $ ?g
+                      :where
+                      [?g :game/possession]]
+                    db g))))
 
 
 (defn last-possession
@@ -91,18 +90,6 @@
 (defn last-action-db
   [db g]
   (last-action (last-possession db g)))
-
-
-(defn box-score
-  [db g]
-  (d/q '[:find ?t ?number (sum ?pts)
-         :in $ % ?g
-         :with ?a
-         :where
-         (actions ?g ?t ?p ?a)
-         [?a :action/player ?number]
-         (pts ?a ?pts)]
-       db query/rules g))
 
 
 (defn efg
@@ -154,7 +141,6 @@
        db query/rules g))
 
 
-;; TODO - use return maps! then you can destructure maps instead of vectors after?
 (defn ft-rate
   [db g]
   (->> (d/q '[:find ?t (sum ?fts) (sum ?fgas)
@@ -171,15 +157,15 @@
 
 (defn fts-per-shot
   [db g]
-  (->> (d/q '[:find ?t (avg ?fts)
-              :in $ % ?g
-              :with ?a
-              :where
-              (actions ?g ?t ?p ?a)
-              [?a :action/type :action.type/shot]
-              (fts ?a ?fts)
-              (fgas ?a ?fgas)]
-            db query/rules g)))
+  (d/q '[:find ?t (avg ?fts)
+         :in $ % ?g
+         :with ?a
+         :where
+         (actions ?g ?t ?p ?a)
+         [?a :action/type :action.type/shot]
+         (fts ?a ?fts)
+         (fgas ?a ?fgas)]
+       db query/rules g))
 
 
 (comment
@@ -214,13 +200,11 @@
 
 (defn team-possession
   [db g]
-  (let [last-possession (last-possession db g)
-        last-possession-team (:possession/team last-possession)]
-    (if-some [last-action (last-action last-possession)]
+  (let [{:possession/keys [team] :as last-possession} (last-possession db g)]
+    (when-some [last-action (last-action last-possession)]
       (if (action-change-possession? last-action)
-        (other-team-db db g (:db/id last-possession-team))
-        last-possession-team)
-      nil)))
+        (other-team-db db g (:db/id team))
+        team))))
 
 
 ;; TODO - see if you can do :_game/possession and :_possession/action easily (in this case, for db.cardinality/many)
@@ -272,11 +256,10 @@
   (let [last-possession (last-possession db g)
         actions (:possession/action last-possession)
         one-action? (= 1 (count actions))
-        entid (:db/id
-               (if one-action?
+        entity (if one-action?
                  last-possession
-                 (last-action last-possession)))]
-    (when (some? entid)
+                 (last-action last-possession))]
+    (when-some [entid (:db/id entity)]
       [[:db/retractEntity entid]])))
 
 #_{:clj-kondo/ignore [:datalog-syntax]}

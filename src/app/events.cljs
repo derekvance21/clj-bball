@@ -1,12 +1,12 @@
 (ns app.events
   (:require
    [re-frame.core :as re-frame]
-   [app.ds :as ds]
+   [app.datascript :as ds]
    [app.db :as db]
-   [app.cofx :as cofx]
-   [app.fx :as fx]
+   [app.coeffects :as cofx]
+   [app.effects :as fx]
    [app.interceptors :as interceptors]
-   [datascript.core :as datascript]))
+   [datascript.core :as d]))
 
 
 (re-frame/reg-event-fx
@@ -17,7 +17,7 @@
    ;; TODO - there should be a separate event for the case where there is a local storage db
    ;; and this would dispatch it
    (if (some? ls-datascript-db)
-     (let [game-id (datascript/q
+     (let [game-id (d/q
                     '[:find ?g .
                       :where [?g :game/teams]]
                     ls-datascript-db)
@@ -31,7 +31,7 @@
      (let [game-tempid -1
            team1-tempid -2
            team2-tempid -3
-           {:keys [db-after tempids]} (datascript/with ds [{:db/id game-tempid
+           {:keys [db-after tempids]} (d/with ds [{:db/id game-tempid
                                                             :game/teams [{:db/id team1-tempid :team/name "Home"}
                                                                          {:db/id team2-tempid :team/name "Away"}]}])
            game-id (get tempids game-tempid)
@@ -48,15 +48,6 @@
   re-frame/trim-v]
  (fn [_ [player]]
    player))
-
-
-(re-frame/reg-event-db
- ::set-action-shot
- [(re-frame/path [:action])]
- (fn [action _]
-   (-> action
-       (select-keys [:action/player])
-       (assoc :action/type :action.type/shot))))
 
 
 (re-frame/reg-event-db
@@ -214,10 +205,9 @@
  (fn [{:keys [ds db]} _]
    (let [{:keys [action game-id players init]} db
          tx-data [[:db.fn/call ds/append-action-tx-data game-id action players init]]
-         new-ds (datascript/db-with ds tx-data)]
-     {:fx [[::fx/ds new-ds]]
-      :db (dissoc db :action :init) ;; TODO - only dissoc :action and :init if transaction was successful?
-      })))
+         new-ds (d/db-with ds tx-data)]
+     {:db (dissoc db :action :init)
+      :fx [[::fx/ds new-ds]]})))
 
 
 (re-frame/reg-event-fx
@@ -225,8 +215,10 @@
  [cofx/inject-ds
   interceptors/ds->local-storage]
  (fn [{:keys [ds db]} _]
-   {:fx [[::fx/ds (datascript/db-with ds [[:db.fn/call ds/undo-last-action-tx-data (:game-id db)]])]]
-    :db (dissoc db :action)}))
+   (let [{:keys [game-id]} db
+         new-ds (d/db-with ds [[:db.fn/call ds/undo-last-action-tx-data game-id]])]
+     {:db (dissoc db :action)
+      :fx [[::fx/ds new-ds]]})))
 
 
 (re-frame/reg-event-db

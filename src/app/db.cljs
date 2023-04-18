@@ -1,11 +1,4 @@
-(ns app.db
-  (:require
-   [bball.db :as db]
-   [bball.query :as query]
-   [datascript.core :as d]
-   [re-frame.core :as re-frame]
-   [reagent.core :as reagent]
-   [datascript.transit :as dt]))
+(ns app.db)
 
 
 (def init-db

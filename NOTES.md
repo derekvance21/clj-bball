@@ -6,12 +6,17 @@
     - supporting custom teams, datetime, other info
 - [ ] Fix bug where you can add empty action by only selecting player. Would be nice to use a proper reagent form, using custom validators like the ol' Angular ReactiveForm has
 - [ ] Add clojure/spec to app-db
+- [ ] Use interceptors for action validation
 - [ ] lineup stats
 - [ ] individual stats
 - [ ] the players map should have players in a set, to not allow duplicates
 - [ ] svg for the whole court, but then mask parts
 - [ ] fix bug where on free throws with at least one miss and make, setting a rebound is required even though the make could've been at the end
 - [ ] start new quarter should be a checkbox, just in case you click it on accident and want to revert that
+- [ ] use :pre and :post assertions in important functions
+- [ ] customize visible stats
+- [ ] support mobile
+- [ ] button-ify UI elements. Nobody likes using a select dropdown (however convenient it is for me, as a dev). What would be nicer is to have the selectable players all visible, and you click on their tile to select them
 
 - [X] Save new db to local/session storage on add action
 - [X] refactor app-db type query operations into db.cljs, and potentially move the datascript db logic into a new file. app.events and app.subs share a lot of the same logic, and app.db is what that's supposed to be for - logic related to the app-db structure

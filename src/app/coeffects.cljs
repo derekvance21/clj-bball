@@ -1,6 +1,6 @@
-(ns app.cofx
+(ns app.coeffects
   (:require
-   [app.ds :as ds]
+   [app.datascript :as ds]
    [datascript.core :as d]
    [re-frame.core :as re-frame]))
 
