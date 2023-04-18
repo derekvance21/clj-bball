@@ -24,6 +24,14 @@
     (str (- period nperiods) "OT")))
 
 
+(defn period-handler
+  [e]
+  (let [checked (-> e .-target .-checked)]
+    (re-frame/dispatch (if checked
+                         [::events/next-period]
+                         [::events/undo-next-period]))))
+
+
 (defn stats []
   (let [[team1 team2] (<sub [::subs/teams])
         t1 (:db/id team1)
@@ -36,9 +44,11 @@
       [:h2.text-xl.border-y-4
        {:class [(if team1-possession? "border-solid" "border-transparent")]}
        (:team/name team1)]
-      [:button.self-center {:type "button"
-                            :on-click #(re-frame/dispatch [::events/next-period])}
-       (period->string period 4 "Q")]
+      [:label
+       (period->string period 4 "Q")
+       [:input.ml-2 {:type "checkbox"
+                     :on-change period-handler
+                     :checked (some? (<sub [::subs/init]))}]]
       [:h2.text-xl.border-y-4
        {:class [(if team2-possession? "border-solid" "border-transparent")]}
        (:team/name team2)]]
@@ -436,11 +446,22 @@
       (when (<sub [::subs/reboundable?])
         [rebound-input])
       [players-input]
-      [:button.self-start {:type "button"
-                           :on-click #(re-frame/dispatch [::events/undo-last-action])}
-       "Undo"]
-      [:button.self-start {:type "submit"}
-       "Add"]]]))
+      [:div.my-2
+       [:button.self-start.bg-orange-500.hover:bg-orange-700.text-white.font-bold.py-1.px-2.rounded-full
+        {:type "button"
+         :on-click #(re-frame/dispatch [::events/undo-last-action])}
+        "Undo"]
+       [:button.self-start.ml-2.bg-blue-500.hover:bg-blue-700.text-white.font-bold.py-1.px-2.rounded-full
+        {:type "submit"}
+        "Add"]]]]))
+
+
+(defn new-game
+  []
+  [:button.self-start.mt-8.bg-red-500.hover:bg-red-700.text-white.font-bold.py-1.px-2.rounded-full
+   {:type "button"
+    :on-click #(re-frame/dispatch [::events/new-game])}
+   "New Game"])
 
 
 (defn main-panel []
@@ -449,7 +470,8 @@
     {:class "w-1/2"}
     [:div.flex.flex-col.flex-1
      [team-selector]
-     [action-input]]
+     [action-input]
+     [new-game]]
     [:div.flex.flex-col.flex-1
      [stats]
      [possessions]]]])

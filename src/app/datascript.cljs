@@ -15,6 +15,9 @@
    (reagent/atom (d/empty-db schema) :meta {:listeners (atom {})})))
 
 
+(def empty-db (d/empty-db bball.db/ds-schema))
+
+
 (defonce conn (create-ratom-conn bball.db/ds-schema))
 
 

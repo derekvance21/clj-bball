@@ -10,36 +10,50 @@
 
 
 (re-frame/reg-event-fx
+ ::initialize-ds-with-local-storage
+ [(re-frame/inject-cofx ::cofx/local-storage-datascript-db)]
+ (fn [{:keys [ls-datascript-db]} _]
+   (let [game-id (d/q
+                  '[:find ?g .
+                    :where [?g :game/teams]]
+                  ls-datascript-db)
+         players (->> (ds/game->team-players ls-datascript-db 1)
+                      (map #(update % 1 (comp vec (partial take 5))))
+                      (into {})) ;; TODO - use last action's players as initial players map
+         ]
+     {:db {:game-id game-id
+           :players players}
+      ::fx/ds ls-datascript-db})))
+
+
+(re-frame/reg-event-fx
+ ::initialize-blank-ds
+ [(re-frame/inject-cofx ::cofx/local-storage-datascript-db)]
+ (fn [_ _]
+   (let [game-tempid -1
+         team1-tempid -2
+         team2-tempid -3
+         {:keys [db-after tempids]} (d/with ds/empty-db [{:db/id game-tempid
+                                                          :game/teams [{:db/id team1-tempid :team/name "Home"}
+                                                                       {:db/id team2-tempid :team/name "Away"}]}])
+         game-id (get tempids game-tempid)
+         team1-id (get tempids team1-tempid)
+         team2-id (get tempids team2-tempid)
+         players {team1-id [0 1 2 3 4]
+                  team2-id [5 6 7 8 9]}]
+
+     {:db (assoc db/init-db :game-id game-id :players players)
+      ::fx/ds db-after})))
+
+
+(re-frame/reg-event-fx
  ::initialize
  [cofx/inject-ds
   (re-frame/inject-cofx ::cofx/local-storage-datascript-db)]
- (fn [{:keys [ds ls-datascript-db]} _]
-   ;; TODO - there should be a separate event for the case where there is a local storage db
-   ;; and this would dispatch it
-   (if (some? ls-datascript-db)
-     (let [game-id (d/q
-                    '[:find ?g .
-                      :where [?g :game/teams]]
-                    ls-datascript-db)
-           players (->> (ds/game->team-players ls-datascript-db 1)
-                        (map #(update % 1 (comp vec (partial take 5))))
-                        (into {})) ;; TODO - use last action's players as initial players map
-           ]
-       {:db {:game-id game-id
-             :players players}
-        :fx [[::fx/ds ls-datascript-db]]})
-     (let [game-tempid -1
-           team1-tempid -2
-           team2-tempid -3
-           {:keys [db-after tempids]} (d/with ds [{:db/id game-tempid
-                                                            :game/teams [{:db/id team1-tempid :team/name "Home"}
-                                                                         {:db/id team2-tempid :team/name "Away"}]}])
-           game-id (get tempids game-tempid)
-           players {(get tempids team1-tempid) [0 1 2 3 4]
-                    (get tempids team2-tempid) [5 6 7 8 9]}]
-
-       {:db (assoc db/init-db :game-id game-id :players players)
-        :fx [[::fx/ds db-after]]}))))
+ (fn [{:keys [ls-datascript-db]} _]
+   {:fx [[:dispatch (if (some? ls-datascript-db)
+                      [::initialize-ds-with-local-storage]
+                      [::initialize-blank-ds])]]}))
 
 
 (re-frame/reg-event-db
@@ -191,11 +205,19 @@
  ::next-period
  [cofx/inject-ds]
  (fn [{:keys [ds db]} _]
-   {:db (assoc-in
-         db [:init :init/period]
-         (-> (ds/last-possession ds (:game-id db))
-             (get :possession/period 0)
-             inc))}))
+   {:db
+    (-> db
+        (assoc-in [:init :init/period]
+                  (-> (ds/last-possession ds (:game-id db))
+                      (get :possession/period 0)
+                      inc))
+        (dissoc :action))}))
+
+
+(re-frame/reg-event-db
+ ::undo-next-period
+ (fn [db _]
+   (dissoc db :init)))
 
 
 (re-frame/reg-event-fx
@@ -207,7 +229,7 @@
          tx-data [[:db.fn/call ds/append-action-tx-data game-id action players init]]
          new-ds (d/db-with ds tx-data)]
      {:db (dissoc db :action :init)
-      :fx [[::fx/ds new-ds]]})))
+      ::fx/ds new-ds})))
 
 
 (re-frame/reg-event-fx
@@ -218,7 +240,7 @@
    (let [{:keys [game-id]} db
          new-ds (d/db-with ds [[:db.fn/call ds/undo-last-action-tx-data game-id]])]
      {:db (dissoc db :action)
-      :fx [[::fx/ds new-ds]]})))
+      ::fx/ds new-ds})))
 
 
 (re-frame/reg-event-db
@@ -229,4 +251,11 @@
     db [:players t]
     (fnil assoc [nil nil nil nil nil])
     i player)))
+
+
+(re-frame/reg-event-fx
+ ::new-game
+ (fn [_ _]
+   {:db db/init-db
+    :fx [[:dispatch [::initialize-blank-ds]]]}))
 
