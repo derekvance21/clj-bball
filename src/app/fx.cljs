@@ -7,7 +7,7 @@
 
 (re-frame/reg-fx
  ::ds
- (fn [value]
-   (when-not (identical? @ds/conn value)
-     (datascript/reset-conn! ds/conn value))))
+ (fn [db]
+   (when-not (identical? @ds/conn db)
+     (datascript/reset-conn! ds/conn db))))
 

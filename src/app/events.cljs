@@ -14,6 +14,8 @@
  [cofx/inject-ds
   (re-frame/inject-cofx ::cofx/local-storage-datascript-db)]
  (fn [{:keys [ds ls-datascript-db]} _]
+   ;; TODO - there should be a separate event for the case where there is a local storage db
+   ;; and this would dispatch it
    (if (some? ls-datascript-db)
      (let [game-id (datascript/q
                     '[:find ?g .
@@ -210,8 +212,10 @@
  [cofx/inject-ds
   interceptors/ds->local-storage]
  (fn [{:keys [ds db]} _]
-   (let [{:keys [action game-id players init]} db]
-     {:fx [[::fx/ds (datascript/db-with ds [[:db.fn/call ds/append-action-tx-data game-id action players init]])]]
+   (let [{:keys [action game-id players init]} db
+         tx-data [[:db.fn/call ds/append-action-tx-data game-id action players init]]
+         new-ds (datascript/db-with ds tx-data)]
+     {:fx [[::fx/ds new-ds]]
       :db (dissoc db :action :init) ;; TODO - only dissoc :action and :init if transaction was successful?
       })))
 
