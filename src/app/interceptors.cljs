@@ -1,10 +1,13 @@
 (ns app.interceptors
-  (:require [cljs.math :as math]
-            [re-frame.core :as re-frame]
-            [app.db :as db]))
+  (:require
+   [cljs.math :as math]
+   [re-frame.core :as re-frame]
+   [app.db :as db]
+   [app.fx :as fx]
+   [app.ds :as ds]))
 
 
-(def fta-interceptor
+(def fta
   (re-frame/on-changes
    (fn [value make? foul?]
      (if foul?
@@ -14,7 +17,7 @@
    [:action :shot/value] [:action :shot/make?] [:action :shot/foul?]))
 
 
-(def shot-value-interceptor
+(def shot-value
   (re-frame/on-changes
    (fn [distance angle]
      (when (and (some? distance) (some? angle))
@@ -27,8 +30,19 @@
    [:action :shot/distance] [:action :shot/angle]))
 
 
-(def rebound-interceptor
+(def rebound
   (re-frame/enrich
    (fn [db event]
      (when-not (db/reboundable? (:action db))
        (update db :action dissoc :rebound/off? :rebound/player :rebound/team?)))))
+
+
+(def ds->local-storage
+  (re-frame/->interceptor
+   :id ::ds->local-storage
+   :after (fn [context]
+            (let [new-ds (re-frame/get-effect context ::fx/ds)]
+              (when (some? new-ds)
+                (ds/db->local-storage new-ds))
+              context))))
+

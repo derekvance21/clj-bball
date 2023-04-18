@@ -9,34 +9,23 @@
    [datascript.core :as datascript]))
 
 
-(re-frame/reg-event-db
- ::set-game-info
- [re-frame/trim-v]
- (fn [db [gtid [team-id1 team-id2] {:keys [tempids]}]]
-   (assoc db
-          :game-id (get tempids gtid)
-          :players {(get tempids team-id1) [0 1 2 3 4]
-                    (get tempids team-id2) [5 6 7 8 9]})))
-
-
-;; put localStorage datascript db into coeffects
-;; if that exists, then have the returned effects map
-;; include it under a :reset-conn-db effect
-;; otherwise, the :reset-conn-db effect value should be a blank db with schema
-;; alternatively, on initialize, register an effect that will mutate db/conn
-;; if localStorage db exists
-;; alternatively, on initialize, inject datascript-conn and 
-;; register a cofx that'll put the localStorage db contents in the coeffects map.
-;; If it's a valid db, then reset-conn-db! with that db
 (re-frame/reg-event-fx
  ::initialize
  [cofx/inject-ds
   (re-frame/inject-cofx ::cofx/local-storage-datascript-db)]
  (fn [{:keys [ds ls-datascript-db]} _]
    (if (some? ls-datascript-db)
-     {:db {:game-id (datascript/q '[:find ?g .
-                                    :where [?g :game/teams]] ls-datascript-db)}
-      ::fx/ds ls-datascript-db}
+     (let [game-id (datascript/q
+                    '[:find ?g .
+                      :where [?g :game/teams]]
+                    ls-datascript-db)
+           players (->> (ds/game->team-players ls-datascript-db 1)
+                        (map #(update % 1 (comp vec (partial take 5))))
+                        (into {})) ;; TODO - use last action's players as initial players map
+           ]
+       {:db {:game-id game-id
+             :players players}
+        :fx [[::fx/ds ls-datascript-db]]})
      (let [game-tempid -1
            team1-tempid -2
            team2-tempid -3
@@ -48,7 +37,7 @@
                     (get tempids team2-tempid) [5 6 7 8 9]}]
 
        {:db (assoc db/init-db :game-id game-id :players players)
-        ::fx/ds db-after}))))
+        :fx [[::fx/ds db-after]]}))))
 
 
 (re-frame/reg-event-db
@@ -109,8 +98,8 @@
 ;; will be used later, b/c on mobile, can't right-click to set a "make"
 (re-frame/reg-event-db
  ::set-shot-make?
- [interceptors/rebound-interceptor
-  interceptors/fta-interceptor
+ [interceptors/rebound
+  interceptors/fta
   (re-frame/path [:action :shot/make?])
   re-frame/trim-v]
  (fn [_ [make?]]
@@ -119,9 +108,9 @@
 
 (re-frame/reg-event-db
  ::set-action-shot-with-info
- [interceptors/rebound-interceptor
-  interceptors/fta-interceptor
-  interceptors/shot-value-interceptor
+ [interceptors/rebound
+  interceptors/fta
+  interceptors/shot-value
   (re-frame/path [:action])
   re-frame/trim-v]
  (fn [{:action/keys [type] :as action} [turns radius make?]]
@@ -144,7 +133,7 @@
 
 (re-frame/reg-event-db
  ::set-shot-foul?
- [interceptors/fta-interceptor
+ [interceptors/fta
   (re-frame/path [:action])
   re-frame/trim-v]
  (fn [action [foul?]]
@@ -155,7 +144,7 @@
 
 (re-frame/reg-event-db
  ::set-ft-made
- [interceptors/rebound-interceptor
+ [interceptors/rebound
   (re-frame/path [:action :ft/made])
   re-frame/trim-v]
  (fn [_ [ftm]]
@@ -218,19 +207,21 @@
 
 (re-frame/reg-event-fx
  ::add-action
- [cofx/inject-ds]
+ [cofx/inject-ds
+  interceptors/ds->local-storage]
  (fn [{:keys [ds db]} _]
    (let [{:keys [action game-id players init]} db]
-     {::fx/ds (datascript/db-with ds [[:db.fn/call ds/append-action-tx-data game-id action players init]])
+     {:fx [[::fx/ds (datascript/db-with ds [[:db.fn/call ds/append-action-tx-data game-id action players init]])]]
       :db (dissoc db :action :init) ;; TODO - only dissoc :action and :init if transaction was successful?
       })))
 
 
 (re-frame/reg-event-fx
  ::undo-last-action
- [cofx/inject-ds]
+ [cofx/inject-ds
+  interceptors/ds->local-storage]
  (fn [{:keys [ds db]} _]
-   {::fx/ds (datascript/db-with ds [[:db.fn/call ds/undo-last-action-tx-data (:game-id db)]])
+   {:fx [[::fx/ds (datascript/db-with ds [[:db.fn/call ds/undo-last-action-tx-data (:game-id db)]])]]
     :db (dissoc db :action)}))
 
 
@@ -242,3 +233,4 @@
     db [:players t]
     (fnil assoc [nil nil nil nil nil])
     i player)))
+
