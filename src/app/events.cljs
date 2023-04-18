@@ -1,69 +1,45 @@
 (ns app.events
-  (:require [cljs.math :as math]
-            [re-frame.core :as re-frame]
-            [app.db :as db]))
-
-
-(re-frame/reg-fx
- :transact
- (fn [{:keys [conn tx-data on-transact]}]
-   (let [tx-report (db/transact! conn tx-data)]
-     (when on-transact
-       (re-frame/dispatch (conj on-transact tx-report))))))
-
-
-(def fta-interceptor
-  (re-frame/on-changes
-   (fn [value make? foul?]
-     (if foul?
-       (if make? 1 value)
-       0))
-   [:action :ft/attempted]
-   [:action :shot/value] [:action :shot/make?] [:action :shot/foul?]))
-
-
-(def shot-value-interceptor
-  (re-frame/on-changes
-   (fn [distance angle]
-     (when (and (some? distance) (some? angle))
-       (let [three-point-distance (+ (* 12 19) 10)
-             three? (if (> (abs angle) 0.25) ;; if below 3 point arc break
-                      (>= (abs (* (math/sin (* angle 2 math/PI)) distance)) three-point-distance) ;; 
-                      (>= distance three-point-distance))]
-         (if three? 3 2))))
-   [:action :shot/value]
-   [:action :shot/distance] [:action :shot/angle]))
-
-
-(def rebound-interceptor
-  (re-frame/enrich
-   (fn [db event]
-     (when-not (db/reboundable? (:action db))
-       (update db :action dissoc :rebound/off? :rebound/player :rebound/team?)))))
-
-
-(re-frame/reg-event-db
- ::set-game-info
- [re-frame/trim-v]
- (fn [db [gtid [team-id1 team-id2] {:keys [tempids]}]]
-   (assoc db
-          :game-id (get tempids gtid)
-          :players {(get tempids team-id1) [0 1 2 3 4]
-                    (get tempids team-id2) [5 6 7 8 9]})))
+  (:require
+   [re-frame.core :as re-frame]
+   [app.ds :as ds]
+   [app.db :as db]
+   [app.cofx :as cofx]
+   [app.fx :as fx]
+   [app.interceptors :as interceptors]
+   [datascript.core :as datascript]))
 
 
 (re-frame/reg-event-fx
  ::initialize
- [(re-frame/inject-cofx ::db/datascript-conn)]
- (fn [{:keys [conn]} _]
-   (let [tempid -1
-         [team-id1 team-id2] [-2 -3]]
-     {:db {:init {:init/period 1}}
-      :transact {:conn conn
-                 :tx-data [{:db/id tempid
-                            :game/teams [{:db/id team-id1 :team/name "Blaine"}
-                                         {:db/id team-id2 :team/name "King's"}]}]
-                 :on-transact [::set-game-info tempid [team-id1 team-id2]]}})))
+ [cofx/inject-ds
+  (re-frame/inject-cofx ::cofx/local-storage-datascript-db)]
+ (fn [{:keys [ds ls-datascript-db]} _]
+   ;; TODO - there should be a separate event for the case where there is a local storage db
+   ;; and this would dispatch it
+   (if (some? ls-datascript-db)
+     (let [game-id (datascript/q
+                    '[:find ?g .
+                      :where [?g :game/teams]]
+                    ls-datascript-db)
+           players (->> (ds/game->team-players ls-datascript-db 1)
+                        (map #(update % 1 (comp vec (partial take 5))))
+                        (into {})) ;; TODO - use last action's players as initial players map
+           ]
+       {:db {:game-id game-id
+             :players players}
+        :fx [[::fx/ds ls-datascript-db]]})
+     (let [game-tempid -1
+           team1-tempid -2
+           team2-tempid -3
+           {:keys [db-after tempids]} (datascript/with ds [{:db/id game-tempid
+                                                            :game/teams [{:db/id team1-tempid :team/name "Home"}
+                                                                         {:db/id team2-tempid :team/name "Away"}]}])
+           game-id (get tempids game-tempid)
+           players {(get tempids team1-tempid) [0 1 2 3 4]
+                    (get tempids team2-tempid) [5 6 7 8 9]}]
+
+       {:db (assoc db/init-db :game-id game-id :players players)
+        :fx [[::fx/ds db-after]]}))))
 
 
 (re-frame/reg-event-db
@@ -124,8 +100,8 @@
 ;; will be used later, b/c on mobile, can't right-click to set a "make"
 (re-frame/reg-event-db
  ::set-shot-make?
- [rebound-interceptor
-  fta-interceptor
+ [interceptors/rebound
+  interceptors/fta
   (re-frame/path [:action :shot/make?])
   re-frame/trim-v]
  (fn [_ [make?]]
@@ -134,9 +110,9 @@
 
 (re-frame/reg-event-db
  ::set-action-shot-with-info
- [rebound-interceptor
-  fta-interceptor
-  shot-value-interceptor
+ [interceptors/rebound
+  interceptors/fta
+  interceptors/shot-value
   (re-frame/path [:action])
   re-frame/trim-v]
  (fn [{:action/keys [type] :as action} [turns radius make?]]
@@ -159,7 +135,7 @@
 
 (re-frame/reg-event-db
  ::set-shot-foul?
- [fta-interceptor
+ [interceptors/fta
   (re-frame/path [:action])
   re-frame/trim-v]
  (fn [action [foul?]]
@@ -170,7 +146,7 @@
 
 (re-frame/reg-event-db
  ::set-ft-made
- [rebound-interceptor
+ [interceptors/rebound
   (re-frame/path [:action :ft/made])
   re-frame/trim-v]
  (fn [_ [ftm]]
@@ -222,41 +198,35 @@
 
 (re-frame/reg-event-fx
  ::next-period
- [(re-frame/inject-cofx ::db/datascript-conn)]
- (fn [{:keys [conn db]} _]
+ [cofx/inject-ds]
+ (fn [{:keys [ds db]} _]
    {:db (assoc-in
          db [:init :init/period]
-         (-> (db/last-possession @conn (:game-id db))
+         (-> (ds/last-possession ds (:game-id db))
              (get :possession/period 0)
              inc))}))
 
 
 (re-frame/reg-event-fx
  ::add-action
- [(re-frame/inject-cofx ::db/datascript-conn)]
- (fn [{:keys [conn db]} _]
-   (let [{:keys [action game-id players init]} db]
-     {:transact {:conn conn
-                 :tx-data [[:db.fn/call db/append-action-tx-data game-id action players init]]}
+ [cofx/inject-ds
+  interceptors/ds->local-storage]
+ (fn [{:keys [ds db]} _]
+   (let [{:keys [action game-id players init]} db
+         tx-data [[:db.fn/call ds/append-action-tx-data game-id action players init]]
+         new-ds (datascript/db-with ds tx-data)]
+     {:fx [[::fx/ds new-ds]]
       :db (dissoc db :action :init) ;; TODO - only dissoc :action and :init if transaction was successful?
       })))
 
 
 (re-frame/reg-event-fx
  ::undo-last-action
- [(re-frame/inject-cofx ::db/datascript-conn)]
- (fn [{:keys [conn db]} _]
-   {:transact {:conn conn
-               :tx-data [[:db.fn/call db/undo-last-action-tx-data (get db :game-id)]]}}))
-
-
-#_(re-frame/reg-event-fx
-   ::set-action
-   [(re-frame/inject-cofx ::db/datascript-conn)
-    re-frame/trim-v]
-   (fn [{:keys [conn db]} [id]]
-     (let [action (d/pull @conn '[*] id)]
-       {:db (assoc db :action action)})))
+ [cofx/inject-ds
+  interceptors/ds->local-storage]
+ (fn [{:keys [ds db]} _]
+   {:fx [[::fx/ds (datascript/db-with ds [[:db.fn/call ds/undo-last-action-tx-data (:game-id db)]])]]
+    :db (dissoc db :action)}))
 
 
 (re-frame/reg-event-db
@@ -267,3 +237,4 @@
     db [:players t]
     (fnil assoc [nil nil nil nil nil])
     i player)))
+

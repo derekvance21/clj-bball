@@ -1,12 +1,14 @@
 (ns app.subs
-  (:require [re-frame.core :as re-frame]
-            [app.db :as db]))
+  (:require
+   [re-frame.core :as re-frame]
+   [app.ds :as ds]
+   [app.db :as db]))
 
 
 (re-frame/reg-sub
  ::datascript-db
  (fn [query-vec dynamic-vec]
-   db/conn)
+   ds/conn)
  (fn [datascript-db query-vec]
    datascript-db))
 
@@ -16,7 +18,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] query-vec]
-   (->> (db/ppp db g)
+   (->> (ds/ppp db g)
         (map (fn [[t pts nposs]]
                [t (/ pts nposs)]))
         (into {}))))
@@ -34,7 +36,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] _]
-   (->> (db/efg db g)
+   (->> (ds/efg db g)
         (into {}))))
 
 
@@ -50,7 +52,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] _]
-   (->> (db/off-reb-rate db g)
+   (->> (ds/off-reb-rate db g)
         (into {}))))
 
 
@@ -66,7 +68,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] _]
-   (->> (db/turnover-rate db g)
+   (->> (ds/turnover-rate db g)
         (into {}))))
 
 
@@ -82,7 +84,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] _]
-   (->> (db/pps db g)
+   (->> (ds/pps db g)
         (into {}))))
 
 
@@ -98,7 +100,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] _]
-   (->> (db/ft-rate db g)
+   (->> (ds/ft-rate db g)
         (into {}))))
 
 
@@ -114,7 +116,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] _]
-   (->> (db/fts-per-shot db g)
+   (->> (ds/fts-per-shot db g)
         (into {}))))
 
 
@@ -132,7 +134,7 @@
  (fn [[g db] query-vec]
    (reduce (fn [box-score [t player pts]]
              (update box-score t (fn [ppts] (conj ppts [player pts]))))
-           {} (db/box-score db g))))
+           {} (ds/box-score db g))))
 
 
 (re-frame/reg-sub
@@ -157,7 +159,7 @@
  (fn [[db g init]]
    (if (some? init)
      (get init :init/team)
-     (db/team-possession db g))))
+     (ds/team-possession db g))))
 
 
 (re-frame/reg-sub
@@ -165,7 +167,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] _]
-   (db/possessions db g)))
+   (ds/possessions db g)))
 
 
 (re-frame/reg-sub
@@ -182,7 +184,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] _]
-   (db/possessions? db g)))
+   (ds/possessions? db g)))
 
 
 (re-frame/reg-sub
@@ -197,7 +199,7 @@
  :<- [::game-id]
  (fn [[db g] _]
    (when (some? g) ;; can't issue datascript pull with nil entity id, so wait for game-id to be populated
-     (db/teams db g))))
+     (ds/teams db g))))
 
 
 (re-frame/reg-sub
@@ -205,7 +207,7 @@
  :<- [::datascript-db]
  :<- [::game-id]
  (fn [[db g] query-vec]
-   (into {} (db/score db g))))
+   (into {} (ds/score db g))))
 
 
 (re-frame/reg-sub
@@ -304,7 +306,7 @@
  (fn [[db g init-period] _]
    (if (some? init-period)
      init-period
-     (:possession/period (db/last-possession db g)))))
+     (:possession/period (ds/last-possession db g)))))
 
 
 (re-frame/reg-sub
