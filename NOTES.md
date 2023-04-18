@@ -2,16 +2,19 @@
 
 ## Todo
 
-- [ ] Fix bug where you can add empty action by only selecting player. Would be nice to use a proper reagent form, using custom validators like the ol' Angular ReactiveForm has
 - [ ] Save new db to local/session storage on add action
 - [ ] Start new game
     - supporting custom teams, datetime, other info
+- [ ] Fix bug where you can add empty action by only selecting player. Would be nice to use a proper reagent form, using custom validators like the ol' Angular ReactiveForm has
 - [ ] Add clojure/spec to app-db
 - [ ] lineup stats
 - [ ] individual stats
 - [ ] the players map should have players in a set, to not allow duplicates
 - [ ] svg for the whole court, but then mask parts
-- [ ] refactor app-db type query operations into db.cljs, and potentially move the datascript db logic into a new file
+- [ ] refactor app-db type query operations into db.cljs, and potentially move the datascript db logic into a new file. app.events and app.subs share a lot of the same logic, and app.db is what that's supposed to be for - logic related to the app-db structure
+- [ ] fix bug where on free throws with at least one miss and make, setting a rebound is required even though the make could've been at the end
+- [ ] this would be a big change - make the datascript connection behave more like the app-db and :db co/effect, where the coeffect is @conn rather than conn. Then I guess the coeffect would be the datascript-db value, and it could effect with the value of the new datascript db, which would then use reset-conn! with the new db, similar to how the :db effect uses `(reset! app-db value)`. And I guess an intermediate effect could be called with tx-data, and then it'd put the result of db-with into the :datascript-db effect. So it wouldn't use `transact!` directly? But then, wouldn't you might-as-well put the datascript db into app-db, and just `(update db :datascript-db d/db-with tx-data)`?
+- [ ] start new quarter should be a checkbox, just in case you click it on accident and want to revert that
 
 - [X] Fix bug where, after setting a rebound on a missed ft, made free throws is set to = attempted free throws, and thus no rebound should be possible. Maybe using a rebound interceptor, or something
 - [X] Refactor rebound from :shot/rebounder to :rebound/player and :rebound/off?

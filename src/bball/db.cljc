@@ -114,7 +114,8 @@
               :db/valueType :db.type/long
               :db/cardinality :db.cardinality/one
               :db/doc "the number of minutes this game lasted"}
-             {:db/ident :game/teams ;; TODO - why is this named plurally? Also, might want to refactor into :game/team1 :game/team2. Or even a tuple
+             ;; TODO - why is this named plurally? Also, might want to refactor into :game/team1 :game/team2. Or even a tuple
+             {:db/ident :game/teams
               :db/valueType :db.type/ref
               :db/cardinality :db.cardinality/many
               :db/doc "the teams playing in this game"}
@@ -132,8 +133,8 @@
 
 (def ds-schema
   (->> schema
-       (filter (fn [sch]
-                 (-> sch keys count (> 1)))) ;; removes enums
+       (remove (fn [sch]
+                 (-> sch :db/ident namespace (= "action.type")))) ;; removes enums
        (map (fn [sch]
               (cond-> sch
                 (-> sch :db/valueType #{:db.type/ref :db.type/tuple} not) (dissoc :db/valueType)

@@ -36,7 +36,9 @@
      [:div.flex.justify-between
       [:h2.text-xl.border-y-4
        {:class [(if team1-possession? "border-solid" "border-transparent")]}
-       (:team/name team1)]
+       (:team/name team1)
+       #_[:button [:img {:src "/images/edit.svg" :width 15 :height 15}]]
+       ]
       [:button.self-center {:type "button"
                             :on-click #(re-frame/dispatch [::events/next-period])}
        (period->string period 4 "Q")]
