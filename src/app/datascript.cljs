@@ -241,19 +241,6 @@
         :possession/action [action]})]))
 
 
-(defn save-db
-  ([]
-   (save-db "game-db.edn"))
-  ([filename]
-   (let [db-string (dt/write-transit-str @conn)
-         url (.createObjectURL js/URL (js/File. [db-string] filename))]
-     (doto (.createElement js/document "a")
-       (.setAttribute "download" filename)
-       (.setAttribute "href" url)
-       (.click))
-     (.revokeObjectURL js/URL url))))
-
-
 (defn undo-last-action-tx-data
   [db g]
   (let [last-possession (last-possession db g)
@@ -281,4 +268,17 @@
              (and (not [?p :possession/team ?t])
                   [(ground ?defense) [?player ...]]))]
        db g))
+
+
+(defn save-db
+  ([]
+   (save-db "game-db.edn"))
+  ([filename]
+   (let [db-string (dt/write-transit-str @conn)
+         url (.createObjectURL js/URL (js/File. [db-string] filename))]
+     (doto (.createElement js/document "a")
+       (.setAttribute "download" filename)
+       (.setAttribute "href" url)
+       (.click))
+     (.revokeObjectURL js/URL url))))
 

@@ -3,7 +3,8 @@
             [app.subs :as subs]
             [cljs.math :as math]
             [clojure.string :as string]
-            [re-frame.core :as re-frame]))
+            [re-frame.core :as re-frame]
+            [reagent.core :as reagent]))
 
 
 (def <sub  (comp deref re-frame/subscribe))
@@ -158,13 +159,32 @@
 
 (defn add-player
   [team-id]
-  nil)
+  (let [player (reagent/atom "+")
+        add-player #(re-frame/dispatch [::events/add-player team-id @player])
+        valid? (fn [player] (and (number? player) (>= player 0) (<= player 99)))
+        on-blur (fn [e]
+                  (when (valid? @player)
+                    (add-player))
+                  (reset! player "+"))
+        on-key-down (fn [e]
+                      (when (and (= 13 (.-keyCode e)) (valid? @player))
+                        (add-player)
+                        (reset! player nil)))]
+    (fn [team-id]
+      [:input.w-8.h-8.text-center.border-green-500.bg-transparent.border.border-green-500.text-green-700.font-semibold.rounded-full
+       {:class "cursor-pointer focus:cursor-text"
+        :type "text"
+        :value @player
+        :on-blur on-blur
+        :on-key-down on-key-down
+        :on-change #(reset! player (-> % .-target .-value parse-long))
+        :on-focus #(reset! player nil)}])))
 
 
-(defn player-btn
+(defn on-court-player-btn
   [player {:keys [selected? disabled? on-click]
            :or {selected? false disabled? false}}]
-  [:button.flex-none
+  [:button
    {:type "button"
     :on-click on-click
     :disabled (or selected? disabled?)
@@ -182,8 +202,8 @@
   [:div
    (doall
     (for [team (<sub [::subs/teams])]
-      [:div.border.p-2 {:key (:db/id team)}
-       [:h2.text-center.mb-2 (:team/name team)]
+      [:div.border.rounded.p-2.mb-2 {:key (:db/id team)}
+       [:h2.mb-2 (:team/name team)]
        [:ul.flex.flex-col.gap-1
         (doall
          (for [player (sort (<sub [::subs/team-players-on-court (:db/id team)]))]
@@ -191,25 +211,34 @@
             {:key player}
             (let [selected? (= player (<sub [::subs/action-player]))
                   disabled? (not= team (<sub [::subs/team]))]
-              [:div.flex.items-center.justify-between
-               [player-btn player {:disabled? disabled?
-                                   :selected? selected?
-                                   :on-click #(re-frame/dispatch [::events/set-player player]) ;; This will change based on what player input needed, ala ::events/set-rebounder, etc.
-                                   }]
-               [:button.border.border-transparent.hover:border-rose-500.text-rose-700.font-semibold.rounded-full.flex-none
-                {:class "ml-1 py-0 px-1"
+              [:div.flex.items-center.justify-between.gap-1
+               [on-court-player-btn player
+                {:disabled? disabled?
+                 :selected? selected?
+                 :on-click #(re-frame/dispatch [::events/set-player player]) ;; This will change based on what player input needed, ala ::events/set-rebounder, etc.
+                 }]
+               [:button.border.border-transparent.hover:border-rose-500.text-rose-700.font-semibold.rounded-full
+                {:class "px-1"
                  :type "button"
                  :on-click #(re-frame/dispatch [::events/put-player-to-bench (:db/id team) player])}
-                "⨯"]])]))
+                [:span.inline-block.w-4.h-4 "-"]]])]))
 
         (for [player (sort (<sub [::subs/team-players-on-bench (:db/id team)]))]
           [:li
            {:key player}
-           [:button.border-orange-500.hover:border-transparent.bg-transparent.border.border-orange-500.hover:bg-orange-500.text-orange-700.hover:text-white.font-semibold.rounded-full
-            {:class "w-8 h-8"
-             :type "button"
-             :on-click #(re-frame/dispatch [::events/put-player-to-court (:db/id team) player])}
-            (str player)]])]]))])
+           [:div.flex.items-center.justify-between.group.gap-1
+            [:button.border-orange-500.hover:border-transparent.bg-transparent.border.border-orange-500.hover:bg-orange-500.text-orange-700.hover:text-white.font-semibold.rounded-full
+             {:class "w-8 h-8"
+              :type "button"
+              :on-click #(re-frame/dispatch [::events/put-player-to-court (:db/id team) player])}
+             (str player)]
+            [:button.invisible.group-hover:visible.border.border-transparent.hover:border-rose-500.text-rose-700.font-semibold.rounded-full
+             {:class "px-1"
+              :type "button"
+              :on-click #(re-frame/dispatch [::events/delete-bench-player (:db/id team) player])}
+             [:span.inline-block.w-4.h-4 "⨯"]]]])
+        [:li {:key -1}
+         [add-player (:db/id team)]]]]))])
 
 
 (defn render-fts
@@ -303,7 +332,7 @@
   (let [[team1 team2] (<sub [::subs/teams])
         team (<sub [::subs/team])
         mid-period? (<sub [::subs/mid-period?])]
-    [:div.flex.justify-center
+    [:div.flex
      [:label [:input {:type "radio"
                       :value team1
                       :name :team

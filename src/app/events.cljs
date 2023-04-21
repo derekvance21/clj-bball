@@ -270,10 +270,18 @@
        (update-in [:players team-id :on-bench] (fnil disj #{}) player))))
 
 
+;; TODO - make sure you're not adding a player that's already on the court
 (re-frame/reg-event-db
  ::add-player
  (fn [db [_ team-id player]]
-   (update-in db [:players team-id :on-bench] (fnil conj #{}) player)))
+   (when-not (contains? (get-in db [:players team-id :on-court]) player)
+     (update-in db [:players team-id :on-bench] (fnil conj #{}) player))))
+
+
+(re-frame/reg-event-db
+ ::delete-bench-player
+ (fn [db [_ team-id player]]
+   (update-in db [:players team-id :on-bench] (fnil disj #{}) player)))
 
 
 (re-frame/reg-event-fx
