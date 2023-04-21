@@ -17,8 +17,8 @@
                   '[:find ?g .
                     :where [?g :game/teams]]
                   ls-datascript-db)
-         players (->> (ds/game->team-players ls-datascript-db 1)
-                      (map #(update % 1 (comp vec (partial take 5))))
+         players (->> (ds/game->team-players ls-datascript-db game-id)
+                      (map (fn [[team-id players]] [team-id {:on-bench players}]))
                       (into {})) ;; TODO - use last action's players as initial players map
          ]
      {:db {:game-id game-id
@@ -39,9 +39,8 @@
          game-id (get tempids game-tempid)
          team1-id (get tempids team1-tempid)
          team2-id (get tempids team2-tempid)
-         players {team1-id [0 1 2 3 4]
-                  team2-id [5 6 7 8 9]}]
-
+         players {team1-id {:on-court #{0 1 2 3 4}}
+                  team2-id {:on-court #{5 6 7 8 9}}}]
      {:db (assoc db/init-db :game-id game-id :players players)
       ::fx/ds db-after})))
 
@@ -251,6 +250,30 @@
     db [:players t]
     (fnil assoc [nil nil nil nil nil])
     i player)))
+
+
+(re-frame/reg-event-db
+ ::put-player-to-bench
+ (fn [db [_ team-id player]]
+   (let [action-player (get-in db [:action :action/player])]
+     (cond-> db
+       true (update-in [:players team-id :on-court] (fnil disj #{}) player)
+       true (update-in [:players team-id :on-bench] (fnil conj #{}) player)
+       (= player action-player) (update :action dissoc :action/player)))))
+
+
+(re-frame/reg-event-db
+ ::put-player-to-court
+ (fn [db [_ team-id player]]
+   (-> db
+       (update-in [:players team-id :on-court] (fnil conj #{}) player)
+       (update-in [:players team-id :on-bench] (fnil disj #{}) player))))
+
+
+(re-frame/reg-event-db
+ ::add-player
+ (fn [db [_ team-id player]]
+   (update-in db [:players team-id :on-bench] (fnil conj #{}) player)))
 
 
 (re-frame/reg-event-fx

@@ -156,25 +156,60 @@
       "/FTAs"]]))
 
 
+(defn add-player
+  [team-id]
+  nil)
+
+
+(defn player-btn
+  [player {:keys [selected? disabled? on-click]
+           :or {selected? false disabled? false}}]
+  [:button.flex-none
+   {:type "button"
+    :on-click on-click
+    :disabled (or selected? disabled?)
+    :class ["font-semibold w-8 h-8 rounded-full"
+            (if disabled?
+              "bg-transparent text-blue-700 border border-blue-500 opacity-50 cursor-not-allowed"
+              (if selected?
+                "bg-blue-500 text-white"
+                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white border border-blue-500 hover:border-transparent"))]}
+   (str player)])
+
+
 (defn players-input
   []
   [:div
    (doall
     (for [team (<sub [::subs/teams])]
-      [:div {:key (:db/id team)}
-       [:h2 (:team/name team)]
-       [:div.flex
-        (for [[i player] (zipmap (range) (<sub [::subs/team-players (:db/id team)]))]
-          [:input.w-12
-           {:key i
-            :type "number"
-            :value player
-            :min 0
-            :max 99
-            :required true
-            :on-change #(re-frame/dispatch [::events/set-on-court-player
-                                            (:db/id team) i
-                                            (-> % .-target .-value parse-long)])}])]]))])
+      [:div.border.p-2 {:key (:db/id team)}
+       [:h2.text-center.mb-2 (:team/name team)]
+       [:ul.flex.flex-col.gap-1
+        (doall
+         (for [player (sort (<sub [::subs/team-players-on-court (:db/id team)]))]
+           [:li
+            {:key player}
+            (let [selected? (= player (<sub [::subs/action-player]))
+                  disabled? (not= team (<sub [::subs/team]))]
+              [:div.flex.items-center.justify-between
+               [player-btn player {:disabled? disabled?
+                                   :selected? selected?
+                                   :on-click #(re-frame/dispatch [::events/set-player player]) ;; This will change based on what player input needed, ala ::events/set-rebounder, etc.
+                                   }]
+               [:button.border.border-transparent.hover:border-rose-500.text-rose-700.font-semibold.rounded-full.flex-none
+                {:class "ml-1 py-0 px-1"
+                 :type "button"
+                 :on-click #(re-frame/dispatch [::events/put-player-to-bench (:db/id team) player])}
+                "⨯"]])]))
+
+        (for [player (sort (<sub [::subs/team-players-on-bench (:db/id team)]))]
+          [:li
+           {:key player}
+           [:button.border-orange-500.hover:border-transparent.bg-transparent.border.border-orange-500.hover:bg-orange-500.text-orange-700.hover:text-white.font-semibold.rounded-full
+            {:class "w-8 h-8"
+             :type "button"
+             :on-click #(re-frame/dispatch [::events/put-player-to-court (:db/id team) player])}
+            (str player)]])]]))])
 
 
 (defn render-fts
@@ -412,7 +447,6 @@
     [:form {:on-submit submit-action-input}
      [:div.flex.flex-col
       [court]
-      [player-input true [::subs/action-player] ::events/set-player "Player" true]
       [:label
        [:input {:type "radio"
                 :value :action.type/turnover
@@ -445,7 +479,6 @@
         [ftm-input])
       (when (<sub [::subs/reboundable?])
         [rebound-input])
-      [players-input]
       [:div.my-2
        [:button.self-start.bg-orange-500.hover:bg-orange-700.text-white.font-bold.py-1.px-2.rounded-full
         {:type "button"
@@ -466,8 +499,9 @@
 
 (defn main-panel []
   [:div
-   [:div.container.mx-4.my-4.flex.justify-between
-    {:class "w-1/2"}
+   [:div.container.mx-4.my-4.flex.justify-between.gap-4
+    {:class "w-11/12"}
+    [players-input]
     [:div.flex.flex-col.flex-1
      [team-selector]
      [action-input]

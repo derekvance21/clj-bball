@@ -229,8 +229,8 @@
                               last-team-id)))
         action          (assoc action
                                :action/order (if poss-change? 1 (inc (get last-action :action/order 0)))
-                               :offense/players (get players team-id)
-                               :defense/players (val (first (dissoc players team-id))))]
+                               :offense/players (get-in players [team-id :on-court])
+                               :defense/players (:on-court (val (first (dissoc players team-id)))))]
     [(if poss-change?
        {:db/id g
         :game/possession [{:possession/order (inc (get last-possession :possession/order 0))

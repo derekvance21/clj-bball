@@ -146,10 +146,20 @@
  :<- [::datascript-db]
  :<- [::game-id]
  :<- [::init]
- (fn [[db g init]]
+ (fn [[db g init] _]
    (if (some? init)
      (get init :init/team)
      (ds/team-possession db g))))
+
+
+(re-frame/reg-sub
+ ::other-team
+ :<- [::team]
+ :<- [::teams]
+ (fn [[{team-id :db/id} teams] _]
+   (->> teams
+        (remove #(= team-id (:db/id %)))
+        first)))
 
 
 (re-frame/reg-sub
@@ -306,21 +316,25 @@
 
 
 (re-frame/reg-sub
- ::team-players
+ ::team-players-on-court
  :<- [::players]
  (fn [players [_ t]]
-   (get players t
-        [nil nil nil nil nil])))
+   (get-in players [t :on-court])))
+
+
+(re-frame/reg-sub
+ ::team-players-on-bench
+ :<- [::players]
+ (fn [players [_ t]]
+   (get-in players [t :on-bench])))
 
 
 (re-frame/reg-sub
  ::defense-players
  :<- [::players]
- :<- [::team]
- (fn [[players {t :db/id}] _]
-   (->> (dissoc players t)
-        vals
-        first
+ :<- [::other-team]
+ (fn [[players {team-id :db/id}] _]
+   (->> (get-in players [team-id :on-court])
         (filter some?))))
 
 
@@ -328,8 +342,9 @@
  ::offense-players
  :<- [::players]
  :<- [::team]
- (fn [[players {t :db/id}] _]
-   (filter some? (get players t []))))
+ (fn [[players {team-id :db/id}] _]
+   (->> (get-in players [team-id :on-court])
+        (filter some?))))
 
 
 (re-frame/reg-sub
