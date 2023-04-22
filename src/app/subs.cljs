@@ -1,6 +1,7 @@
 (ns app.subs
   (:require
    [re-frame.core :as re-frame]
+   [datascript.core :as d]
    [app.datascript :as ds]
    [app.db :as db]))
 
@@ -175,8 +176,63 @@
  :<- [::possessions]
  (fn [possessions _]
    (->> possessions
-        (sort-by :possession/order >)
-        (map #(update % :possession/action (partial sort-by :action/order >))))))
+        (sort-by :possession/order >))))
+
+
+(re-frame/reg-sub
+ ::preview-db-tx-report
+ :<- [::datascript-db]
+ :<- [::game-id]
+ :<- [::action]
+ :<- [::players]
+ :<- [::init]
+ (fn [[db g action players init] _]
+   (if (nil? action)
+     (d/with db nil)
+     (d/with db [[:db.fn/call ds/append-action-tx-data g action players init]]))))
+
+
+(re-frame/reg-sub
+ ::preview-entities
+ :<- [::preview-db-tx-report]
+ (fn [tx-report _]
+   (set (vals (:tempids tx-report)))))
+
+
+(re-frame/reg-sub
+ ::preview-db-after
+ :<- [::preview-db-tx-report]
+ (fn [tx-report _]
+   (:db-after tx-report)))
+
+
+(re-frame/reg-sub
+ ::preview-possessions
+ :<- [::preview-db-after]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (sort-by :possession/order > (ds/possessions db g))))
+
+
+(re-frame/reg-sub
+ ::preview-score
+ :<- [::preview-db-after]
+ :<- [::game-id]
+ (fn [[db g] _]
+   (into {} (ds/score db g))))
+
+
+(re-frame/reg-sub
+ ::preview-team-score
+ :<- [::preview-score]
+ (fn [score [_ t]]
+   (get score t 0)))
+
+
+(re-frame/reg-sub
+ ::action
+ (fn [db _]
+   (get db :action)))
 
 
 (re-frame/reg-sub

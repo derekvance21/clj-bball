@@ -4,9 +4,7 @@
 
 - [ ] button-ify UI elements. Nobody likes using a select dropdown (however convenient it is for me, as a dev). What would be nicer is to have the selectable players all visible, and you click on their tile to select them.
     - [ ] First thing is to button-ify the action/types. The radio selector is kind of lame
-    - [ ] Another thing is to button-ify the player selectors
     Idea: you can't select a shot or action type until a player is selected. After it's selected, you can choose the action type (turnover, bonus, technical, or slicking a shot on the shot svg). After that happens, different players can be selected. If it's a miss (and reboundable?), you can select any player or team, on either team. If it's a turnover, you can select players from the defense to set a stealer. For a shot, there'll be a button foul? where you can set free throw attempts. If it's selected, there'll be vertically connected make/miss button pairs, for however many free throws there were. So one of each is required, and, if the last free throw is a miss, it'll prompt for a rebound player or team. For a bonus, maybe you can select single bonus or double bonus, and that'll determine how many free throws there are. Same thing about ending with a miss prompting for a rebound. For a technical, it'll be two free throws, no prompt for a rebound
-- [ ] have an action in progress above the most recent possession so that inputter can verify action before adding
 - [ ] supporting custom teams, datetime, other info
 - [ ] Fix bug where you can add empty action by only selecting player. Would be nice to use a proper reagent form, using custom validators like the ol' Angular ReactiveForm has
 - [ ] Add clojure/spec to app-db
@@ -22,6 +20,8 @@
 - [ ] edit already transacted action. But you should think of it more like editting a possession, b/c you don't really want to throw off the possession alternating pattern, although this is broken at periods, so... So if you allowed just randomly deleting one possession, then you'd need a way to insert a possession in between others. Also, something you might need is editting the period of past possessions.
 - [ ] So like, maybe there's a way to show the end of a period in the render-possessions component. And it would insert some kind of possession end marker in between the :game/possession 's, so that you could see end of periods. It'd need to be a stateful-transducer-kind-of-thing, but I don't think it'd be too hard
 
+- [X] Button-ify the player selectors
+- [X] have an action in progress above the most recent possession so that inputter can verify action before adding
 - [X] start new quarter should be a checkbox, just in case you click it on accident and want to revert that
 - [X] Start new game
 - [X] Save new db to local/session storage on add action

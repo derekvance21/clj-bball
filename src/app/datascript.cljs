@@ -186,7 +186,7 @@
 
 (defn action-change-possession?
   [{:action/keys [type] off-reb? :rebound/off?}]
-  (not (or off-reb? (= type :action.type/technical))))
+  (and (not off-reb?) (not= type :action.type/technical)))
 
 
 (defn other-team

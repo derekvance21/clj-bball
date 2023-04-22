@@ -37,13 +37,14 @@
   (let [[team1 team2] (<sub [::subs/teams])
         t1 (:db/id team1)
         t2 (:db/id team2)
-        team1-possession? (comment (<sub [::subs/team-has-possession? t1]))
-        team2-possession? (comment (<sub [::subs/team-has-possession? t2]))
-        period (<sub [::subs/period])]
+        period (<sub [::subs/period])
+        team1-score (<sub [::subs/team-score t1])
+        team2-score (<sub [::subs/team-score t2])
+        team1-preview-score (<sub [::subs/preview-team-score t1])
+        team2-preview-score (<sub [::subs/preview-team-score t2])]
     [:div
      [:div.flex.justify-between
       [:h2.text-xl.border-y-4
-       {:class [(if team1-possession? "border-solid" "border-transparent")]}
        (:team/name team1)]
       [:label
        (period->string period 4 "Q")
@@ -51,11 +52,16 @@
                      :on-change period-handler
                      :checked (some? (<sub [::subs/init]))}]]
       [:h2.text-xl.border-y-4
-       {:class [(if team2-possession? "border-solid" "border-transparent")]}
        (:team/name team2)]]
      [:div.flex.justify-between
-      [:code.text-3xl.font-bold (<sub [::subs/team-score t1])]
-      [:code.text-3xl.font-bold (<sub [::subs/team-score t2])]]
+      [:div.flex.items-center.gap-2
+       [:code.text-3xl.font-bold team1-score]
+       (when (not= team1-score team1-preview-score)
+         [:code.text-xl.text-blue-700 (str "+" (- team1-preview-score team1-score))])]
+      [:div.flex.items-center.gap-2
+       (when (not= team2-preview-score team2-score)
+         [:code.text-xl.text-blue-700 (str "+" (- team2-preview-score team2-score))])
+       [:code.text-3xl.font-bold team2-score]]]
      [stat "PPP" #(.toFixed % 2) [::subs/team-ppp t1] [::subs/team-ppp t2]]
      [stat "PPS" #(.toFixed % 2) [::subs/team-pps t1] [::subs/team-pps t2]]
      [stat "eFG%" #(-> % (* 100) .toFixed) [::subs/team-efg t1] [::subs/team-efg t2]]
@@ -292,10 +298,13 @@
 
 
 (defn render-action
-  [action]
-  (let [{player :action/player type :action/type} action]
+  [action & {:keys [preview-entities]}]
+  (let [{:action/keys [player type] :keys [db/id]} action]
     [:div
-     [:span (str "#" player " ")]
+     {:class (when (contains? preview-entities id)
+               "text-blue-700")}
+     (when (some? player)
+       [:span (str "#" player " ")])
      (case type
        :action.type/shot [render-shot action]
        :action.type/turnover [render-turnover action]
@@ -305,26 +314,30 @@
 
 
 (defn render-possession
-  [possession team-map]
-  (let [{actions :possession/action {t :db/id} :possession/team order :possession/order} possession
-        team (get-in team-map [t :team/name])]
+  [possession {:keys [preview-entities]}]
+  (let [{actions :possession/action team :possession/team order :possession/order id :db/id} possession
+        team (:team/name team)]
     [:div
+     {:class (when (contains? preview-entities id) "text-blue-700")}
      [:p.font-bold (str order ". " team)]
      [:ul.ml-8
       (for [action actions]
-        [:li {:key (:db/id action)} [render-action action]])]]))
+        [:li
+         {:key (:db/id action)}
+         [render-action action {:preview-entities preview-entities}]])]]))
 
 
 (defn possessions
   []
-  (let [possessions (<sub [::subs/sorted-possessions])
-        [team1 team2] (<sub [::subs/teams])
-        team-map {(:db/id team1) team1 (:db/id team2) team2}]
+  (let [possessions (<sub [::subs/preview-possessions])
+        preview-entities (<sub [::subs/preview-entities])]
     [:div.my-4
      [:h2.text-xl "Possessions"]
-     [:ol.max-h-64.overflow-auto
+     [:ol.max-h-64.overflow-auto.flex.flex-col-reverse
       (for [possession possessions]
-        [:li {:key (:db/id possession)} [render-possession possession team-map]])]]))
+        [:li
+         {:key (:db/id possession)}
+         [render-possession possession {:preview-entities preview-entities}]])]]))
 
 
 (defn team-selector
