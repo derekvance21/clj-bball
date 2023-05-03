@@ -156,12 +156,13 @@
           [:div.border.border-2.rounded-md.mb-2.p-2
            {:key (:db/id team)
             :class (if offense? "border-blue-500" "border-transparent")}
-           (let [mid-period? (<sub [::subs/mid-period?])]
+           (let [mid-period? (<sub [::subs/mid-period?])
+                 type? (nil? (<sub [::subs/action-type]))]
              [team-button team
-              {:disabled? (and (not need-rebound-player?) mid-period?)
+              {:disabled? (not (or need-rebound-player? (and (not mid-period?) type?)))
                :selected? (and team-reb? (= offense? off-reb?))
                :on-click (fn []
-                           (if mid-period?
+                           (if need-rebound-player?
                              (do (re-frame/dispatch [::events/set-off-reb? offense?])
                                  (re-frame/dispatch [::events/set-team-reb? true]))
                              (re-frame/dispatch [::events/set-init-team team])))}])

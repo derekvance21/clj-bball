@@ -74,7 +74,8 @@
 
 (re-frame/reg-event-db
  ::set-action-bonus
- [interceptors/ft
+ [interceptors/ftm
+  interceptors/ft-results
   (re-frame/path [:action])]
  (fn [action _]
    (-> action
