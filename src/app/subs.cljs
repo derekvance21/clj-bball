@@ -154,32 +154,6 @@
 
 
 (re-frame/reg-sub
- ::other-team
- :<- [::team]
- :<- [::teams]
- (fn [[{team-id :db/id} teams] _]
-   (->> teams
-        (remove #(= team-id (:db/id %)))
-        first)))
-
-
-(re-frame/reg-sub
- ::possessions
- :<- [::datascript-db]
- :<- [::game-id]
- (fn [[db g] _]
-   (ds/possessions db g)))
-
-
-(re-frame/reg-sub
- ::sorted-possessions
- :<- [::possessions]
- (fn [possessions _]
-   (->> possessions
-        (sort-by :possession/order >))))
-
-
-(re-frame/reg-sub
  ::preview-db-tx-report
  :<- [::datascript-db]
  :<- [::game-id]
@@ -187,9 +161,9 @@
  :<- [::players]
  :<- [::init]
  (fn [[db g action players init] _]
-   (if (nil? action)
-     (d/with db nil)
-     (d/with db [[:db.fn/call ds/append-action-tx-data g action players init]]))))
+   (if (some? action)
+     (d/with db [[:db.fn/call ds/append-action-tx-data g action players init]])
+     (d/with db nil))))
 
 
 (re-frame/reg-sub
@@ -286,24 +260,12 @@
 
 
 (re-frame/reg-sub
- ::shot-value
- (fn [db]
-   (get-in db [:action :shot/value])))
-
-
-(re-frame/reg-sub
  ::shot-location
  (fn [db]
    (let [angle (get-in db [:action :shot/angle])
          distance (get-in db [:action :shot/distance])]
      (when (and (some? angle) (some? distance))
        [angle distance]))))
-
-
-(re-frame/reg-sub
- ::ft-made
- (fn [db]
-   (get-in db [:action :ft/made])))
 
 
 (re-frame/reg-sub
@@ -344,14 +306,8 @@
 
 (re-frame/reg-sub
  ::reboundable?
- (fn [_]
-   [(re-frame/subscribe [::action-type])
-    (re-frame/subscribe [::shot-make?])
-    (re-frame/subscribe [::foul?])
-    (re-frame/subscribe [::ft-made])
-    (re-frame/subscribe [::ft-attempted])])
- (fn [[type make? foul? ftm fta] _]
-   (db/reboundable? type make? foul? ftm fta)))
+ (fn [db _]
+   (db/reboundable? (:action db))))
 
 
 (re-frame/reg-sub
@@ -375,32 +331,14 @@
  ::team-players-on-court
  :<- [::players]
  (fn [players [_ t]]
-   (get-in players [t :on-court])))
+   (sort (get-in players [t :on-court]))))
 
 
 (re-frame/reg-sub
  ::team-players-on-bench
  :<- [::players]
  (fn [players [_ t]]
-   (get-in players [t :on-bench])))
-
-
-(re-frame/reg-sub
- ::defense-players
- :<- [::players]
- :<- [::other-team]
- (fn [[players {team-id :db/id}] _]
-   (->> (get-in players [team-id :on-court])
-        (filter some?))))
-
-
-(re-frame/reg-sub
- ::offense-players
- :<- [::players]
- :<- [::team]
- (fn [[players {team-id :db/id}] _]
-   (->> (get-in players [team-id :on-court])
-        (filter some?))))
+   (sort (get-in players [t :on-bench]))))
 
 
 (re-frame/reg-sub
@@ -423,3 +361,31 @@
  (fn [[init possessions?]]
    (and (nil? init) possessions?)))
 
+
+(re-frame/reg-sub
+ ::need-action-player?
+ :<- [::action-player]
+ :<- [::action-type]
+ (fn [[player type] _]
+   (or (nil? player) (nil? type))))
+
+(re-frame/reg-sub
+ ::need-rebound-player?
+ :<- [::action-type]
+ :<- [::action-player]
+ :<- [::reboundable?]
+ (fn [[type player reboundable?] _]
+   (and (some? type) (not= type :action.type/technical) (some? player) reboundable?)))
+
+(re-frame/reg-sub
+ ::need-stealer-player?
+ :<- [::action-player]
+ :<- [::action-type]
+ (fn [[player type] _]
+   (and (= type :action.type/turnover) (some? player))))
+
+
+(re-frame/reg-sub
+ ::ft-results
+ (fn [db _]
+   (get-in db [:action :ft/results])))

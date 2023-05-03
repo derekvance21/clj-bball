@@ -74,16 +74,19 @@
 
 (re-frame/reg-event-db
  ::set-action-bonus
- [(re-frame/path [:action])]
+ [interceptors/ft
+  (re-frame/path [:action])]
  (fn [action _]
    (-> action
        (select-keys [:action/player])
-       (assoc :action/type :action.type/bonus))))
+       (assoc :action/type :action.type/bonus
+              :ft/attempted 1))))
 
 
 (re-frame/reg-event-db
  ::set-action-technical
- [(re-frame/path [:action])]
+ [interceptors/ft
+  (re-frame/path [:action])]
  (fn [action _]
    (-> action
        (select-keys [:action/player])
@@ -105,7 +108,7 @@
 (re-frame/reg-event-db
  ::set-shot-make?
  [interceptors/rebound
-  interceptors/fta
+  interceptors/ft
   (re-frame/path [:action :shot/make?])
   re-frame/trim-v]
  (fn [_ [make?]]
@@ -115,7 +118,7 @@
 (re-frame/reg-event-db
  ::set-action-shot-with-info
  [interceptors/rebound
-  interceptors/fta
+  interceptors/ft
   interceptors/shot-value
   (re-frame/path [:action])
   re-frame/trim-v]
@@ -135,11 +138,10 @@
             :shot/make? make?))))
 
 
-
-
 (re-frame/reg-event-db
  ::set-shot-foul?
- [interceptors/fta
+ [interceptors/rebound
+  interceptors/ft
   (re-frame/path [:action])
   re-frame/trim-v]
  (fn [action [foul?]]
@@ -149,28 +151,13 @@
 
 
 (re-frame/reg-event-db
- ::set-ft-made
- [interceptors/rebound
-  (re-frame/path [:action :ft/made])
-  re-frame/trim-v]
- (fn [_ [ftm]]
-   ftm))
-
-
-(re-frame/reg-event-db
- ::set-ft-attempted
- [(re-frame/path [:action :ft/attempted])
-  re-frame/trim-v]
- (fn [_ [fta]]
-   fta))
-
-
-(re-frame/reg-event-db
  ::set-rebounder
- [(re-frame/path [:action :rebound/player])
+ [(re-frame/path [:action])
   re-frame/trim-v]
- (fn [_ [rebounder]]
-   rebounder))
+ (fn [action [rebounder]]
+   (-> action
+       (dissoc :rebound/team?)
+       (assoc :rebound/player rebounder))))
 
 
 (re-frame/reg-event-db
@@ -194,10 +181,11 @@
 
 (re-frame/reg-event-db
  ::set-init-team
- [(re-frame/path [:init :init/team])
-  re-frame/trim-v]
- (fn [_ [team]]
-   team))
+ [re-frame/trim-v]
+ (fn [db [team]]
+   (-> db
+       (assoc-in [:init :init/team] team)
+       (dissoc :action))))
 
 
 (re-frame/reg-event-fx
@@ -243,16 +231,6 @@
 
 
 (re-frame/reg-event-db
- ::set-on-court-player
- [re-frame/trim-v]
- (fn [db [t i player]]
-   (update-in
-    db [:players t]
-    (fnil assoc [nil nil nil nil nil])
-    i player)))
-
-
-(re-frame/reg-event-db
  ::put-player-to-bench
  (fn [db [_ team-id player]]
    (let [action-player (get-in db [:action :action/player])]
@@ -290,3 +268,29 @@
    {:db db/init-db
     :fx [[:dispatch [::initialize-blank-ds]]]}))
 
+
+(re-frame/reg-event-db
+ ::add-ft-attempted
+ (fn [db _]
+   (-> db
+       (update-in [:action :ft/attempted] inc)
+       (update-in [:action :ft/results] conj false))))
+
+
+(re-frame/reg-event-db
+ ::pop-ft-attempted
+ [interceptors/rebound
+  interceptors/ftm]
+ (fn [db _]
+   (-> db
+       (update-in [:action :ft/attempted] dec)
+       (update-in [:action :ft/results] pop))))
+
+
+(re-frame/reg-event-db
+ ::set-ft-result
+ [interceptors/rebound
+  interceptors/ftm
+  re-frame/trim-v]
+ (fn [db [idx make?]]
+   (update-in db [:action :ft/results] assoc idx make?)))

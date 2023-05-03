@@ -25,33 +25,38 @@
     (str (- period nperiods) "OT")))
 
 
-(defn period-handler
-  [e]
-  (let [checked (-> e .-target .-checked)]
-    (re-frame/dispatch (if checked
-                         [::events/next-period]
-                         [::events/undo-next-period]))))
+(defn period-button
+  []
+  (let [period (<sub [::subs/period])
+        init? (some? (<sub [::subs/init]))
+        on-click #(re-frame/dispatch
+                   (if init?
+                     [::events/undo-next-period]
+                     [::events/next-period]))]
+    [:button
+     {:type "button"
+      :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
+              (if init?
+                "bg-blue-500 text-white"
+                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white")]
+      :on-click on-click}
+     (period->string period 4 "Q")]))
 
 
 (defn stats []
   (let [[team1 team2] (<sub [::subs/teams])
         t1 (:db/id team1)
         t2 (:db/id team2)
-        period (<sub [::subs/period])
         team1-score (<sub [::subs/team-score t1])
         team2-score (<sub [::subs/team-score t2])
         team1-preview-score (<sub [::subs/preview-team-score t1])
         team2-preview-score (<sub [::subs/preview-team-score t2])]
     [:div
      [:div.flex.justify-between
-      [:h2.text-xl.border-y-4
+      [:h2.text-xl
        (:team/name team1)]
-      [:label
-       (period->string period 4 "Q")
-       [:input.ml-2 {:type "checkbox"
-                     :on-change period-handler
-                     :checked (some? (<sub [::subs/init]))}]]
-      [:h2.text-xl.border-y-4
+      [period-button]
+      [:h2.text-xl
        (:team/name team2)]]
      [:div.flex.justify-between
       [:div.flex.items-center.gap-2
@@ -71,96 +76,16 @@
      [stat "FT/Shot" #(.toFixed % 2) [::subs/team-fts-per-shot t1] [::subs/team-fts-per-shot t2]]]))
 
 
-;; TODO - think of a better way to have inputs here
-;;        maybe keyword arguments?
-(defn player-input
-  [offense? player-sub player-event label required?]
-  (let [player (re-frame/subscribe player-sub)
-        players (<sub [(if offense? ::subs/offense-players ::subs/defense-players)])
-        on-player-change (fn [e]
-                           (let [p (-> e .-target .-value parse-long)]
-                             (when p (re-frame/dispatch [player-event p]))))]
-    [:label
-     [:select.w-12 {:on-change on-player-change
-                    :value (or @player "")
-                    :required required?}
-      (when-not @player [:option {:value ""} ""])
-      (for [[i p] (zipmap (range) players)]
-        [:option {:key i :value p} (str p)])]
-     label]))
-
-
-(defn rebound-input []
-  (let [off-reb? (<sub [::subs/off-reb?])
-        team-reb? (<sub [::subs/team-reb?])]
-    [:div.flex.flex-col
-     [:label
-      [:input {:type "checkbox"
-               :on-change #(re-frame/dispatch [::events/set-off-reb? (-> % .-target .-checked)])
-               :checked (boolean off-reb?)}]
-      "Off-Reb?"]
-     [:label
-      [:input {:type "checkbox"
-               :on-change #(re-frame/dispatch [::events/set-team-reb? (-> % .-target .-checked)])
-               :checked (boolean team-reb?)}]
-      "Team Reb?"]
-     (when-not team-reb?
-       [player-input off-reb? [::subs/rebounder] ::events/set-rebounder "Rebounder"
-        true ;; this isn't guaranteed to be true if after a foul shot
-        ])]))
-
-
-(defn ftm-input []
-  (let [ftm (re-frame/subscribe [::subs/ft-made])
-        fta (re-frame/subscribe [::subs/ft-attempted])]
-    [:label
-     [:input.w-12 {:type "number"
-                   :on-change #(re-frame/dispatch [::events/set-ft-made (-> % .-target .-value parse-long)])
-                   :value @ftm
-                   :min 0
-                   :max @fta
-                   :required true}]
-     (str "/ " @fta " FTs")]))
-
-
-(defn foul-input []
-  (let [value (re-frame/subscribe [::subs/shot-value])
-        foul? (re-frame/subscribe [::subs/foul?])]
-    [:div.flex.flex-col
-     [:label
-      [:input {:type "checkbox"
-               :on-change #(re-frame/dispatch [::events/set-shot-foul? (-> % .-target .-checked)])
-               :disabled (nil? @value)
-               :checked (boolean @foul?)}]
-      "Foul?"]
-     (when @foul?
-       [ftm-input])]))
-
-
-(defn turnover-input []
-  [player-input false [::subs/stealer] ::events/set-stealer "Stealer" false])
-
-
-(defn bonus-input []
-  (let [ftm (<sub [::subs/ft-made])
-        fta (<sub [::subs/ft-attempted])]
-    [:div.flex
-     [:label
-      [:input.w-12 {:type "number"
-                    :on-change #(re-frame/dispatch [::events/set-ft-made (-> % .-target .-value parse-long)])
-                    :value ftm
-                    :min 0
-                    :max fta
-                    :required true}]
-      "FTs"]
-     [:label
-      [:input.w-12 {:type "number"
-                    :on-change #(re-frame/dispatch [::events/set-ft-attempted (-> % .-target .-value parse-long)])
-                    :value fta
-                    :min 1
-                    :max 2
-                    :required true}]
-      "/FTAs"]]))
+(defn foul?-button []
+  (let [foul? (<sub [::subs/foul?])]
+    [:button
+     {:type "button"
+      :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
+              (if foul?
+                "bg-blue-500 text-white"
+                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white")]
+      :on-click #(re-frame/dispatch [::events/set-shot-foul? (not foul?)])}
+     "Foul?"]))
 
 
 (defn add-player
@@ -177,7 +102,7 @@
                         (add-player)
                         (reset! player nil)))]
     (fn [team-id]
-      [:input.w-8.h-8.text-center.border-green-500.bg-transparent.border.border-green-500.text-green-700.font-semibold.rounded-full
+      [:input.w-8.h-8.text-center.bg-transparent.border.border-green-500.text-green-700.hover:text-white.hover:bg-green-500.font-semibold.rounded-full
        {:class "cursor-pointer focus:cursor-text"
         :type "text"
         :value @player
@@ -188,8 +113,7 @@
 
 
 (defn on-court-player-btn
-  [player {:keys [selected? disabled? on-click]
-           :or {selected? false disabled? false}}]
+  [player {:keys [selected? disabled? on-click]}]
   [:button
    {:type "button"
     :on-click on-click
@@ -203,48 +127,89 @@
    (str player)])
 
 
+(defn team-button
+  [team {:keys [disabled? selected? on-click]}]
+  [:button.mb-2
+   {:type "button"
+    :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
+            (if disabled?
+              "bg-transparent text-blue-700 opacity-50 cursor-not-allowed"
+              (if selected?
+                "bg-blue-500 text-white"
+                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white"))]
+    :on-click on-click
+    :disabled disabled?}
+   [:h2 (:team/name team)]])
+
+
 (defn players-input
   []
-  [:div
-   (doall
-    (for [team (<sub [::subs/teams])]
-      [:div.border.rounded.p-2.mb-2 {:key (:db/id team)}
-       [:h2.mb-2 (:team/name team)]
-       [:ul.flex.flex-col.gap-1
-        (doall
-         (for [player (sort (<sub [::subs/team-players-on-court (:db/id team)]))]
-           [:li
-            {:key player}
-            (let [selected? (= player (<sub [::subs/action-player]))
-                  disabled? (not= team (<sub [::subs/team]))]
-              [:div.flex.items-center.justify-between.gap-1
-               [on-court-player-btn player
-                {:disabled? disabled?
-                 :selected? selected?
-                 :on-click #(re-frame/dispatch [::events/set-player player]) ;; This will change based on what player input needed, ala ::events/set-rebounder, etc.
-                 }]
-               [:button.border.border-transparent.hover:border-rose-500.text-rose-700.font-semibold.rounded-full
-                {:class "px-1"
-                 :type "button"
-                 :on-click #(re-frame/dispatch [::events/put-player-to-bench (:db/id team) player])}
-                [:span.inline-block.w-4.h-4 "-"]]])]))
+  (let [need-action-player? (<sub [::subs/need-action-player?])
+        need-rebound-player? (<sub [::subs/need-rebound-player?])
+        need-stealer-player? (<sub [::subs/need-stealer-player?])
+        team-reb? (<sub [::subs/team-reb?])
+        off-reb? (<sub [::subs/off-reb?])]
+    [:div
+     (doall
+      (for [team (<sub [::subs/teams])]
+        (let [offense? (= team (<sub [::subs/team]))]
+          [:div.border.border-2.rounded-md.mb-2.p-2
+           {:key (:db/id team)
+            :class (if offense? "border-blue-500" "border-transparent")}
+           (let [mid-period? (<sub [::subs/mid-period?])]
+             [team-button team
+              {:disabled? (and (not need-rebound-player?) mid-period?)
+               :selected? (and team-reb? (= offense? off-reb?))
+               :on-click (fn []
+                           (if mid-period?
+                             (do (re-frame/dispatch [::events/set-off-reb? offense?])
+                                 (re-frame/dispatch [::events/set-team-reb? true]))
+                             (re-frame/dispatch [::events/set-init-team team])))}])
+           [:ul.flex.flex-col.gap-1
+            (doall
+             (for [player (<sub [::subs/team-players-on-court (:db/id team)])]
+               [:li
+                {:key player}
+                (let [selected? (cond need-action-player? (= player (<sub [::subs/action-player]))
+                                      need-rebound-player? (and (= off-reb? offense?)
+                                                                (= player (<sub [::subs/rebounder])))
+                                      need-stealer-player? (= player (<sub [::subs/stealer])))
+                      disabled? (cond need-action-player? (not offense?)
+                                      need-rebound-player? false
+                                      need-stealer-player? offense?
+                                      :else true)
+                      on-click (cond need-action-player? #(re-frame/dispatch [::events/set-player player])
+                                     need-rebound-player? (fn []
+                                                            (re-frame/dispatch [::events/set-off-reb? offense?])
+                                                            (re-frame/dispatch [::events/set-rebounder player]))
+                                     need-stealer-player? #(re-frame/dispatch [::events/set-stealer player]))]
+                  [:div.flex.items-center.justify-between.gap-1
+                   [on-court-player-btn player
+                    {:disabled? disabled?
+                     :selected? selected?
+                     :on-click on-click}]
+                   [:button.border.border-transparent.hover:border-red-500.text-red-700.font-semibold.rounded-full
+                    {:class "px-1"
+                     :type "button"
+                     :on-click #(re-frame/dispatch [::events/put-player-to-bench (:db/id team) player])}
+                    [:span.inline-block.w-4.h-4 "-"]]])]))
 
-        (for [player (sort (<sub [::subs/team-players-on-bench (:db/id team)]))]
-          [:li
-           {:key player}
-           [:div.flex.items-center.justify-between.group.gap-1
-            [:button.border-orange-500.hover:border-transparent.bg-transparent.border.border-orange-500.hover:bg-orange-500.text-orange-700.hover:text-white.font-semibold.rounded-full
-             {:class "w-8 h-8"
-              :type "button"
-              :on-click #(re-frame/dispatch [::events/put-player-to-court (:db/id team) player])}
-             (str player)]
-            [:button.invisible.group-hover:visible.border.border-transparent.hover:border-rose-500.text-rose-700.font-semibold.rounded-full
-             {:class "px-1"
-              :type "button"
-              :on-click #(re-frame/dispatch [::events/delete-bench-player (:db/id team) player])}
-             [:span.inline-block.w-4.h-4 "⨯"]]]])
-        [:li {:key -1}
-         [add-player (:db/id team)]]]]))])
+            (for [player (<sub [::subs/team-players-on-bench (:db/id team)])]
+              [:li
+               {:key player}
+               [:div.flex.items-center.justify-between.group.gap-1
+                [:button.border-orange-500.hover:border-transparent.bg-transparent.border.border-orange-500.hover:bg-orange-500.text-orange-700.hover:text-white.font-semibold.rounded-full
+                 {:class "w-8 h-8"
+                  :type "button"
+                  :on-click #(re-frame/dispatch [::events/put-player-to-court (:db/id team) player])}
+                 (str player)]
+                [:button.invisible.group-hover:visible.border.border-transparent.hover:border-red-500.text-red-700.font-semibold.rounded-full
+                 {:class "px-1"
+                  :type "button"
+                  :on-click #(re-frame/dispatch [::events/delete-bench-player (:db/id team) player])}
+                 [:span.inline-block.w-4.h-4 "⨯"]]]])
+            [:li {:key -1}
+             [add-player (:db/id team)]]]])))]))
 
 
 (defn render-fts
@@ -340,31 +305,6 @@
          [render-possession possession {:preview-entities preview-entities}]])]]))
 
 
-(defn team-selector
-  []
-  (let [[team1 team2] (<sub [::subs/teams])
-        team (<sub [::subs/team])
-        mid-period? (<sub [::subs/mid-period?])]
-    [:div.flex
-     [:label [:input {:type "radio"
-                      :value team1
-                      :name :team
-                      :checked (= team team1)
-                      :disabled mid-period?
-                      :required true
-                      :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-init-team team1]))}]
-      (:team/name team1)]
-     [:label.ml-2
-      [:input {:type "radio"
-               :value team2
-               :name :team
-               :checked (= team team2)
-               :disabled mid-period?
-               :required true
-               :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-init-team team2]))}]
-      (:team/name team2)]]))
-
-
 (defn court-bounding-rect-xy
   [court-id]
   (let [bounding-client-rect (.getBoundingClientRect (.getElementById js/document court-id))]
@@ -435,7 +375,7 @@
 
 
 (defn court []
-  (let [scale 0.5
+  (let [scale 0.8
         [court-width court-height :as court-dimensions] [(* 12 50) (* 12 42)]
         court-client-dimensions [(* scale court-width) (* scale court-height)]
         hoop-coordinates [(/ court-width 2) 63]
@@ -466,7 +406,7 @@
       ]
      (when (some? shot-location)
        (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
-             icon-size 10]
+             icon-size 8]
          (if (<sub [::subs/shot-make?])
            [:circle
             {:r icon-size :cx x :cy y
@@ -484,43 +424,64 @@
   (re-frame/dispatch [::events/add-action]))
 
 
+(defn action-type-button
+  [{:keys [label type on-click]}]
+  (let [selected? (= type (<sub [::subs/action-type]))]
+    [:button
+     {:type "button"
+      :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
+              (if selected?
+                "bg-blue-500 text-white"
+                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white")]
+      :on-click on-click}
+     label]))
+
+
 (defn action-input []
   (let [type (re-frame/subscribe [::subs/action-type])]
     [:form {:on-submit submit-action-input}
-     [:div.flex.flex-col
+     [:div.flex.flex-col.items-start
       [court]
-      [:label
-       [:input {:type "radio"
-                :value :action.type/turnover
-                :name :action/type
-                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-turnover]))
-                :checked (= @type :action.type/turnover)}]
-       "Turnover"]
-
-      [:label
-       [:input {:type "radio"
-                :value :action.type/bonus
-                :name :action/type
-                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-bonus]))
-                :checked (= @type :action.type/bonus)}]
-       "Bonus"]
-      [:label
-       [:input {:type "radio"
-                :value :action.type/technical
-                :name :action/type
-                :on-change #(when (-> % .-target .-checked) (re-frame/dispatch [::events/set-action-technical]))
-                :checked (= @type :action.type/technical)}]
-       "Technical"]
-      (when (= @type :action.type/shot)
-        [foul-input])
-      (when (= @type :action.type/turnover)
-        [turnover-input])
-      (when (= @type :action.type/bonus)
-        [bonus-input])
-      (when (= @type :action.type/technical)
-        [ftm-input])
-      (when (<sub [::subs/reboundable?])
-        [rebound-input])
+      [:div.my-2.flex.gap-2
+       [action-type-button
+        {:label "Turnover"
+         :type :action.type/turnover
+         :on-click #(re-frame/dispatch [::events/set-action-turnover])}]
+       [action-type-button
+        {:label "Bonus"
+         :type :action.type/bonus
+         :on-click #(re-frame/dispatch [::events/set-action-bonus])}]
+       [action-type-button
+        {:label "Technical"
+         :type :action.type/technical
+         :on-click #(re-frame/dispatch [::events/set-action-technical])}]]
+      [:div.flex.gap-2
+       (when (= @type :action.type/shot)
+         [foul?-button])
+       [:ul.flex.gap-1
+        (for [[idx make?] (zipmap (range) (<sub [::subs/ft-results]))]
+          [:li {:key idx}
+           [:button
+            {:type "button"
+             :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
+                     (if make?
+                       "bg-blue-500 text-white"
+                       "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white")]
+             :on-click #(re-frame/dispatch [::events/set-ft-result idx (not make?)])}
+            "Make?"]])]
+       (when (= @type :action.type/bonus)
+         (let [fta (<sub [::subs/ft-attempted])
+               add-ft? (= fta 1)]
+           [:button.w-8.h-8.border.bg-transparent.font-semibold.rounded-full.hover:text-white
+            {:type "button"
+             :class (if add-ft?
+                      "border-green-500 text-green-700 hover:bg-green-500"
+                      "border-red-500 text-red-700 hover:bg-red-500")
+             :on-click #(re-frame/dispatch
+                         (if add-ft?
+                           [::events/add-ft-attempted]
+                           [::events/pop-ft-attempted]))}
+            (if add-ft? "+" "-")]))]
       [:div.my-2
        [:button.self-start.bg-orange-500.hover:bg-orange-700.text-white.font-bold.py-1.px-2.rounded-full
         {:type "button"
@@ -545,7 +506,6 @@
     {:class "w-11/12"}
     [players-input]
     [:div.flex.flex-col.flex-1
-     [team-selector]
      [action-input]
      [new-game]]
     [:div.flex.flex-col.flex-1

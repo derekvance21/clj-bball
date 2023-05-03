@@ -17,6 +17,27 @@
    [:action :shot/value] [:action :shot/make?] [:action :shot/foul?]))
 
 
+(def ftm
+  (re-frame/on-changes
+   (fn [results] (->> results (filter true?) count))
+   [:action :ft/made]
+   [:action :ft/results]))
+
+
+(def ft-results
+  (re-frame/on-changes
+   (fn [attempts]
+     (vec (repeat attempts false)))
+   [:action :ft/results]
+   [:action :ft/attempted]))
+
+
+(def ft
+  [ftm
+   ft-results
+   fta])
+
+
 (def shot-value
   (re-frame/on-changes
    (fn [distance angle]
