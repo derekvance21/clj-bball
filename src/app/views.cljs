@@ -157,9 +157,14 @@
            {:key (:db/id team)
             :class (if offense? "border-blue-500" "border-transparent")}
            (let [mid-period? (<sub [::subs/mid-period?])
-                 type? (nil? (<sub [::subs/action-type]))]
+                 type? (nil? (<sub [::subs/action-type]))
+                 team-disabled? (if mid-period?
+                                  (not need-rebound-player?)
+                                  (and (not need-rebound-player?)
+                                       (not type?)
+                                       (not need-action-player?)))]
              [team-button team
-              {:disabled? (not (or need-rebound-player? (and (not mid-period?) type?)))
+              {:disabled? team-disabled?
                :selected? (and team-reb? (= offense? off-reb?))
                :on-click (fn []
                            (if need-rebound-player?

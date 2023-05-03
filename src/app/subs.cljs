@@ -154,14 +154,24 @@
 
 
 (re-frame/reg-sub
+ ::show-preview?
+ :<- [::team]
+ :<- [::action]
+ (fn [[team action] _]
+   (and (some? team)
+        (some? action))))
+
+
+(re-frame/reg-sub
  ::preview-db-tx-report
  :<- [::datascript-db]
  :<- [::game-id]
  :<- [::action]
  :<- [::players]
  :<- [::init]
- (fn [[db g action players init] _]
-   (if (some? action)
+ :<- [::show-preview?]
+ (fn [[db g action players init preview?] _]
+   (if preview?
      (d/with db [[:db.fn/call ds/append-action-tx-data g action players init]])
      (d/with db nil))))
 
