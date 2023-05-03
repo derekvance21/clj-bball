@@ -25,6 +25,20 @@
     (str (- period nperiods) "OT")))
 
 
+(defn button
+  [{:keys [disabled? selected? on-click class]} label]
+  [:button.font-semibold.rounded-full.border.border-blue-500
+   {:type "button"
+    :on-click on-click
+    :disabled disabled?
+    :class [class
+            (cond
+              selected? "bg-blue-500 text-white"
+              disabled? "bg-transparent text-blue-700 opacity-50 cursor-not-allowed"
+              :else "bg-transparent text-blue-700 hover:bg-blue-500 hover:text-white hover:border-transparent")]}
+   label])
+
+
 (defn period-button
   []
   (let [period (<sub [::subs/period])
@@ -33,13 +47,10 @@
                    (if init?
                      [::events/undo-next-period]
                      [::events/next-period]))]
-    [:button
-     {:type "button"
-      :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
-              (if init?
-                "bg-blue-500 text-white"
-                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white")]
-      :on-click on-click}
+    [button
+     {:class "px-2 py-1"
+      :on-click on-click
+      :selected? init?}
      (period->string period 4 "Q")]))
 
 
@@ -76,18 +87,6 @@
      [stat "FT/Shot" #(.toFixed % 2) [::subs/team-fts-per-shot t1] [::subs/team-fts-per-shot t2]]]))
 
 
-(defn foul?-button []
-  (let [foul? (<sub [::subs/foul?])]
-    [:button
-     {:type "button"
-      :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
-              (if foul?
-                "bg-blue-500 text-white"
-                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white")]
-      :on-click #(re-frame/dispatch [::events/set-shot-foul? (not foul?)])}
-     "Foul?"]))
-
-
 (defn add-player
   [team-id]
   (let [player (reagent/atom "+")
@@ -112,36 +111,6 @@
         :on-focus #(reset! player nil)}])))
 
 
-(defn on-court-player-btn
-  [player {:keys [selected? disabled? on-click]}]
-  [:button
-   {:type "button"
-    :on-click on-click
-    :disabled (or selected? disabled?)
-    :class ["font-semibold w-8 h-8 rounded-full"
-            (if disabled?
-              "bg-transparent text-blue-700 border border-blue-500 opacity-50 cursor-not-allowed"
-              (if selected?
-                "bg-blue-500 text-white"
-                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white border border-blue-500 hover:border-transparent"))]}
-   (str player)])
-
-
-(defn team-button
-  [team {:keys [disabled? selected? on-click]}]
-  [:button.mb-2
-   {:type "button"
-    :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
-            (if disabled?
-              "bg-transparent text-blue-700 opacity-50 cursor-not-allowed"
-              (if selected?
-                "bg-blue-500 text-white"
-                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white"))]
-    :on-click on-click
-    :disabled disabled?}
-   [:h2 (:team/name team)]])
-
-
 (defn players-input
   []
   (let [need-action-player? (<sub [::subs/need-action-player?])
@@ -156,27 +125,30 @@
           [:div.border.border-2.rounded-md.mb-2.p-2
            {:key (:db/id team)
             :class (if offense? "border-blue-500" "border-transparent")}
-           (let [mid-period? (<sub [::subs/mid-period?])
-                 type? (nil? (<sub [::subs/action-type]))
-                 team-disabled? (if mid-period?
-                                  (not need-rebound-player?)
-                                  (and (not need-rebound-player?)
-                                       (not type?)
-                                       (not need-action-player?)))]
-             [team-button team
-              {:disabled? team-disabled?
-               :selected? (and team-reb? (= offense? off-reb?))
-               :on-click (fn []
-                           (if need-rebound-player?
-                             (do (re-frame/dispatch [::events/set-off-reb? offense?])
-                                 (re-frame/dispatch [::events/set-team-reb? true]))
-                             (re-frame/dispatch [::events/set-init-team team])))}])
+           [:div.mb-2
+            (let [mid-period? (<sub [::subs/mid-period?])
+                  type? (nil? (<sub [::subs/action-type]))
+                  team-disabled? (if mid-period?
+                                   (not need-rebound-player?)
+                                   (and (not need-rebound-player?)
+                                        (not type?)
+                                        (not need-action-player?)))]
+              [button
+               {:class "px-2 py-1"
+                :disabled? team-disabled?
+                :selected? (and team-reb? (= offense? off-reb?))
+                :on-click (fn []
+                            (if need-rebound-player?
+                              (do (re-frame/dispatch [::events/set-off-reb? offense?])
+                                  (re-frame/dispatch [::events/set-team-reb? true]))
+                              (re-frame/dispatch [::events/set-init-team team])))}
+               (:team/name team)])]
            [:ul.flex.flex-col.gap-1
             (doall
              (for [player (<sub [::subs/team-players-on-court (:db/id team)])]
                [:li
                 {:key player}
-                (let [selected? (cond need-action-player? (= player (<sub [::subs/action-player]))
+                (let [selected? (cond need-action-player? (and offense? (= player (<sub [::subs/action-player])))
                                       need-rebound-player? (and (= off-reb? offense?)
                                                                 (= player (<sub [::subs/rebounder])))
                                       need-stealer-player? (= player (<sub [::subs/stealer])))
@@ -190,10 +162,12 @@
                                                             (re-frame/dispatch [::events/set-rebounder player]))
                                      need-stealer-player? #(re-frame/dispatch [::events/set-stealer player]))]
                   [:div.flex.items-center.justify-between.gap-1
-                   [on-court-player-btn player
-                    {:disabled? disabled?
-                     :selected? selected?
-                     :on-click on-click}]
+                   [button
+                    {:selected? selected?
+                     :disabled? disabled?
+                     :on-click on-click
+                     :class "w-8 h-8"}
+                    (str player)]
                    [:button.border.border-transparent.hover:border-red-500.text-red-700.font-semibold.rounded-full
                     {:class "px-1"
                      :type "button"
@@ -424,65 +398,50 @@
                              :stroke "red" :stroke-width 2})])))]))
 
 
-(defn submit-action-input
-  [e]
-  (.preventDefault e)
-  (re-frame/dispatch [::events/add-action]))
-
-
-(defn action-type-button
-  [{:keys [label type on-click]}]
-  (let [selected? (= type (<sub [::subs/action-type]))]
-    [:button
-     {:type "button"
-      :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
-              (if selected?
-                "bg-blue-500 text-white"
-                "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white")]
-      :on-click on-click}
-     label]))
-
-
 (defn action-input []
   (let [type (re-frame/subscribe [::subs/action-type])]
-    [:form {:on-submit submit-action-input}
+    [:form {:on-submit (fn submit-action-input
+                         [e]
+                         (.preventDefault e)
+                         (re-frame/dispatch [::events/add-action]))}
      [:div.flex.flex-col.items-start
       [court]
       [:div.my-2.flex.gap-2
-       [action-type-button
-        {:label "Turnover"
-         :type :action.type/turnover
-         :on-click #(re-frame/dispatch [::events/set-action-turnover])}]
-       [action-type-button
-        {:label "Bonus"
-         :type :action.type/bonus
-         :on-click #(re-frame/dispatch [::events/set-action-bonus])}]
-       [action-type-button
-        {:label "Technical"
-         :type :action.type/technical
-         :on-click #(re-frame/dispatch [::events/set-action-technical])}]]
+       [button
+        {:class "px-2 py-1"
+         :selected? (= @type :action.type/turnover)
+         :on-click #(re-frame/dispatch [::events/set-action-turnover])}
+        "Turnover"]
+       [button
+        {:class "px-2 py-1"
+         :selected? (= @type :action.type/bonus)
+         :on-click #(re-frame/dispatch [::events/set-action-bonus])}
+        "Bonus"]
+       [button
+        {:class "px-2 py-1"
+         :selected? (= @type :action.type/technical)
+         :on-click #(re-frame/dispatch [::events/set-action-technical])}
+        "Technical"]]
       [:div.flex.gap-2
        (when (= @type :action.type/shot)
-         [foul?-button])
+         (let [foul? (<sub [::subs/foul?])]
+           [button
+            {:class "px-2 py-1"
+             :selected? foul?
+             :on-click #(re-frame/dispatch [::events/set-shot-foul? (not foul?)])}
+            "Foul?"]))
        [:ul.flex.gap-1
         (for [[idx make?] (zipmap (range) (<sub [::subs/ft-results]))]
           [:li {:key idx}
-           [:button
-            {:type "button"
-             :class ["font-semibold rounded-full border border-blue-500 px-2 py-1"
-                     (if make?
-                       "bg-blue-500 text-white"
-                       "bg-transparent hover:bg-blue-500 text-blue-700 hover:text-white")]
+           [button
+            {:class "px-2 py-1"
+             :selected? make?
              :on-click #(re-frame/dispatch [::events/set-ft-result idx (not make?)])}
             "Make?"]])]
-       (when (= @type :action.type/bonus)
-         (let [fta (<sub [::subs/ft-attempted])
-               add-ft? (= fta 1)]
-           [:button.w-8.h-8.border.bg-transparent.font-semibold.rounded-full.hover:text-white
-            {:type "button"
-             :class (if add-ft?
-                      "border-green-500 text-green-700 hover:bg-green-500"
-                      "border-red-500 text-red-700 hover:bg-red-500")
+       (when (contains? #{:action.type/bonus :action.type/technical} @type)
+         (let [add-ft? (<= 1 (<sub [::subs/ft-attempted]))]
+           [button
+            {:class "w-8 h-8"
              :on-click #(re-frame/dispatch
                          (if add-ft?
                            [::events/add-ft-attempted]
