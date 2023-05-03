@@ -1,4 +1,3 @@
-;; TODO - rename to datascript?
 (ns app.datascript
   (:require [bball.db]
             [bball.query :as query]
@@ -287,21 +286,3 @@
         ref? (= :db.type/ref (get-in schema [a :db/valueType]))]
     [:db/add (- e) a (if ref? (- v) v)]))
 
-(let [schema bball.db/ds-schema
-      tx-datoms (->> (d/datoms @conn :eavt)
-                     (map #(datom->tx % schema)))]
-  (->> (-> (d/empty-db bball.db/ds-schema)
-           (d/db-with [{:game/teams [{:team/name "Anacortes"} {:team/name "Blaine"}]
-                        :game/possession [{:possession/period 1
-                                           :possession/order 1
-                                           :possession/team {:team/name "Blaine"}
-                                           :possession/action [{:action/order 1
-                                                                :action/type :action.type/shot
-                                                                :action/player 12
-                                                                :shot/value 3
-                                                                :shot/make? true
-                                                                :offense/players #{1 2 3 4 12}
-                                                                :defense/players #{11 21 13 14 22}}]}]}])
-           (d/db-with tx-datoms)
-           (d/datoms :eavt))
-       (group-by :tx)))

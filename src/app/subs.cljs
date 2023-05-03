@@ -361,7 +361,7 @@
  ::init-period
  :<- [::init]
  (fn [init _]
-   (get init :init/period 1)))
+   (get init :init/period)))
 
 
 (re-frame/reg-sub

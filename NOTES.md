@@ -2,6 +2,7 @@
 
 ## Todo
 
+- [ ] problem - subs happen during free throw, and then someone who just checked in gets the rebound. Are they part of the possession (offense/players or defense/players)? no, but then how to get them in the game for the rebound? Maybe it should be - they aren't part of the possession, but can still be credited with a rebound
 - [ ] generated court svg with specified dimensions
 - [ ] Add clojure/spec to app-db
 - [ ] have a button to activate substitutions, which would also allow deleting players. This gives more space for other things there, like a second column for "object" players
