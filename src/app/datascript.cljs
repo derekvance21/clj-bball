@@ -1,11 +1,10 @@
 ;; TODO - rename to datascript?
 (ns app.datascript
-  (:require
-   [bball.db]
-   [bball.query :as query]
-   [datascript.core :as d]
-   [datascript.transit :as dt]
-   [reagent.core :as reagent]))
+  (:require [bball.db]
+            [bball.query :as query]
+            [cljs.reader :as reader]
+            [datascript.core :as d]
+            [reagent.core :as reagent]))
 
 
 (defn create-ratom-conn
@@ -26,13 +25,13 @@
 
 (defn db->local-storage
   [db]
-  (.setItem js/localStorage db-local-storage-key (dt/write-transit-str db)))
+  (.setItem js/localStorage db-local-storage-key (pr-str db)))
 
 
 (defn local-storage->db
   []
   (some-> (.getItem js/localStorage db-local-storage-key)
-          (dt/read-transit-str)))
+          reader/read-string))
 
 
 (defn teams
@@ -274,7 +273,7 @@
   ([]
    (save-db "game-db.edn"))
   ([filename]
-   (let [db-string (dt/write-transit-str @conn)
+   (let [db-string (pr-str @conn)
          url (.createObjectURL js/URL (js/File. [db-string] filename))]
      (doto (.createElement js/document "a")
        (.setAttribute "download" filename)
