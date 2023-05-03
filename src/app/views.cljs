@@ -50,7 +50,8 @@
     [button
      {:class "px-2 py-1"
       :on-click on-click
-      :selected? init?}
+      :selected? init?
+      :disabled? (and init? (= period 1))}
      (period->string period 4 "Q")]))
 
 
@@ -178,7 +179,7 @@
               [:li
                {:key player}
                [:div.flex.items-center.justify-between.group.gap-1
-                [:button.border-orange-500.hover:border-transparent.bg-transparent.border.border-orange-500.hover:bg-orange-500.text-orange-700.hover:text-white.font-semibold.rounded-full
+                [:button.bg-transparent.border.border-orange-500.hover:bg-orange-500.text-orange-700.hover:text-white.font-semibold.rounded-full
                  {:class "w-8 h-8"
                   :type "button"
                   :on-click #(re-frame/dispatch [::events/put-player-to-court (:db/id team) player])}
@@ -448,13 +449,19 @@
                            [::events/pop-ft-attempted]))}
             (if add-ft? "+" "-")]))]
       [:div.my-2
-       [:button.self-start.bg-orange-500.hover:bg-orange-700.text-white.font-bold.py-1.px-2.rounded-full
-        {:type "button"
-         :on-click #(re-frame/dispatch [::events/undo-last-action])}
-        "Undo"]
-       [:button.self-start.ml-2.bg-blue-500.hover:bg-blue-700.text-white.font-bold.py-1.px-2.rounded-full
-        {:type "submit"}
-        "Add"]]]]))
+       (let [disabled? (and (nil? (<sub [::subs/action])) (not (<sub [::subs/possessions?])))]
+         [:button.self-start.bg-orange-500.hover:bg-orange-700.text-white.font-bold.py-1.px-2.rounded-full
+          {:type "button"
+           :class (when disabled? "opacity-50 cursor-not-allowed")
+           :disabled disabled?
+           :on-click #(re-frame/dispatch [::events/undo-last-action])}
+          "Undo"])
+       (let [disabled? (not (<sub [::subs/valid?]))]
+         [:button.self-start.ml-2.bg-blue-500.hover:bg-blue-700.text-white.font-bold.py-1.px-2.rounded-full
+          {:type "submit"
+           :class (when disabled? "opacity-50 cursor-not-allowed")
+           :disabled disabled?}
+          "Add"])]]]))
 
 
 (defn new-game

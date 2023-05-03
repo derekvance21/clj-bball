@@ -18,7 +18,7 @@
                     :where [?g :game/teams]]
                   ls-datascript-db)
          players (->> (ds/game->team-players ls-datascript-db game-id)
-                      (map (fn [[team-id players]] [team-id {:on-bench players}]))
+                      (map (fn [[team-id players]] [team-id {:on-court players}]))
                       (into {})) ;; TODO - use last action's players as initial players map
          ]
      {:db {:game-id game-id
@@ -225,10 +225,11 @@
  [cofx/inject-ds
   interceptors/ds->local-storage]
  (fn [{:keys [ds db]} _]
-   (let [{:keys [game-id]} db
-         new-ds (d/db-with ds [[:db.fn/call ds/undo-last-action-tx-data game-id]])]
-     {:db (dissoc db :action)
-      ::fx/ds new-ds})))
+   (if (some? (:action db))
+     {:db (dissoc db :action)}
+     (let [{:keys [game-id]} db
+           new-ds (d/db-with ds [[:db.fn/call ds/undo-last-action-tx-data game-id]])]
+       {::fx/ds new-ds}))))
 
 
 (re-frame/reg-event-db

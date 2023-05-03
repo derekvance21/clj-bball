@@ -361,7 +361,7 @@
  ::init-period
  :<- [::init]
  (fn [init _]
-   (get init :init/period)))
+   (get init :init/period 1)))
 
 
 (re-frame/reg-sub
@@ -381,11 +381,10 @@
 
 (re-frame/reg-sub
  ::need-rebound-player?
- :<- [::action-type]
  :<- [::action-player]
  :<- [::reboundable?]
- (fn [[type player reboundable?] _]
-   (and (some? type) (not= type :action.type/technical) (some? player) reboundable?)))
+ (fn [[player reboundable?] _]
+   (and (some? player) reboundable?)))
 
 (re-frame/reg-sub
  ::need-stealer-player?
@@ -399,3 +398,24 @@
  ::ft-results
  (fn [db _]
    (get-in db [:action :ft/results])))
+
+
+(re-frame/reg-sub
+ ::valid?
+ :<- [::action]
+ :<- [::reboundable?]
+ :<- [::players]
+ :<- [::team]
+ (fn [[action reboundable? players team] _]
+   (let [five-players? (->> (vals players)
+                            (map :on-court)
+                            (every? #(= 5 (count %))))
+         {:action/keys [player type]} action
+         rebound? (or (:rebound/team? action) (:rebound/player action))]
+     (and five-players?
+          (some? team)
+          (some? player)
+          (some? type)
+          (or (not reboundable?)
+              rebound?)))))
+

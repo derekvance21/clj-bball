@@ -2,16 +2,10 @@
 
 ## Todo
 
-- [ ] disable "Add" button if action is invalid, form validation reporting
-- [ ] Fix bug where you can add empty action by only selecting player. Would be nice to use a proper reagent form, using custom validators like the ol' Angular ReactiveForm has
-
 - [ ] generated court svg with specified dimensions
 - [ ] Add clojure/spec to app-db
-- [ ] ascertain whether or not to add hoop radius to distance measurements (would have to subtract it back when displaying on court)
-- [ ] be able to change :action/player
 - [ ] have a button to activate substitutions, which would also allow deleting players. This gives more space for other things there, like a second column for "object" players
 - [ ] supporting custom teams, datetime, other info
-- [ ] Use interceptors for action validation
 - [ ] lineup stats
 - [ ] individual stats
 - [ ] svg for the whole court, but then mask parts?
@@ -21,6 +15,8 @@
 - [ ] edit already transacted action. But you should think of it more like editting a possession, b/c you don't really want to throw off the possession alternating pattern, although this is broken at periods, so... So if you allowed just randomly deleting one possession, then you'd need a way to insert a possession in between others. Also, something you might need is editting the period of past possessions.
 - [ ] So like, maybe there's a way to show the end of a period in the render-possessions component. And it would insert some kind of possession end marker in between the :game/possession 's, so that you could see end of periods. It'd need to be a stateful-transducer-kind-of-thing, but I don't think it'd be too hard
 
+- [X] disable "Add" button if action is invalid, form validation reporting
+- [X] Fix bug where you can add empty action by only selecting player. Would be nice to use a proper reagent form, using custom validators like the ol' Angular ReactiveForm has
 - [X] use shared logic for these clickable button things
 - [X] fix bug where on free throws with at least one miss and make, setting a rebound is required even though the make could've been at the end
 - [X] have bonus do correct number of free throws - maybe a manual button to add free throw attempts? (different rules in different leagues)
