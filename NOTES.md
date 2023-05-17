@@ -2,6 +2,11 @@
 
 ## Todo
 
+- [ ] Dockerize db. Going to need to:
+    - [ ] 
+
+- [ ] sending datomic db to datascript
+- [ ] I'm now using the preview db to basically transact on any action input change. So maybe I should just drop the :action part of app-db and just transact to conn every time? I guess I was originally worried about performance, but this doesn't seem to be an issue. This would also simplify adding certain action attributes like offense/players and defense/players, b/c I could just directly transact them when an action starts. And, it also allows me to do the fouled shot with a certain lineup, press sub and make substitutions after the 1st free throw, then set the missed free throw rebounder as someone who just subbed in
 - [ ] problem - subs happen during free throw, and then someone who just checked in gets the rebound. Are they part of the possession (offense/players or defense/players)? no, but then how to get them in the game for the rebound? Maybe it should be - they aren't part of the possession, but can still be credited with a rebound
 - [ ] generated court svg with specified dimensions
 - [ ] Add clojure/spec to app-db
@@ -16,6 +21,7 @@
 - [ ] edit already transacted action. But you should think of it more like editting a possession, b/c you don't really want to throw off the possession alternating pattern, although this is broken at periods, so... So if you allowed just randomly deleting one possession, then you'd need a way to insert a possession in between others. Also, something you might need is editting the period of past possessions.
 - [ ] So like, maybe there's a way to show the end of a period in the render-possessions component. And it would insert some kind of possession end marker in between the :game/possession 's, so that you could see end of periods. It'd need to be a stateful-transducer-kind-of-thing, but I don't think it'd be too hard
 
+- [X] converting datomic db to datascript db
 - [X] disable "Add" button if action is invalid, form validation reporting
 - [X] Fix bug where you can add empty action by only selecting player. Would be nice to use a proper reagent form, using custom validators like the ol' Angular ReactiveForm has
 - [X] use shared logic for these clickable button things

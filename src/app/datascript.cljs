@@ -1,9 +1,10 @@
 (ns app.datascript
-  (:require [bball.db]
-            [bball.query :as query]
-            [cljs.reader :as reader]
-            [datascript.core :as d]
-            [reagent.core :as reagent]))
+  (:require
+   [bball.db :as db]
+   [bball.query :as query]
+   [cljs.reader :as reader]
+   [datascript.core :as d]
+   [reagent.core :as reagent]))
 
 
 (defn create-ratom-conn
@@ -13,10 +14,25 @@
    (reagent/atom (d/empty-db schema) :meta {:listeners (atom {})})))
 
 
-(def empty-db (d/empty-db bball.db/ds-schema))
+(def schema
+  (->> db/schema
+       (remove #(= "action.type" (namespace (:db/ident %)))) ;; removes enums
+       (map
+        (fn [{:db/keys [ident valueType] :as sch}]
+          [ident
+           (select-keys sch [:db/cardinality :db/unique :db/index :db/tupleAttrs :db/isComponent :db/doc
+                             (when (case valueType
+                                     :db.type/ref (not= "type" (name ident))
+                                     :db.type/tuple (contains? sch :db/tupleAttrs) ;; TODO - probably no need to do this - just remove non-refs
+                                     false)
+                               :db/valueType)])]))
+       (into {})))
 
 
-(defonce conn (create-ratom-conn bball.db/ds-schema))
+(def empty-db (d/empty-db schema))
+
+
+(defonce conn (create-ratom-conn schema))
 
 
 (def db-local-storage-key "datascript-db")
@@ -141,6 +157,35 @@
          (pts ?a ?pts)]
        db query/rules g))
 
+
+(comment
+  (->> (d/q '[:find (pull ?t [:team/name]) ?player (sum ?pts) (count ?a) (avg ?pts)
+              :in $ % ?g
+      ;;  :with ?a
+              :where
+              (actions ?g ?t ?p ?a)
+              [?a :action/player ?player]
+              [?a :action/type :action.type/shot]
+              (pts ?a ?pts)]
+            @conn query/rules 1)
+       (map #(update % 0 :team/name))
+       (sort-by #(nth % 2) >))
+;;      team   p  pts s  pps
+;; => (["Away" 24 16 13 1.2307692307692308]
+;;     ["Home" 13 10 20 0.5]
+;;     ["Home" 21 9 9 1]
+;;     ["Away" 32 8 9 0.8888888888888888]
+;;     ["Away" 10 7 9 0.7777777777777778]
+;;     ["Away" 25 6 10 0.6]
+;;     ["Home" 2 5 6 0.8333333333333334]
+;;     ["Home" 22 4 2 2]
+;;     ["Home" 12 3 8 0.375]
+;;     ["Home" 1 3 2 1.5]
+;;     ["Home" 20 2 2 1]
+;;     ["Away" 15 2 4 0.5]
+;;     ["Home" 4 0 1 0]
+;;     ["Away" 35 0 2 0])
+  )
 
 (defn ft-rate
   [db g]
@@ -278,11 +323,4 @@
        (.setAttribute "href" url)
        (.click))
      (.revokeObjectURL js/URL url))))
-
-
-(defn datom->tx
-  [datom schema]
-  (let [{:keys [e a v]} datom
-        ref? (= :db.type/ref (get-in schema [a :db/valueType]))]
-    [:db/add (- e) a (if ref? (- v) v)]))
 

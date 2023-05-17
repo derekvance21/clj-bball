@@ -1,0 +1,8 @@
+node_modules/
+.clj-kondo/
+.cpcache/
+.lsp/
+.shadow-cljs/
+.vscode/
+.calva/
+output.calva-repl

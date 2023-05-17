@@ -1,10 +1,11 @@
 (ns app.views
-  (:require [app.events :as events]
-            [app.subs :as subs]
-            [cljs.math :as math]
-            [clojure.string :as string]
-            [re-frame.core :as re-frame]
-            [reagent.core :as reagent]))
+  (:require
+   [app.events :as events]
+   [app.subs :as subs]
+   [cljs.math :as math]
+   [clojure.string :as string]
+   [re-frame.core :as re-frame]
+   [reagent.core :as reagent]))
 
 
 (def <sub  (comp deref re-frame/subscribe))

@@ -45,5 +45,32 @@ These are explicit non-goals of the system:
 
 To enable tailwindcss:
 ```sh
-npx tailwindcss -i ./resources/input.css -o ./resources/public/css/compiled/output.css --watch
+npx tailwindcss -i input.css -o ./resources/public/css/compiled/output.css --watch
+```
+
+## Deploy
+
+Create the css file:
+```sh
+npx tailwindcss -i input.css -o ./resources/public/css/compiled/output.css --minify
+```
+
+Install npm modules:
+```sh
+npm install
+```
+
+Compile the frontend javascript files:
+```sh
+npx shadow-cljs release app
+```
+
+Build the uberjar:
+```sh
+clj -T:build uber
+```
+
+Run the uberjar
+```sh
+java -jar target/standalone.jar
 ```
