@@ -4,7 +4,7 @@
 
 - [ ] Dockerize db. Going to need to:
     - [ ] 
-
+- [ ] when a steal is selected, if the offense has a player of the same number, it'll highlight the offensive player too, rather than just the defensive player. I had this bug earlier with action/types, I think
 - [ ] sending datomic db to datascript
 - [ ] I'm now using the preview db to basically transact on any action input change. So maybe I should just drop the :action part of app-db and just transact to conn every time? I guess I was originally worried about performance, but this doesn't seem to be an issue. This would also simplify adding certain action attributes like offense/players and defense/players, b/c I could just directly transact them when an action starts. And, it also allows me to do the fouled shot with a certain lineup, press sub and make substitutions after the 1st free throw, then set the missed free throw rebounder as someone who just subbed in
 - [ ] problem - subs happen during free throw, and then someone who just checked in gets the rebound. Are they part of the possession (offense/players or defense/players)? no, but then how to get them in the game for the rebound? Maybe it should be - they aren't part of the possession, but can still be credited with a rebound
