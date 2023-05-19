@@ -170,21 +170,6 @@
             @conn query/rules 1)
        (map #(update % 0 :team/name))
        (sort-by #(nth % 2) >))
-;;      team   p  pts s  pps
-;; => (["Away" 24 16 13 1.2307692307692308]
-;;     ["Home" 13 10 20 0.5]
-;;     ["Home" 21 9 9 1]
-;;     ["Away" 32 8 9 0.8888888888888888]
-;;     ["Away" 10 7 9 0.7777777777777778]
-;;     ["Away" 25 6 10 0.6]
-;;     ["Home" 2 5 6 0.8333333333333334]
-;;     ["Home" 22 4 2 2]
-;;     ["Home" 12 3 8 0.375]
-;;     ["Home" 1 3 2 1.5]
-;;     ["Home" 20 2 2 1]
-;;     ["Away" 15 2 4 0.5]
-;;     ["Home" 4 0 1 0]
-;;     ["Away" 35 0 2 0])
   )
 
 (defn ft-rate
@@ -323,4 +308,5 @@
        (.setAttribute "href" url)
        (.click))
      (.revokeObjectURL js/URL url))))
+
 
