@@ -113,85 +113,110 @@
         :on-focus #(reset! player nil)}])))
 
 
-(defn players-input
-  []
-  (let [need-action-player? (<sub [::subs/need-action-player?])
+(defn team-bench-player
+  [team player]
+  [:div.flex.items-center.justify-between.group.gap-1
+   [:button.bg-transparent.border.border-orange-500.hover:bg-orange-500.text-orange-700.hover:text-white.font-semibold.rounded-full
+    {:class "w-8 h-8"
+     :type "button"
+     :on-click #(re-frame/dispatch [::events/put-player-to-court (:db/id team) player])}
+    (str player)]
+   [:button.invisible.group-hover:visible.border.border-transparent.hover:border-red-500.text-red-700.font-semibold.rounded-full
+    {:class "px-1"
+     :type "button"
+     :on-click #(re-frame/dispatch [::events/delete-bench-player (:db/id team) player])}
+    [:span.inline-block.w-4.h-4 "⨯"]]])
+
+
+(defn team-on-court-player
+  [team player]
+  (let [offense? (= team (<sub [::subs/team]))
+        need-action-player? (<sub [::subs/need-action-player?])
         need-rebound-player? (<sub [::subs/need-rebound-player?])
         need-stealer-player? (<sub [::subs/need-stealer-player?])
-        team-reb? (<sub [::subs/team-reb?])
-        off-reb? (<sub [::subs/off-reb?])]
-    [:div
-     (doall
-      (for [team (<sub [::subs/teams])]
-        (let [offense? (= team (<sub [::subs/team]))]
-          [:div.border.border-2.rounded-md.mb-2.p-2
-           {:key (:db/id team)
-            :class (if offense? "border-blue-500" "border-transparent")}
-           [:div.mb-2
-            (let [mid-period? (<sub [::subs/mid-period?])
-                  type? (nil? (<sub [::subs/action-type]))
-                  team-disabled? (if mid-period?
-                                   (not need-rebound-player?)
-                                   (and (not need-rebound-player?)
-                                        (not type?)
-                                        (not need-action-player?)))]
-              [button
-               {:class "px-2 py-1"
-                :disabled? team-disabled?
-                :selected? (and team-reb? (= offense? off-reb?))
-                :on-click (fn []
-                            (if need-rebound-player?
-                              (do (re-frame/dispatch [::events/set-off-reb? offense?])
-                                  (re-frame/dispatch [::events/set-team-reb? true]))
-                              (re-frame/dispatch [::events/set-init-team team])))}
-               (:team/name team)])]
-           [:ul.flex.flex-col.gap-1
-            (doall
-             (for [player (<sub [::subs/team-players-on-court (:db/id team)])]
-               [:li
-                {:key player}
-                (let [selected? (cond need-action-player? (and offense? (= player (<sub [::subs/action-player])))
-                                      need-rebound-player? (and (= off-reb? offense?)
-                                                                (= player (<sub [::subs/rebounder])))
-                                      need-stealer-player? (= player (<sub [::subs/stealer])))
-                      disabled? (cond need-action-player? (not offense?)
-                                      need-rebound-player? false
-                                      need-stealer-player? offense?
-                                      :else true)
-                      on-click (cond need-action-player? #(re-frame/dispatch [::events/set-player player])
-                                     need-rebound-player? (fn []
-                                                            (re-frame/dispatch [::events/set-off-reb? offense?])
-                                                            (re-frame/dispatch [::events/set-rebounder player]))
-                                     need-stealer-player? #(re-frame/dispatch [::events/set-stealer player]))]
-                  [:div.flex.items-center.justify-between.gap-1
-                   [button
-                    {:selected? selected?
-                     :disabled? disabled?
-                     :on-click on-click
-                     :class "w-8 h-8"}
-                    (str player)]
-                   [:button.border.border-transparent.hover:border-red-500.text-red-700.font-semibold.rounded-full
-                    {:class "px-1"
-                     :type "button"
-                     :on-click #(re-frame/dispatch [::events/put-player-to-bench (:db/id team) player])}
-                    [:span.inline-block.w-4.h-4 "-"]]])]))
+        off-reb? (<sub [::subs/off-reb?])
+        selected? (cond need-action-player? (and offense? (= player (<sub [::subs/action-player])))
+                        need-rebound-player? (and (= off-reb? offense?)
+                                                  (= player (<sub [::subs/rebounder])))
+                        need-stealer-player? (= player (<sub [::subs/stealer])))
+        disabled? (cond need-action-player? (not offense?)
+                        need-rebound-player? false
+                        need-stealer-player? offense?
+                        :else true)
+        on-click (cond need-action-player? #(re-frame/dispatch [::events/set-player player])
+                       need-rebound-player? (fn []
+                                              (re-frame/dispatch [::events/set-off-reb? offense?])
+                                              (re-frame/dispatch [::events/set-rebounder player]))
+                       need-stealer-player? #(re-frame/dispatch [::events/set-stealer player]))]
+    [:div.flex.items-center.justify-between.gap-1
+     [button
+      {:selected? selected?
+       :disabled? disabled?
+       :on-click on-click
+       :class "w-8 h-8"}
+      (str player)]
+     [:button.border.border-transparent.hover:border-red-500.text-red-700.font-semibold.rounded-full
+      {:class "px-1"
+       :type "button"
+       :on-click #(re-frame/dispatch [::events/put-player-to-bench (:db/id team) player])}
+      [:span.inline-block.w-4.h-4 "-"]]]))
 
-            (for [player (<sub [::subs/team-players-on-bench (:db/id team)])]
-              [:li
-               {:key player}
-               [:div.flex.items-center.justify-between.group.gap-1
-                [:button.bg-transparent.border.border-orange-500.hover:bg-orange-500.text-orange-700.hover:text-white.font-semibold.rounded-full
-                 {:class "w-8 h-8"
-                  :type "button"
-                  :on-click #(re-frame/dispatch [::events/put-player-to-court (:db/id team) player])}
-                 (str player)]
-                [:button.invisible.group-hover:visible.border.border-transparent.hover:border-red-500.text-red-700.font-semibold.rounded-full
-                 {:class "px-1"
-                  :type "button"
-                  :on-click #(re-frame/dispatch [::events/delete-bench-player (:db/id team) player])}
-                 [:span.inline-block.w-4.h-4 "⨯"]]]])
-            [:li {:key -1}
-             [add-player (:db/id team)]]]])))]))
+
+(defn team-button
+  [team]
+  (let [offense? (= team (<sub [::subs/team]))
+        need-action-player? (<sub [::subs/need-action-player?])
+        need-rebound-player? (<sub [::subs/need-rebound-player?])
+        team-reb? (<sub [::subs/team-reb?])
+        off-reb? (<sub [::subs/off-reb?])
+        mid-period? (<sub [::subs/mid-period?])
+        type? (nil? (<sub [::subs/action-type]))
+        team-disabled? (if mid-period?
+                         (not need-rebound-player?)
+                         (and (not need-rebound-player?)
+                              (not type?)
+                              (not need-action-player?)))]
+    [button
+     {:class "px-2 py-1"
+      :disabled? team-disabled?
+      :selected? (and team-reb? (= offense? off-reb?))
+      :on-click (fn []
+                  (if need-rebound-player?
+                    (do (re-frame/dispatch [::events/set-off-reb? offense?])
+                        (re-frame/dispatch [::events/set-team-reb? true]))
+                    (re-frame/dispatch [::events/set-init-team team])))}
+     (:team/name team)]))
+
+
+(defn team-players-input
+  [team]
+  (let [offense? (= team (<sub [::subs/team]))
+        team-id (:db/id team)
+        on-court-players (<sub [::subs/team-players-on-court team-id])
+        bench-players (<sub [::subs/team-players-on-bench team-id])]
+    [:div.border.border-2.rounded-md.p-2.flex.flex-col.gap-2
+     {:class (if offense? "border-blue-500" "border-transparent")}
+     [team-button team]
+     [:ul.flex.flex-col.gap-1
+      (for [player on-court-players]
+        [:li {:key (str team-id "#" player)}
+         [team-on-court-player  team player]])
+      (for [player bench-players]
+        [:li {:key (str team-id "#" player)}
+         [team-bench-player team player]])
+      [:li {:key (str team-id "new-player")}
+       [add-player team-id]]]]))
+
+
+(defn players-input
+  []
+  (let [[team1 team2] (<sub [::subs/teams])]
+    [:div.flex.flex-col.gap-2
+     [team-players-input team1]
+     [button {:class "px-2 py-1"
+              :disabled? false :selected? false :on-click #(print "HI")}
+      "Sub"]
+     [team-players-input team2]]))
 
 
 (defn render-fts
