@@ -158,20 +158,6 @@
        db query/rules g))
 
 
-(comment
-  (->> (d/q '[:find (pull ?t [:team/name]) ?player (sum ?pts) (count ?a) (avg ?pts)
-              :in $ % ?g
-      ;;  :with ?a
-              :where
-              (actions ?g ?t ?p ?a)
-              [?a :action/player ?player]
-              [?a :action/type :action.type/shot]
-              (pts ?a ?pts)]
-            @conn query/rules 1)
-       (map #(update % 0 :team/name))
-       (sort-by #(nth % 2) >))
-  )
-
 (defn ft-rate
   [db g]
   (->> (d/q '[:find ?t (sum ?fts) (sum ?fgas)
@@ -295,6 +281,20 @@
              (and (not [?p :possession/team ?t])
                   [(ground ?defense) [?player ...]]))]
        db g))
+
+
+(comment
+  (->> (d/q '[:find (pull ?t [:team/name]) ?player (sum ?pts) (count ?a) (avg ?pts)
+              :in $ % ?g
+      ;;  :with ?a
+              :where
+              (actions ?g ?t ?p ?a)
+              [?a :action/player ?player]
+              [?a :action/type :action.type/shot]
+              (pts ?a ?pts)]
+            @conn query/rules 1)
+       (map #(update % 0 :team/name))
+       (sort-by #(nth % 2) >)))
 
 
 (defn save-db
