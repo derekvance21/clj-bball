@@ -32,8 +32,31 @@
    [:action :ft/attempted]))
 
 
+(def ft-players
+  (re-frame/enrich
+   (fn [db event]
+     (if (db/ft? (:action db))
+       (when (every? (fn [[team-id players]]
+                       (and (contains? players :on-court-ft)
+                            (contains? players :on-bench-ft)))
+                     (:players db))
+         (update db :players (fn [players-map]
+                               (->> players-map
+                                    (map (fn [[team-id team-players]]
+                                           [team-id (assoc team-players
+                                                           :on-court-ft (:on-court team-players)
+                                                           :on-bench-ft (:on-bench team-players))]))
+                                    (into {})))))
+       (update db :players (fn [players-map]
+                             (->> players-map
+                                  (map (fn [[team-id team-players]]
+                                         [team-id (dissoc team-players :on-court-ft :on-bench-ft)]))
+                                  (into {}))))))))
+
+
 (def ft
-  [ftm
+  [ft-players
+   ftm
    ft-results
    fta])
 
@@ -65,4 +88,3 @@
             (when-some [new-ds (re-frame/get-effect context ::fx/ds)]
               (ds/db->local-storage new-ds))
             context)))
-

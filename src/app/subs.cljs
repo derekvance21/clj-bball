@@ -291,6 +291,14 @@
 
 
 (re-frame/reg-sub
+ ::ft?
+ :<- [::foul?]
+ :<- [::action-type]
+ (fn [[foul? action-type] _]
+   (or foul? (contains? #{:action.type/bonus :action.type/technical} action-type))))
+
+
+(re-frame/reg-sub
  ::rebounder
  (fn [db]
    (get-in db [:action :rebound/player])))
@@ -352,6 +360,20 @@
 
 
 (re-frame/reg-sub
+ ::team-players-on-court-ft
+ :<- [::players]
+ (fn [players [_ t]]
+   (sort (get-in players [t :on-court-ft]))))
+
+
+(re-frame/reg-sub
+ ::team-players-on-bench-ft
+ :<- [::players]
+ (fn [players [_ t]]
+   (sort (get-in players [t :on-bench-ft]))))
+
+
+(re-frame/reg-sub
  ::init
  (fn [db _]
    (get db :init)))
@@ -400,6 +422,7 @@
    (get-in db [:action :ft/results])))
 
 
+;; TODO - add five count check for ft/offense/defense
 (re-frame/reg-sub
  ::valid?
  :<- [::action]
@@ -418,4 +441,10 @@
           (some? type)
           (or (not reboundable?)
               rebound?)))))
+
+
+(re-frame/reg-sub
+ ::sub?
+ (fn [db _]
+   (get-in db [:sub?] false)))
 

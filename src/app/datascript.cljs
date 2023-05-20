@@ -1,6 +1,7 @@
 (ns app.datascript
   (:require
-   [bball.db :as db]
+   [bball.db :as bball.db]
+   [app.db :as db]
    [bball.query :as query]
    [cljs.reader :as reader]
    [datascript.core :as d]
@@ -15,7 +16,7 @@
 
 
 (def schema
-  (->> db/schema
+  (->> bball.db/schema
        (remove #(= "action.type" (namespace (:db/ident %)))) ;; removes enums
        (map
         (fn [{:db/keys [ident valueType] :as sch}]
@@ -107,6 +108,8 @@
 (defn last-action-db
   [db g]
   (last-action (last-possession db g)))
+
+(last-action-db @conn 1)
 
 
 (defn efg
@@ -240,10 +243,14 @@
                             (if poss-change?
                               (:db/id (other-team-db db g last-team-id))
                               last-team-id)))
-        action          (assoc action
-                               :action/order (if poss-change? 1 (inc (get last-action :action/order 0)))
-                               :offense/players (get-in players [team-id :on-court])
-                               :defense/players (:on-court (val (first (dissoc players team-id)))))]
+        action          (cond-> action
+                          true (assoc
+                                :action/order (if poss-change? 1 (inc (get last-action :action/order 0)))
+                                :offense/players (get-in players [team-id :on-court])
+                                :defense/players (:on-court (val (first (dissoc players team-id)))))
+                          (db/ft? action) (assoc
+                                           :ft/offense (get-in players [team-id :on-court-ft])
+                                           :ft/defense (:on-court-ft (val (first (dissoc players team-id))))))]
     [(if poss-change?
        {:db/id g
         :game/possession [{:possession/order (inc (get last-possession :possession/order 0))

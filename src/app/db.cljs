@@ -16,3 +16,10 @@
             (false? (last results))
             (and (= type :action.type/shot) (not make?)))))))
 
+(defn ft?
+  [{:action/keys [type]
+    :shot/keys [foul?]}]
+  (or (= type :action.type/bonus)
+      (= type :action.type/technical)
+      foul?))
+

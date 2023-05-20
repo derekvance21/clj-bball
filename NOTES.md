@@ -12,6 +12,14 @@
     
     - [ ] thus, other idea is just to have another entry in the :players map for on-court-action or something
     - [ ] then at action submit, copies on-court players into on-court-action
+
+    - NEW IDEA
+    - [ ] there'll be ft/offense and ft/defense attributes
+    - [ ] when there's a foul and sub button is pressed, both teams will have a second column to make subs.
+    - [ ] then, you can conj and disj players to the ft/offense and ft/defense
+    - [ ] at new action, if there're ft/offense and ft/defense, it'll become the new action/offense and action/defense
+    - [ ] And maybe you always have ft/offense and ft/defense on free throws, even though many times it'll be the same as action/offense and action/defense if there were no subs
+- [ ] the on-court players inputs should always fill at least the size of five positions, even when making subbing out substitutions. I think it'd look better
 - [ ] when a steal is selected, if the offense has a player of the same number, it'll highlight the offensive player too, rather than just the defensive player. I had this bug earlier with action/types, I think
 - [ ] I'm now using the preview db to basically transact on any action input change. So maybe I should just drop the :action part of app-db and just transact to conn every time? I guess I was originally worried about performance, but this doesn't seem to be an issue. This would also simplify adding certain action attributes like offense/players and defense/players, b/c I could just directly transact them when an action starts. And, it also allows me to do the fouled shot with a certain lineup, press sub and make substitutions after the 1st free throw, then set the missed free throw rebounder as someone who just subbed in
 - [ ] generated court svg with specified dimensions

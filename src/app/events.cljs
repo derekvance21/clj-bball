@@ -65,7 +65,8 @@
 
 (re-frame/reg-event-db
  ::set-action-turnover
- [(re-frame/path [:action])]
+ [interceptors/ft-players
+  (re-frame/path [:action])]
  (fn [action _]
    (-> action
        (select-keys [:action/player])
@@ -74,7 +75,8 @@
 
 (re-frame/reg-event-db
  ::set-action-bonus
- [interceptors/ftm
+ [interceptors/ft-players
+  interceptors/ftm
   interceptors/ft-results
   (re-frame/path [:action])]
  (fn [action _]
@@ -139,45 +141,48 @@
             :shot/make? make?))))
 
 
+;; TODO - add an interceptor to set [:players :on-court-ft] when shooting ft's
 (re-frame/reg-event-db
  ::set-shot-foul?
- [interceptors/rebound
+ [interceptors/ft-players
+  interceptors/rebound
   interceptors/ft
-  (re-frame/path [:action])
   re-frame/trim-v]
- (fn [action [foul?]]
-   (cond-> action
-     true (assoc :shot/foul? foul?)
-     (not foul?) (dissoc :ft/attempted :ft/made :shot/foul?))))
+ (fn [db [foul?]]
+   (let [{:keys [action players]} db]
+     (cond-> db
+       true (update :action assoc :shot/foul? foul?)
+       (not foul?) (update :action dissoc :ft/attempted :ft/made :shot/foul?)
+       foul? (update :players
+                     (fn [players-map]
+                       (->> players-map
+                            (map (fn [[team-id team-players]]
+                                   [team-id (assoc team-players
+                                                   :on-court-ft (:on-court team-players)
+                                                   :on-bench-ft (:on-bench team-players))]))
+                            (into {}))))))))
 
 
 (re-frame/reg-event-db
  ::set-rebounder
  [(re-frame/path [:action])
   re-frame/trim-v]
- (fn [action [rebounder]]
+ (fn [action [offense? rebounder]]
    (-> action
        (dissoc :rebound/team?)
+       (assoc :rebound/off? offense?)
        (assoc :rebound/player rebounder))))
 
-
-(re-frame/reg-event-db
- ::set-off-reb?
- [(re-frame/path [:action])
-  re-frame/trim-v]
- (fn [action [off-reb?]]
-   (-> action
-       (dissoc :rebound/player)
-       (assoc :rebound/off? off-reb?))))
 
 (re-frame/reg-event-db
  ::set-team-reb?
  [(re-frame/path [:action])
   re-frame/trim-v]
- (fn [action [team-reb?]]
+ (fn [action [offense? team-reb?]]
    (-> action
        (dissoc :rebound/player)
-       (assoc :rebound/team? team-reb?))))
+       (assoc :rebound/off? offense?
+              :rebound/team? team-reb?))))
 
 
 (re-frame/reg-event-db
@@ -208,6 +213,7 @@
    (dissoc db :init)))
 
 
+;; TODO - add on-court-ft to action as ft/offense/defense in append-action...
 (re-frame/reg-event-fx
  ::add-action
  [cofx/inject-ds
@@ -216,10 +222,23 @@
    (let [{:keys [action game-id players init]} db
          tx-data [[:db.fn/call ds/append-action-tx-data game-id action players init]]
          new-ds (d/db-with ds tx-data)]
-     {:db (dissoc db :action :init)
+     {:db (-> db
+              (dissoc :init :action)
+              (update :players
+                      (fn [players-map]
+                        (->> players-map
+                             (map (fn [[team-id players]]
+                                    (let [next-on-court (get players :on-court-ft (:on-court players))
+                                          next-on-bench (get players :on-bench-ft (:on-bench players))]
+                                      [team-id (-> players
+                                                   (dissoc :on-court-ft :on-bench-ft)
+                                                   (assoc :on-court next-on-court
+                                                          :on-bench next-on-bench))])))
+                             (into {})))))
       ::fx/ds new-ds})))
 
 
+#_{:clj-kondo/ignore [:not-empty?]}
 (re-frame/reg-event-fx
  ::undo-last-action
  [cofx/inject-ds
@@ -232,6 +251,7 @@
        {::fx/ds new-ds}))))
 
 
+;; TODO - use interceptor to dissoc action fields that used the benched player
 (re-frame/reg-event-db
  ::put-player-to-bench
  (fn [db [_ team-id player]]
@@ -250,12 +270,26 @@
        (update-in [:players team-id :on-bench] (fnil disj #{}) player))))
 
 
-;; TODO - make sure you're not adding a player that's already on the court
+(re-frame/reg-event-db
+ ::put-player-to-ft-bench
+ (fn [db [_ team-id player]]
+   (-> db
+       (update-in [:players team-id :on-court-ft] (fnil disj #{}) player)
+       (update-in [:players team-id :on-bench-ft] (fnil conj #{}) player))))
+
+
+(re-frame/reg-event-db
+ ::put-player-to-ft-court
+ (fn [db [_ team-id player]]
+   (-> db
+       (update-in [:players team-id :on-court-ft] (fnil conj #{}) player)
+       (update-in [:players team-id :on-bench-ft] (fnil disj #{}) player))))
+
+
 (re-frame/reg-event-db
  ::add-player
  (fn [db [_ team-id player]]
-   (when-not (contains? (get-in db [:players team-id :on-court]) player)
-     (update-in db [:players team-id :on-bench] (fnil conj #{}) player))))
+   (update-in db [:players team-id :on-bench] (fnil conj #{}) player)))
 
 
 (re-frame/reg-event-db
@@ -296,3 +330,10 @@
   re-frame/trim-v]
  (fn [db [idx make?]]
    (update-in db [:action :ft/results] assoc idx make?)))
+
+
+(re-frame/reg-event-db
+ ::toggle-sub?
+ (fn [db _]
+   (update-in db [:sub?] not)))
+
