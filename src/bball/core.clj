@@ -94,7 +94,7 @@
 ;;                          :else v)]))
 
 
-;;   @(def ds-db (edn/read-string {:readers datascript/data-readers} (slurp "games/2023-03-04-lynden-christian-nooksack-valley.edn")))
+;;   @(def ds-db (edn/read-string {:readers datascript/data-readers} (slurp "resources/games/2023-03-04-lynden-christian-nooksack-valley.edn")))
 
 
 ;;   @(def lc-nv-tx-lists
@@ -114,9 +114,9 @@
 ;;     (-> file slurp edn/read-string p/parse))
 
 
-;;   @(def games (map file->tx ["games/2022-09-04-Vegas-Seattle.edn"
-;;                              "games/2022-09-06-Vegas-Seattle.edn"
-;;                              "games/2022-02-05-Blaine-Ferndale.edn"]))
+;;   @(def games (map file->tx ["resources/games/2022-09-04-Vegas-Seattle.edn"
+;;                              "resources/games/2022-09-06-Vegas-Seattle.edn"
+;;                              "resources/games/2022-02-05-Blaine-Ferndale.edn"]))
 
 
 ;;   (d/transact conn {:tx-data games}))

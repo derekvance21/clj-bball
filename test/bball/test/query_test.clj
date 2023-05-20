@@ -15,8 +15,8 @@
                      (d/connect client db))]
 
     (d/transact *conn* {:tx-data db/schema})
-    (d/transact *conn* {:tx-data [(file->tx "games/2022-09-06-Vegas-Seattle.edn")]})
-
+    (d/transact *conn* {:tx-data [(file->tx "resources/games/2022-09-06-Vegas-Seattle.edn")]})
+    
     (testing "FT%"
       (is (= (-> '[:find (pull ?t [:team/name]) (sum ?fts) (sum ?ftas)
                    :in $ %
