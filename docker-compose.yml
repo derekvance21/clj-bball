@@ -1,5 +1,12 @@
 services:
-  app:
-    build: .
+  transactor:
+    image: dev-transactor
+    build: ./docker/dev-transactor
+  
+  peer-server:
+    image: dev-peer-server
+    build: ./docker/dev-peer-server
     ports:
-      - 8008:8008
+      - "4336:4336"
+    depends_on:
+      - transactor

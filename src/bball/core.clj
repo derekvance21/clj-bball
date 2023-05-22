@@ -3,8 +3,7 @@
    [bball.parser :as p]
    [bball.db :as db]
    [bball.query :as q]
-   [datomic.api :as d]
-   [datomic.client.api :as client.d]
+   [datomic.client.api :as d]
    [clojure.edn :as edn]
    [datascript.core :as datascript]
    [ring.adapter.jetty :as jetty]
@@ -14,42 +13,14 @@
   (:gen-class))
 
 
-;; (comment
-;;   (def client
-;;     (d/client
-;;      {:server-type :peer-server
-;;       :endpoint "localhost:8998"
-;;       :secret "mysecret"
-;;       :access-key "myaccesskey"
-;;       :validate-hostnames false}))
-;;   ;; (d/create-database client {:db-name "games"}) ;; NOT AVAILABLE WITH PEER SERVER  
-;;   (def client-conn (d/connect client {:db-name "games"})))
-
-;; (def client
-;;   (d/client
-;;    {:server-type :peer-server
-;;     :endpoint "localhost:8998"
-;;     :secret "mysecret"
-;;     :access-key "myaccesskey"
-;;     :validate-hostnames false}))
-;; (def client-conn (d/connect client {:db-name "games"}))
-;; (d/q '[:find ?g (pull ?t [:team/name]) (sum ?pts)
-;;        :in $ %
-;;        :with ?a
-;;        :where
-;;        (actions ?g ?t ?p ?a)
-;;        (pts ?a ?pts)]
-;;      (d/db client-conn)
-;;      q/rules)
+(def client (d/client {:server-type :peer-server
+                       :access-key "key"
+                       :secret "secret"
+                       :endpoint "localhost:4336"
+                       :validate-hostnames false}))
 
 
-(def db-uri "datomic:mem://games")
-
-
-(d/create-database db-uri)
-
-
-(def conn (d/connect db-uri))
+(def conn (d/connect client {:db-name "db"}))
 
 
 (defn datomic->datascript-tx-data
@@ -78,106 +49,77 @@
        (map :db/ident db/schema)))
 
 
-;; (comment
-;;   (d/transact conn {:tx-data db/schema}))
+(defn datomic->datascript-db
+  [db]
+  (datascript/db-with
+   (datascript/empty-db (db/datomic->datascript-schema db/schema))
+   (datomic->datascript-tx-data db)))
 
 
-;; (comment
-;;   (defn datom->tx
-;;     [datom schema]
-;;     (let [{:keys [e a v]} datom
-;;           ref? (and (= :db.type/ref (get-in schema [a :db/valueType]))
-;;                     (number? v))]
-;;       [:db/add (- e) a (cond
-;;                          ref? (- v)
-;;                          (coll? v) (vec v)
-;;                          :else v)]))
+(defn datascript->datomic-tx-data
+  [db]
+  (let [schema-ds-format (into {} (map (juxt :db/ident identity) db/schema))
+        datom->tx (fn [{:keys [e a v]}]
+                    (let [ref? (and (= :db.type/ref (get-in schema-ds-format [a :db/valueType]))
+                                    (number? v))]
+                      [:db/add (- e) a (cond
+                                         ref? (- v)
+                                         (coll? v) (vec v)
+                                         :else v)]))]
+    (->>
+     (datascript/datoms db :eavt)
+     (filter (fn [{:keys [a]}] (contains? schema-ds-format a)))
+     (map datom->tx))))
 
 
-;;   @(def ds-db (edn/read-string {:readers datascript/data-readers} (slurp "resources/games/2023-03-04-lynden-christian-nooksack-valley.edn")))
+(comment
 
 
-;;   @(def lc-nv-tx-lists
-;;      (let [schema-ds-format (into {} (map (juxt :db/ident identity) db/schema))]
-;;        (->>
-;;         (datascript/datoms ds-db :eavt)
-;;         (filter (fn [{:keys [a]}] (contains? schema-ds-format a)))
-;;         (map #(datom->tx % schema-ds-format)))))
+  (d/transact conn {:tx-data db/schema})
 
 
-;;   (d/transact conn {:tx-data lc-nv-tx-lists}))
+  @(def datascript-game-db
+     (edn/read-string {:readers datascript/data-readers} (slurp "resources/games/2023-03-04-lynden-christian-nooksack-valley.edn")))
 
 
-;; (comment
-;;   (defn file->tx
-;;     [file]
-;;     (-> file slurp edn/read-string p/parse))
+  @(def datascript-game-tx-data
+     (datascript->datomic-tx-data datascript-game-db))
 
 
-;;   @(def games (map file->tx ["resources/games/2022-09-04-Vegas-Seattle.edn"
-;;                              "resources/games/2022-09-06-Vegas-Seattle.edn"
-;;                              "resources/games/2022-02-05-Blaine-Ferndale.edn"]))
+  (d/transact conn {:tx-data datascript-game-tx-data})
 
 
-;;   (d/transact conn {:tx-data games}))
+  (defn edn-file->tx-data
+    [file]
+    (-> file slurp edn/read-string p/parse))
 
 
-;; (comment
-;;   (->> (d/q '[:find ?g (pull ?t [:team/name]) (sum ?pts)
-;;               :in $ %
-;;               :with ?a
-;;               :where
-;;               (actions ?g ?t ?p ?a)
-;;               (pts ?a ?pts)]
-;;             (d/db conn)
-;;             q/rules)
-;;        (sort-by #(nth % 2) >)
-;;        (sort-by first)))
+  @(def edn-games (map edn-file->tx-data ["resources/games/2022-09-04-Vegas-Seattle.edn"
+                                     "resources/games/2022-09-06-Vegas-Seattle.edn"
+                                     "resources/games/2022-02-05-Blaine-Ferndale.edn"]))
 
 
+  (d/transact conn {:tx-data edn-games})
 
 
-
-;; (comment
-;;   @(def datascript-tx-data (datomic->datascript-tx-data (d/db conn)))
-
-
-;;   @(def datascript-schema
-;;      (->> db/schema
-;;           (remove #(= "action.type" (namespace (:db/ident %)))) ;; removes enums
-;;           (map
-;;            (fn [{:db/keys [ident valueType] :as sch}]
-;;              [ident
-;;               (select-keys sch [:db/cardinality :db/unique :db/index :db/tupleAttrs :db/isComponent :db/doc
-;;                                 (when (and (= valueType :db.type/ref) (not= "type" (name ident)))
-;;                                   :db/valueType)])]))
-;;           (into {})))
-
-
-;;   @(def datascript-db
-;;      (datascript/db-with
-;;       (datascript/empty-db datascript-schema)
-;;       datascript-tx-data))
-
-
-;;   (->> (datascript/q
-;;         '[:find ?g (pull ?t [:team/name]) (sum ?pts)
-;;           :in $ %
-;;           :with ?a
-;;           :where
-;;           (actions ?g ?t ?p ?a)
-;;           (pts ?a ?pts)]
-;;         datascript-db q/rules)
-;;        (sort-by #(nth % 2) >)
-;;        (sort-by first)))
+  (datascript/q
+   '[:find ?g ?team (sum ?pts)
+     :in $ %
+     :with ?a
+     :where
+     (actions ?g ?t ?p ?a)
+     (pts ?a ?pts)
+     [?t :team/name ?team]]
+   (datomic->datascript-db (d/db conn))
+   q/rules))
 
 
 (defroutes app-routes
   (GET "/" [] "<html><head><title>clj-bball</title></head><body><div style=\"height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center\"><p style=\"font-family: sans-serif; \">Hello, Ring!</p></div></body></html>")
   (route/files "/" {:root "resources/public"})
-  #_(GET "/db" [] {:headers {"Access-Control-Allow-Origin" "*"
-                             "Content-Type" "application/edn"}
-                   :body (comment "DB WILL GO HERE")})
+  (GET "/db" [] {:headers {"Access-Control-Allow-Origin" "*"
+                           "Content-Type" "application/edn"}
+                 :body (pr-str (datomic->datascript-db (d/db conn)))})
   (route/not-found "Not Found"))
 
 

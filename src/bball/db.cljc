@@ -1,5 +1,6 @@
 (ns bball.db)
 
+
 (def schema [;; action
              {:db/ident :action/type
               :db/valueType :db.type/ref
@@ -131,6 +132,7 @@
               :db/unique :db.unique/identity
               :db/doc "the name of the team"}])
 
+
 (def ds-schema
   (->> schema
        (remove (fn [sch]
@@ -143,6 +145,20 @@
        (reduce (fn [schema sch]
                  (assoc schema (:db/ident sch) (dissoc sch :db/ident)))
                {}))) ;; transforms from vector to map
+
+
+(defn datomic->datascript-schema
+  [schema]
+  (->> schema
+       (remove #(= "action.type" (namespace (:db/ident %)))) ;; removes enums
+       (map
+        (fn [{:db/keys [ident valueType] :as sch}]
+          [ident
+           (select-keys sch [:db/cardinality :db/unique :db/index :db/tupleAttrs :db/isComponent :db/doc
+                             (when (and (= valueType :db.type/ref) (not= "type" (name ident)))
+                               :db/valueType)])]))
+       (into {})))
+
 
 (def dev-config {:server-type :dev-local
                  :storage-dir :mem

@@ -2,7 +2,7 @@
   (:require [clojure.test :as t :refer [is deftest testing]]
             [bball.query :as q]
             [bball.db :as db]
-            [bball.core :refer [file->tx]]
+            [bball.core :refer [edn-file->tx-data]]
             [datomic.client.api :as d]))
 
 (def ^:dynamic *conn*)
@@ -15,7 +15,7 @@
                      (d/connect client db))]
 
     (d/transact *conn* {:tx-data db/schema})
-    (d/transact *conn* {:tx-data [(file->tx "resources/games/2022-09-06-Vegas-Seattle.edn")]})
+    (d/transact *conn* {:tx-data [(edn-file->tx-data "resources/games/2022-09-06-Vegas-Seattle.edn")]})
     
     (testing "FT%"
       (is (= (-> '[:find (pull ?t [:team/name]) (sum ?fts) (sum ?ftas)
