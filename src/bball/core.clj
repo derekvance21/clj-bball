@@ -102,17 +102,18 @@
   (d/transact conn {:tx-data (map (comp parser/parse edn/read-string slurp) edn-game-files)})
 
 
-  (let [score-query
-        '[:find ?g ?team (sum ?pts)
-          :in $ %
-          :with ?a
-          :where
-          (actions ?g ?t ?p ?a)
-          (pts ?a ?pts)
-          [?t :team/name ?team]]]
-    [(d/q score-query (d/db conn) query/rules)
-     (datascript/q score-query (datomic->datascript-db (d/db conn)) query/rules)])
+  (->> (let [score-query
+             '[:find ?g ?team (sum ?pts)
+               :in $ %
+               :with ?a
+               :where
+               (actions ?g ?t ?p ?a)
+               (pts ?a ?pts)
+               [?t :team/name ?team]]]
+         [(d/q score-query (d/db conn) query/rules)
+          (datascript/q score-query (datomic->datascript-db (d/db conn)) query/rules)]))
   )
+
 
 
 (defroutes app-routes

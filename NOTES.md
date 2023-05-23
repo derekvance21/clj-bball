@@ -2,6 +2,7 @@
 
 ## Todo
 
+- [ ] datoms with empty :ft/results are being logged. Lots of [_ :ft/results [] _]
 - [ ] delete player
 - [ ] use interceptors for validation - events should be very simple, and use interceptors like enrich for validation and stuff. Like subbing someone out dissoc'ing the player if they were a shoot/rebound/stealer. That should be done via an interceptor, not cond-> logic in the event.
 - [ ] I'm now using the preview db to basically transact on any action input change. So maybe I should just drop the :action part of app-db and just transact to conn every time? I guess I was originally worried about performance, but this doesn't seem to be an issue. This would also simplify adding certain action attributes like offense/players and defense/players, b/c I could just directly transact them when an action starts. And, it also allows me to do the fouled shot with a certain lineup, press sub and make substitutions after the 1st free throw, then set the missed free throw rebounder as someone who just subbed in
