@@ -82,7 +82,8 @@
   (def db-game-files
     ["resources/games/2023-03-04-lynden-christian-nooksack-valley.edn"
      "resources/games/2023-02-25-Zillah-Blaine.edn"
-     "resources/games/2023-02-18-Northwest-Blaine.edn"])
+     "resources/games/2023-02-18-Northwest-Blaine.edn"
+     "resources/games/2023-02-14-Blaine-Nooksack-Valley.edn"])
 
 
   (for [db-tx-data (map (comp datascript->datomic-tx-data

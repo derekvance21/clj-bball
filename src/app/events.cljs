@@ -288,8 +288,10 @@
 
 (re-frame/reg-event-db
  ::add-player
- (fn [db [_ team-id player]]
-   (update-in db [:players team-id :on-bench] (fnil conj #{}) player)))
+ (fn [{:keys [action] :as db} [_ team-id player]]
+   (cond-> db
+     true (update-in [:players team-id :on-bench] (fnil conj #{}) player)
+     (db/ft? action) (update-in [:players team-id :on-bench-ft] (fnil conj #{}) player))))
 
 
 (re-frame/reg-event-fx

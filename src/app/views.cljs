@@ -65,7 +65,7 @@
         team1-preview-score (<sub [::subs/preview-team-score t1])
         team2-preview-score (<sub [::subs/preview-team-score t2])]
     [:div
-     [:div.flex.justify-between
+     [:div.flex.justify-between.items-center
       [:h2.text-xl
        (:team/name team1)]
       [period-button]
@@ -454,7 +454,7 @@
 
 
 (defn court []
-  (let [scale 0.8
+  (let [scale 0.5
         [court-width court-height :as court-dimensions] [(* 12 50) (* 12 42)]
         court-client-dimensions [(* scale court-width) (* scale court-height)]
         hoop-coordinates [(/ court-width 2) 63]
