@@ -162,17 +162,18 @@
                        #(re-frame/dispatch [::events/set-player player]))
            :class "w-8 h-8"}
           (str player)]])]
-     [:ul.flex.flex-col.gap-1
-      (for [player (if ft? ft-players players)]
-        [:li {:key (str team-id "#" player "secondary")}
-         [button
-          {:selected? (cond reboundable? (rebounder? player)
-                            :else false)
-           :disabled? (if sub? (not ft?) (not reboundable?))
-           :on-click (cond (and sub? ft?) #(re-frame/dispatch [::events/put-player-to-ft-bench team-id player])
-                           reboundable? #(re-frame/dispatch [::events/set-rebounder true player]))
-           :class "w-8 h-8"}
-          (str player)]])]]))
+     (when (if sub? ft? (or ft? reboundable?))
+       [:ul.flex.flex-col.gap-1
+        (for [player (if ft? ft-players players)]
+          [:li {:key (str team-id "#" player "secondary")}
+           [button
+            {:selected? (cond reboundable? (rebounder? player)
+                              :else false)
+             :disabled? (if sub? (not ft?) (not reboundable?))
+             :on-click (cond (and sub? ft?) #(re-frame/dispatch [::events/put-player-to-ft-bench team-id player])
+                             reboundable? #(re-frame/dispatch [::events/set-rebounder true player]))
+             :class "w-8 h-8"}
+            (str player)]])])]))
 
 
 (defn defensive-team-players
@@ -189,28 +190,30 @@
         off-reb? (<sub [::subs/off-reb?])
         rebounder? (fn [player] (and (not off-reb?) (= player rebounder)))]
     [:div.flex.items-start.gap-1
-     [:ul.flex.flex-col.gap-1
-      (for [player players]
-        [:li {:key (str team-id "#" player "primary")}
-         [button
-          {:selected? false
-           :disabled? (not sub?)
-           :on-click (when sub? #(re-frame/dispatch [::events/put-player-to-bench (:db/id team) player]))
-           :class "w-8 h-8"}
-          (str player)]])]
-     [:ul.flex.flex-col.gap-1
-      (for [player (if ft? ft-players players)]
-        [:li {:key (str team-id "#" player "secondary")}
-         [button
-          {:selected? (cond reboundable? (rebounder? player)
-                            stealable? (= player stealer)
-                            :else false)
-           :disabled? (if sub? (not ft?) (and (not reboundable?) (not stealable?)))
-           :on-click (cond (and sub? ft?) #(re-frame/dispatch [::events/put-player-to-ft-bench team-id player])
-                           reboundable? #(re-frame/dispatch [::events/set-rebounder false player])
-                           stealable? #(re-frame/dispatch [::events/set-stealer player]))
-           :class "w-8 h-8"}
-          (str player)]])]]))
+     (when (or sub? ft? (and (not reboundable?) (not stealable?)))
+       [:ul.flex.flex-col.gap-1
+        (for [player players]
+          [:li {:key (str team-id "#" player "primary")}
+           [button
+            {:selected? false
+             :disabled? (not sub?)
+             :on-click (when sub? #(re-frame/dispatch [::events/put-player-to-bench (:db/id team) player]))
+             :class "w-8 h-8"}
+            (str player)]])])
+     (when (if sub? ft? (or ft? reboundable? stealable?))
+       [:ul.flex.flex-col.gap-1
+        (for [player (if ft? ft-players players)]
+          [:li {:key (str team-id "#" player "secondary")}
+           [button
+            {:selected? (cond reboundable? (rebounder? player)
+                              stealable? (= player stealer)
+                              :else false)
+             :disabled? (if sub? (not ft?) (and (not reboundable?) (not stealable?)))
+             :on-click (cond (and sub? ft?) #(re-frame/dispatch [::events/put-player-to-ft-bench team-id player])
+                             reboundable? #(re-frame/dispatch [::events/set-rebounder false player])
+                             stealable? #(re-frame/dispatch [::events/set-stealer player]))
+             :class "w-8 h-8"}
+            (str player)]])])]))
 
 
 (defn team-players-input
@@ -519,13 +522,12 @@
              :on-click #(re-frame/dispatch [::events/set-ft-result idx (not make?)])}
             "Make?"]])]
        (when (contains? #{:action.type/bonus :action.type/technical} @type)
-         (let [add-ft? (<= 1 (<sub [::subs/ft-attempted]))]
+         (let [add-ft? (<= (<sub [::subs/ft-attempted]) 1)]
            [button
             {:class "w-8 h-8"
-             :on-click #(re-frame/dispatch
-                         (if add-ft?
-                           [::events/add-ft-attempted]
-                           [::events/pop-ft-attempted]))}
+             :on-click (if add-ft?
+                         #(re-frame/dispatch [::events/add-ft-attempted])
+                         #(re-frame/dispatch [::events/pop-ft-attempted]))}
             (if add-ft? "+" "-")]))]
       [:div.my-2
        (let [disabled? (and (nil? (<sub [::subs/action])) (not (<sub [::subs/possessions?])))]

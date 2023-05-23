@@ -109,8 +109,6 @@
   [db g]
   (last-action (last-possession db g)))
 
-(last-action-db @conn 1)
-
 
 (defn efg
   [db g]

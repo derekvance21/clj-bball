@@ -35,8 +35,9 @@
 (def ft-players
   (re-frame/enrich
    (fn [db event]
+     ;; TODO - I think this if statement isn't needed. ft-players is set for ft events, so it'll be a ft?
      (if (db/ft? (:action db))
-       (when (every? (fn [[team-id players]]
+       (when-not (every? (fn [[team-id players]]
                        (and (contains? players :on-court-ft)
                             (contains? players :on-bench-ft)))
                      (:players db))
