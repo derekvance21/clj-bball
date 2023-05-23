@@ -2,6 +2,12 @@ services:
   transactor:
     image: dev-transactor
     build: ./docker/dev-transactor
+    volumes:
+      - type: volume
+        source: dbdata
+        target: /datomic-pro-1.0.6726/data
+        volume:
+          nocopy: true
   
   peer-server:
     image: dev-peer-server
@@ -10,3 +16,6 @@ services:
       - "4336:4336"
     depends_on:
       - transactor
+
+volumes:
+  dbdata:

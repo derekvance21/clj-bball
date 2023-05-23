@@ -1,8 +1,9 @@
 (ns bball.test.query-test
   (:require [clojure.test :as t :refer [is deftest testing]]
-            [bball.query :as q]
+            [bball.query :as query]
             [bball.db :as db]
-            [bball.core :refer [edn-file->tx-data]]
+            [bball.parser :as parser]
+            [clojure.edn :as edn]
             [datomic.client.api :as d]))
 
 (def ^:dynamic *conn*)
@@ -15,7 +16,7 @@
                      (d/connect client db))]
 
     (d/transact *conn* {:tx-data db/schema})
-    (d/transact *conn* {:tx-data [(edn-file->tx-data "resources/games/2022-09-06-Vegas-Seattle.edn")]})
+    (d/transact *conn* {:tx-data [(-> "resources/games/2022-09-06-Vegas-Seattle.edn" slurp edn/read-string parser/parse)]})
     
     (testing "FT%"
       (is (= (-> '[:find (pull ?t [:team/name]) (sum ?fts) (sum ?ftas)
@@ -25,7 +26,7 @@
                    (actions ?g ?t ?p ?a)
                    [?a :ft/attempted ?ftas]
                    [?a :ft/made ?fts]]
-                 (d/q (d/db *conn*) q/rules)
+                 (d/q (d/db *conn*) query/rules)
                  set)
              #{[{:team/name "Las Vegas Aces"} 15 19]
                [{:team/name "Seattle Storm"} 19 26]})))
@@ -37,7 +38,7 @@
                          [?g :game/possession ?p]
                          [?p :possession/team ?t]]
                        (d/db *conn*)
-                       q/rules))
+                       query/rules))
              #{[{:team/name "Las Vegas Aces"} 78 40]
                [{:team/name "Seattle Storm"} 78 40]})))
     (testing "FT/FGA"
@@ -50,7 +51,7 @@
                          (fgas ?a ?fgas)
                          [?t :team/name ?team]]
                        (d/db *conn*)
-                       q/rules))
+                       query/rules))
              #{["Las Vegas Aces" 15 63]
                ["Seattle Storm" 19 70]})))
     (testing "eFG%"
@@ -62,7 +63,7 @@
                          (fga? ?a)
                          (efgs ?a ?efgs)]
                        (d/db *conn*)
-                       q/rules))
+                       query/rules))
              #{[{:team/name "Seattle Storm"} 0.5214285714285715]
                [{:team/name "Las Vegas Aces"} 0.6507936507936508]})))
     (testing "TO%"
@@ -73,7 +74,7 @@
                          (actions ?g ?t ?p ?a)
                          (tos ?a ?turnovers)]
                        (d/db *conn*)
-                       q/rules))
+                       query/rules))
              #{[{:team/name "Seattle Storm"} 9 78]
                [{:team/name "Las Vegas Aces"} 12 78]})))
     (testing "3Pt%"
@@ -87,7 +88,7 @@
                          (fgs ?a ?3fgs)
                          [?t :team/name ?team]]
                        (d/db *conn*)
-                       q/rules))
+                       query/rules))
              #{["Las Vegas Aces" 10 24 0.4166666666666667]
                ["Seattle Storm" 11 26 0.4230769230769231]})))
     (testing "OffReb%"
@@ -100,7 +101,7 @@
                          (off-rebs ?a ?off-rebs)
                          [?t :team/name ?team]]
                        (d/db *conn*)
-                       q/rules))
+                       query/rules))
              #{["Las Vegas Aces" 5 29 0.1724137931034483]
                ["Seattle Storm" 11 40 0.275]})))
     (testing "OffRtg"
@@ -111,7 +112,7 @@
                          (pts ?a ?pts)
                          [?t :team/name ?team]]
                        (d/db *conn*)
-                       q/rules))
+                       query/rules))
              #{["Seattle Storm" 92 78]
                ["Las Vegas Aces" 97 78]})))
     (testing "Box Score"
@@ -123,7 +124,7 @@
                          [?a :action/player ?number]
                          (pts ?a ?pts)]
                        (d/db *conn*)
-                       q/rules))
+                       query/rules))
              #{[{:team/name "Las Vegas Aces"} 41 4]
                [{:team/name "Seattle Storm"} 10 8]
                [{:team/name "Las Vegas Aces"} 5 0]

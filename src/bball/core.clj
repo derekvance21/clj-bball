@@ -1,8 +1,8 @@
 (ns bball.core
   (:require
-   [bball.parser :as p]
+   [bball.parser :as parser]
    [bball.db :as db]
-   [bball.query :as q]
+   [bball.query :as query]
    [datomic.client.api :as d]
    [clojure.edn :as edn]
    [datascript.core :as datascript]
@@ -58,18 +58,19 @@
 
 (defn datascript->datomic-tx-data
   [db]
-  (let [schema-ds-format (into {} (map (juxt :db/ident identity) db/schema))
+  (let [schema (->> db/schema
+                    (map (juxt :db/ident identity))
+                    (into {}))
         datom->tx (fn [{:keys [e a v]}]
-                    (let [ref? (and (= :db.type/ref (get-in schema-ds-format [a :db/valueType]))
+                    (let [ref? (and (= :db.type/ref (get-in schema [a :db/valueType]))
                                     (number? v))]
                       [:db/add (- e) a (cond
                                          ref? (- v)
                                          (coll? v) (vec v)
                                          :else v)]))]
-    (->>
-     (datascript/datoms db :eavt)
-     (filter (fn [{:keys [a]}] (contains? schema-ds-format a)))
-     (map datom->tx))))
+    (->> (datascript/datoms db :eavt)
+         (filter (fn [{:keys [a]}] (contains? schema a)))
+         (map datom->tx))))
 
 
 (comment
@@ -78,40 +79,37 @@
   (d/transact conn {:tx-data db/schema})
 
 
-  @(def datascript-game-db
-     (edn/read-string {:readers datascript/data-readers} (slurp "resources/games/2023-03-04-lynden-christian-nooksack-valley.edn")))
+  (def db-game-files
+    ["resources/games/2023-03-04-lynden-christian-nooksack-valley.edn"
+     "resources/games/2023-02-25-Zillah-Blaine.edn"])
 
 
-  @(def datascript-game-tx-data
-     (datascript->datomic-tx-data datascript-game-db))
+  (for [db-tx-data (map (comp datascript->datomic-tx-data
+                              (partial edn/read-string {:readers datascript/data-readers})
+                              slurp)
+                        db-game-files)]
+    (d/transact conn {:tx-data db-tx-data}))
 
 
-  (d/transact conn {:tx-data datascript-game-tx-data})
+  (def edn-game-files
+    ["resources/games/2022-09-04-Vegas-Seattle.edn"
+     "resources/games/2022-09-06-Vegas-Seattle.edn"
+     "resources/games/2022-02-05-Blaine-Ferndale.edn"])
 
 
-  (defn edn-file->tx-data
-    [file]
-    (-> file slurp edn/read-string p/parse))
+  (d/transact conn {:tx-data (map (comp parser/parse edn/read-string slurp) edn-game-files)})
 
 
-  @(def edn-games (map edn-file->tx-data ["resources/games/2022-09-04-Vegas-Seattle.edn"
-                                     "resources/games/2022-09-06-Vegas-Seattle.edn"
-                                     "resources/games/2022-02-05-Blaine-Ferndale.edn"]))
-
-
-  (d/transact conn {:tx-data edn-games})
-
-
-  (datascript/q
-   '[:find ?g ?team (sum ?pts)
-     :in $ %
-     :with ?a
-     :where
-     (actions ?g ?t ?p ?a)
-     (pts ?a ?pts)
-     [?t :team/name ?team]]
-   (datomic->datascript-db (d/db conn))
-   q/rules))
+  (let [score-query
+        '[:find ?g ?team (sum ?pts)
+          :in $ %
+          :with ?a
+          :where
+          (actions ?g ?t ?p ?a)
+          (pts ?a ?pts)
+          [?t :team/name ?team]]]
+    [(d/q score-query (d/db conn) query/rules)
+     (datascript/q score-query (datomic->datascript-db (d/db conn)) query/rules)]))
 
 
 (defroutes app-routes
