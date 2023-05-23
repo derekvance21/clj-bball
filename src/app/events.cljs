@@ -255,11 +255,13 @@
 (re-frame/reg-event-db
  ::put-player-to-bench
  (fn [db [_ team-id player]]
-   (let [action-player (get-in db [:action :action/player])]
+   (let [action-player (get-in db [:action :action/player])
+         rebounder (get-in db [:action :rebound/player])]
      (cond-> db
        true (update-in [:players team-id :on-court] (fnil disj #{}) player)
        true (update-in [:players team-id :on-bench] (fnil conj #{}) player)
-       (= player action-player) (update :action dissoc :action/player)))))
+       ;; (= player action-player) (update :action dissoc :action/player) ;; TODO - this doesn't work b/c it doesn't do an offense? check
+       ))))
 
 
 (re-frame/reg-event-db

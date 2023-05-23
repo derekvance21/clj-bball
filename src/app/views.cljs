@@ -169,7 +169,7 @@
            [button
             {:selected? (cond reboundable? (rebounder? player)
                               :else false)
-             :disabled? (if sub? (not ft?) (not reboundable?))
+             :disabled? (if sub? (= player action-player) (not reboundable?))
              :on-click (cond (and sub? ft?) #(re-frame/dispatch [::events/put-player-to-ft-bench team-id player])
                              reboundable? #(re-frame/dispatch [::events/set-rebounder true player]))
              :class "w-8 h-8"}
