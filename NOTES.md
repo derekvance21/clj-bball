@@ -6,7 +6,6 @@
 - [ ] I'm now using the preview db to basically transact on any action input change. So maybe I should just drop the :action part of app-db and just transact to conn every time? I guess I was originally worried about performance, but this doesn't seem to be an issue. This would also simplify adding certain action attributes like offense/players and defense/players, b/c I could just directly transact them when an action starts. And, it also allows me to do the fouled shot with a certain lineup, press sub and make substitutions after the 1st free throw, then set the missed free throw rebounder as someone who just subbed in
 - [ ] generated court svg with specified dimensions
 - [ ] add clojure/spec to app-db
-- [ ] customize team/name
 - [ ] lineup stats
 - [ ] individual stats
 - [ ] svg for the whole court, but then mask parts?
@@ -16,6 +15,7 @@
 - [ ] edit already transacted action. But you should think of it more like editting a possession, b/c you don't really want to throw off the possession alternating pattern, although this is broken at periods, so... So if you allowed just randomly deleting one possession, then you'd need a way to insert a possession in between others. Also, something you might need is editting the period of past possessions.
 - [ ] So like, maybe there's a way to show the end of a period in the render-possessions component. And it would insert some kind of possession end marker in between the :game/possession 's, so that you could see end of periods. It'd need to be a stateful-transducer-kind-of-thing, but I don't think it'd be too hard
 
+- [X] customize team/name
 - [X] have a button to activate substitutions, which would also allow deleting players. This gives more space for other things there, like a second column for "object" players
 - [X] two column players inputs
 - [X] when a steal is selected, if the offense has a player of the same number, it'll highlight the offensive player too, rather than just the defensive player. I had this bug earlier with action/types, I think

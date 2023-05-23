@@ -113,6 +113,19 @@
         :on-focus #(reset! player nil)}])))
 
 
+(defn team-edit
+  [team]
+  (let [team-name (reagent/atom (:team/name team))]
+    (fn [team]
+      [:input.rounded-full.border.border-green-500.text-green-700.px-2.py-1.font-mono
+       {:type "text"
+        :value @team-name
+        :on-change #(reset! team-name (-> % .-target .-value))
+        :on-blur #(when (not= @team-name (:team/name team))
+                    (re-frame/dispatch [::events/update-team-name (:db/id team) @team-name]))
+        :style {:width (str (+ 2 (count @team-name)) "ch")}}])))
+
+
 (defn team-button
   [team]
   (let [offense? (= team (<sub [::subs/team]))
@@ -126,16 +139,19 @@
                          (not need-rebound-player?)
                          (and (not need-rebound-player?)
                               (not type?)
-                              (not need-action-player?)))]
-    [button
-     {:class "px-2 py-1"
-      :disabled? team-disabled?
-      :selected? (and team-reb? (= offense? off-reb?))
-      :on-click (fn []
-                  (if need-rebound-player?
-                    (re-frame/dispatch [::events/set-team-reb? offense? true])
-                    (re-frame/dispatch [::events/set-init-team team])))}
-     (:team/name team)]))
+                              (not need-action-player?)))
+        sub? (<sub [::subs/sub?])]
+    (if sub?
+      [:div.w-fit [team-edit team]]
+      [button
+       {:class "px-2 py-1"
+        :disabled? team-disabled?
+        :selected? (and team-reb? (= offense? off-reb?))
+        :on-click (fn []
+                    (if need-rebound-player?
+                      (re-frame/dispatch [::events/set-team-reb? offense? true])
+                      (re-frame/dispatch [::events/set-init-team team])))}
+       (:team/name team)])))
 
 
 (defn offensive-team-players

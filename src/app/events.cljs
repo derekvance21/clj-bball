@@ -294,6 +294,17 @@
    (update-in db [:players team-id :on-bench] (fnil conj #{}) player)))
 
 
+(re-frame/reg-event-fx
+ ::update-team-name
+ [cofx/inject-ds]
+ (fn [{:keys [ds]} [_ team-id team-name]]
+   (try
+     ;; db/db-with may error because of upsert conflicts (two teams with the same name)
+     {::fx/ds (d/db-with ds [{:db/id team-id
+                              :team/name team-name}])}
+     (catch js/Object e))))
+
+
 (re-frame/reg-event-db
  ::delete-bench-player
  (fn [db [_ team-id player]]
