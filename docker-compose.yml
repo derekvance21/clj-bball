@@ -1,21 +1,25 @@
 services:
   transactor:
     image: dev-transactor
-    build: ./docker/dev-transactor
+    build: ./docker/datomic-pro
+    command: bin/transactor -Ddatomic.printConnectionInfo=true config/transactor.properties
+    expose:
+      - "4334"
+      - "4335"
     volumes:
-      - type: volume
-        source: dbdata
-        target: /datomic-pro-1.0.6726/data
-        volume:
-          nocopy: true
+      - dbdata:/datomic-pro-1.0.6726/data
+      - ./docker/dev-transactor:/datomic-pro-1.0.6726/config
   
   peer-server:
     image: dev-peer-server
-    build: ./docker/dev-peer-server
+    build: ./docker/datomic-pro
+    command: sh -c "bin/repl < init/init.clj && bin/run -m datomic.peer-server -h peer-server -p 4336 -a key,secret -d db,datomic:dev://transactor:4334/db?password=datomic"
     ports:
       - "4336:4336"
     depends_on:
       - transactor
+    volumes:
+      - ./docker/dev-peer-server:/datomic-pro-1.0.6726/init
 
 volumes:
   dbdata:

@@ -109,7 +109,8 @@
           (pts ?a ?pts)
           [?t :team/name ?team]]]
     [(d/q score-query (d/db conn) query/rules)
-     (datascript/q score-query (datomic->datascript-db (d/db conn)) query/rules)]))
+     (datascript/q score-query (datomic->datascript-db (d/db conn)) query/rules)])
+  )
 
 
 (defroutes app-routes
