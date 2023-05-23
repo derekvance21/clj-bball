@@ -18,7 +18,8 @@
                     :where [?g :game/teams]]
                   ls-datascript-db)
          players (->> (ds/game->team-players ls-datascript-db game-id)
-                      (map (fn [[team-id players]] [team-id {:on-court players}]))
+                      (map (fn [[team-id players]]
+                             [team-id {:on-court players}]))
                       (into {})) ;; TODO - use last action's players as initial players map
          ]
      {:db {:game-id game-id
@@ -36,12 +37,8 @@
          {:keys [db-after tempids]} (d/with ds/empty-db [{:db/id game-tempid
                                                           :game/teams [{:db/id team1-tempid :team/name "Home"}
                                                                        {:db/id team2-tempid :team/name "Away"}]}])
-         game-id (get tempids game-tempid)
-         team1-id (get tempids team1-tempid)
-         team2-id (get tempids team2-tempid)
-         players {team1-id {:on-court #{0 1 2 3 4}}
-                  team2-id {:on-court #{5 6 7 8 9}}}]
-     {:db (assoc db/init-db :game-id game-id :players players)
+         game-id (get tempids game-tempid)]
+     {:db (assoc db/init-db :game-id game-id)
       ::fx/ds db-after})))
 
 
@@ -77,13 +74,14 @@
  ::set-action-bonus
  [interceptors/ft-players
   interceptors/ftm
-  interceptors/ft-results
+  interceptors/ft-results ;; TODO - this doesn't work if you reselect bonus, because there's no change (onchanges) to ft/attempted, as it's still 1
   (re-frame/path [:action])]
  (fn [action _]
    (-> action
        (select-keys [:action/player])
        (assoc :action/type :action.type/bonus
-              :ft/attempted 1))))
+              :ft/attempted 1
+              :ft/results [false]))))
 
 
 (re-frame/reg-event-db
