@@ -12,14 +12,14 @@
               (not (fta? ?a))]
              [(fga? ?a)
               [?a :action/type :action.type/shot]
-              [?a :shot/make? true]] 
+              [?a :shot/make? true]]
              ;; below works in datascript, having everything in one rule, using or and and
              #_[(fga? ?a)
-              [?a :action/type :action.type/shot]
-              (or [?a :shot/make? true]
-                  (and [?a :shot/make? false]
-                       (not (fta? ?a))))]
-             
+                [?a :action/type :action.type/shot]
+                (or [?a :shot/make? true]
+                    (and [?a :shot/make? false]
+                         (not (fta? ?a))))]
+
              [(rebound? ?a)
               (or [?a :rebound/player]
                   [?a :rebound/team? true])]
@@ -109,4 +109,29 @@
 
              [(lineup ?a ?type ?lineup)
               [?a ?type ?ps]
-              [(set ?ps) ?lineup]]])
+              [(set ?ps) ?lineup]]
+
+             [(sector ?value ?inches ?sector)
+              [(= ?value 2)]
+              (sector-2pt ?inches ?sector)]
+             [(sector ?value ?inches ?sector)
+              [(= ?value 3)]
+              (sector-3pt ?inches ?sector)]
+
+             [(sector-2pt ?inches ?sector)
+              [(< ?inches 36)]
+              [(ground "0-3") ?sector]]
+             [(sector-2pt ?inches ?sector)
+              [(>= ?inches 36)]
+              [(< ?inches 120)]
+              [(ground "3-10") ?sector]]
+             [(sector-2pt ?inches ?sector)
+              [(>= ?inches 120)]
+              [(ground "10-3P") ?sector]]
+
+             [(sector-3pt ?inches ?sector)
+              [(< ?inches 288)]
+              [(ground "3P-24") ?sector]]
+             [(sector-3pt ?inches ?sector)
+              [(>= ?inches 288)]
+              [(ground "24+") ?sector]]])

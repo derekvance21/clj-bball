@@ -114,7 +114,7 @@
 
 
   [(d/q score-query (d/db conn) query/rules)
-   (datascript/q score-query (datomic->datascript-db (d/db conn)) query/rules)] 
+   (datascript/q score-query (datomic->datascript-db (d/db conn)) query/rules)]
   
 
   (->> (d/q '[:find ?team ?numbers ?sector (avg ?pts) (count ?a)
@@ -129,32 +129,7 @@
               [?a :action/player ?player]
               [(contains? ?numbers ?player)]]
             (d/db conn)
-            (conj query/rules
-                  '[(sector ?value ?inches ?sector)
-                    [(= ?value 2)]
-                    (sector-2pt ?inches ?sector)]
-                  '[(sector ?value ?inches ?sector)
-                    [(= ?value 3)]
-                    (sector-3pt ?inches ?sector)]
-
-                  '[(sector-2pt ?inches ?sector)
-                    [(< ?inches 36)]
-                    [(ground "0-3") ?sector]]
-                  '[(sector-2pt ?inches ?sector)
-                    [(>= ?inches 36)]
-                    [(< ?inches 120)]
-                    [(ground "3-10") ?sector]]
-                  '[(sector-2pt ?inches ?sector)
-                    [(>= ?inches 120)]
-                    [(ground "10-3P") ?sector]]
-
-
-                  '[(sector-3pt ?inches ?sector)
-                    [(< ?inches 288)]
-                    [(ground "3P-24") ?sector]]
-                  '[(sector-3pt ?inches ?sector)
-                    [(>= ?inches 288)]
-                    [(ground "24+") ?sector]])
+            query/rules
             (map vector (repeat "Blaine") [#{1} #{2 5} #{3} #{4} #{35} #{42}]))
        (sort-by (fn [[_ _ sector _]] (->> ["0-3" "3-10" "10-3P" "3P-24" "24+"]
                                           (map-indexed vector)
