@@ -2,6 +2,7 @@
 
 ## Todo
 
+- [ ] maybe disable Add button and other action buttons while sub? - I made a mistake this way once
 - [ ] datoms with empty :ft/results are being logged. Lots of [_ :ft/results [] _]
 - [ ] delete player
 - [ ] use interceptors for validation - events should be very simple, and use interceptors like enrich for validation and stuff. Like subbing someone out dissoc'ing the player if they were a shoot/rebound/stealer. That should be done via an interceptor, not cond-> logic in the event.
