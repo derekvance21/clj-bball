@@ -3,7 +3,8 @@
    [bball.parser :as parser]
    [bball.db :as db]
    [bball.query :as query]
-   [datomic.client.api :as d]
+   [datomic.api :as d]
+   [datomic.client.api :as client.d]
    [clojure.edn :as edn]
    [datascript.core :as datascript]
    [ring.adapter.jetty :as jetty]
@@ -13,47 +14,62 @@
   (:gen-class))
 
 
-(def client (d/client {:server-type :peer-server
-                       :access-key "key"
-                       :secret "secret"
-                       :endpoint "localhost:4336"
-                       :validate-hostnames false}))
+(def db-uri "datomic:dev://localhost:4334/db?password=datomic")
 
 
-(def conn (d/connect client {:db-name "db"}))
+(d/create-database db-uri)
+
+
+(def conn (d/connect db-uri))
+
+
+
+(comment
+  
+
+  (def client (client.d/client {:server-type :peer-server
+                                :access-key "key"
+                                :secret "secret"
+                                :endpoint "localhost:4336"
+                                :validate-hostnames false}))
+
+
+  (def client-conn (client.d/connect client {:db-name "db"})))
 
 
 (defn datomic->datascript-tx-data
   [db]
-  (d/q '[:find ?add ?tempid ?attr ?value
-         :in $ % [?attr ...]
-         :where
-         [?e ?a ?v ?tx ?b]
-         [(true? ?b)]
-         [?a :db/ident ?attr]
-         (value ?a ?v ?value)
-         [(- ?e) ?tempid]
-         [(ground :db/add) ?add]]
-       db
-       '[[(value ?a ?v ?value)
-          [?a :db/valueType :db.type/ref]
-          (ref-value ?v ?value)]
-         [(value ?a ?v ?value)
-          (not [?a :db/valueType :db.type/ref])
-          [(identity ?v) ?value]]
-         [(ref-value ?v ?value)
-          [(missing? $ ?v :db/ident)]
-          [(- ?v) ?value]]
-         [(ref-value ?v ?value)
-          [?v :db/ident ?value]]]
-       (map :db/ident db/schema)))
+  (vec
+   (d/q '[:find ?add ?tempid ?attr ?value
+          :in $ % [?attr ...]
+          :where
+          [?e ?a ?v ?tx ?b]
+          [(true? ?b)]
+          [?a :db/ident ?attr]
+          (value ?a ?v ?value)
+          [(- ?e) ?tempid]
+          [(ground :db/add) ?add]]
+        db
+        '[[(value ?a ?v ?value)
+           [?a :db/valueType :db.type/ref]
+           (ref-value ?v ?value)]
+          [(value ?a ?v ?value)
+           (not [?a :db/valueType :db.type/ref])
+           [(identity ?v) ?value]]
+          [(ref-value ?v ?value)
+           [(missing? $ ?v :db/ident)]
+           [(- ?v) ?value]]
+          [(ref-value ?v ?value)
+           [?v :db/ident ?value]]]
+        (map :db/ident db/schema))))
 
 
 (defn datomic->datascript-db
   [db]
-  (datascript/db-with
-   (datascript/empty-db (db/datomic->datascript-schema db/schema))
-   (datomic->datascript-tx-data db)))
+  (let [tx-data (datomic->datascript-tx-data db)
+        schema (db/datomic->datascript-schema db/schema)
+        empty-db (datascript/empty-db schema)]
+    (datascript/db-with empty-db tx-data)))
 
 
 (defn datascript->datomic-tx-data
@@ -104,36 +120,55 @@
   (d/transact conn {:tx-data (map (comp parser/parse edn/read-string slurp) parser-game-files)})
 
 
-  (def score-query '[:find ?g ?team (sum ?pts)
-                     :in $ %
-                     :with ?a
-                     :where
-                     (actions ?g ?t ?p ?a)
-                     (pts ?a ?pts)
-                     [?t :team/name ?team]])
-
   ;; here's the problem with this when using datomic.client.api:
   ;; d/as-of only works with (d/db conn)
   ;; and NOT (d/with-db conn)
   ;; however, d/with only works with (d/with-db conn)
   ;; and NOT (d/db conn)
   ;; so it's hard to transact on an "empty" (with schema) datomic db
-  (defn empty-db
-    [db-fn]
-    (d/as-of (db-fn conn) (:t (first (d/tx-range conn {})))))
-  (d/with (empty-db d/db) {:tx-data [[:db/add -1 :team/name "TEST TEAM"]]}) ;; Execution Error
-  (d/with (empty-db d/with-db) {:tx-data [[:db/add -1 :team/name "TEST TEAM"]]}) ;; includes the rest of conn's db
+  (let [schema-t (:t (first (client.d/tx-range client-conn {})))
+        db->db-with-schema (fn [db] (client.d/as-of db schema-t))]
+    #_(client.d/with
+       (db->db-with-schema (client.d/db client-conn))
+       {:tx-data [[:db/add -1 :team/name "TEST TEAM"]]}) ;; Execution Error
+    (client.d/q
+     '[:find ?team :where [?t :team/name ?team]]
+     (:db-after
+      (client.d/with
+       (db->db-with-schema (client.d/with-db client-conn))
+       {:tx-data [[:db/add -1 :team/name "TEST TEAM"]]}))) ;; still includes rest of conn's db
+    )
+  
+  
+  (def score-query
+    '[:find ?g ?team (sum ?pts)
+      :in $ %
+      :with ?a
+      :where
+      (actions ?g ?t ?p ?a)
+      (pts ?a ?pts)
+      [?t :team/name ?team]])
+
+
+  ;; this still doesn't work, because no matter which order they are called,
+  ;; calling d/with with d/as-of will first apply d/with, then d/as-of
+  ;; see: https://docs.datomic.com/pro/time/filters.html#as-of-not-branch
+  ;; "it does **not** let you branch the past"
+  (let [schema-t (:t (first (d/tx-range (d/log conn) nil nil)))
+        db-with-schema (d/as-of (d/db conn) schema-t)
+        datomic-tx-data (datascript->datomic-tx-data (datomic->datascript-db (d/db conn)))
+        db-branch (:db-after (d/with db-with-schema datomic-tx-data))]
+    (d/q score-query db-branch query/rules))
 
 
   (let [datomic-db (d/db conn)
         datascript-db (datomic->datascript-db (d/db conn))
-        datomic-db-again (:db-after
-                          (d/with (d/as-of (d/with-db conn) (:t (first (d/tx-range conn {}))))
-                                  {:tx-data (datascript->datomic-tx-data datascript-db)}))]
-    (-> [(d/q score-query datomic-db query/rules)
-         (datascript/q score-query datascript-db query/rules)
-         (d/q score-query datomic-db-again query/rules) ;; there's two of each game, here. See above
-         ]))
+        datomic-tx-data (datascript->datomic-tx-data datascript-db)
+        datomic-db-again (:db-after (d/with datomic-db datomic-tx-data))]
+    [(d/q score-query datomic-db query/rules)
+     (datascript/q score-query datascript-db query/rules)
+     (d/q score-query datomic-db-again query/rules) ;; doubled up results, which is expected
+     ])
 
 
   (->> (d/q '[:find ?team ?numbers ?sector (avg ?pts) (count ?a)

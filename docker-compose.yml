@@ -6,6 +6,9 @@ services:
     expose:
       - "4334"
       - "4335"
+    ports:
+      - "4334:4334"
+      - "4335:4335"
     volumes:
       - dbdata:/datomic-pro-1.0.6726/data
       - ./docker/dev-transactor:/datomic-pro-1.0.6726/config
