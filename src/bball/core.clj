@@ -138,8 +138,8 @@
        (db->db-with-schema (client.d/with-db client-conn))
        {:tx-data [[:db/add -1 :team/name "TEST TEAM"]]}))) ;; still includes rest of conn's db
     )
-  
-  
+
+
   (def score-query
     '[:find ?g ?team (sum ?pts)
       :in $ %
@@ -217,6 +217,22 @@
   ;;     ["Blaine" #{42} "0-3" 1.1428571428571428 14]
   ;;     ["Blaine" #{42} "3-10" 0.0 4]
   ;;     ["Blaine" #{42} "3P-24" 1.2857142857142858 14])
+
+
+  ;; example log api usage
+  ;; gets all datoms transacted from ?t1 to ?t2
+  (->> (d/q '[:find ?e ?attr ?v ?instant ?op
+              :in $ ?log ?t1 ?t2
+              :where
+              [(tx-ids ?log ?t1 ?t2) [?tx-id ...]]
+              [(tx-data ?log ?tx-id) [[?e ?a ?v ?tx ?op]]]
+              [?tx :db/txInstant ?instant]
+              [?a :db/ident ?attr]]
+            (d/db conn) (d/log conn)
+            #inst "2023-05-23" #inst "2023-05-25")
+       (sort-by #(nth % 3)))
+
+
   )
 
 
