@@ -112,10 +112,29 @@
                      (pts ?a ?pts)
                      [?t :team/name ?team]])
 
+  ;; here's the problem with this when using datomic.client.api:
+  ;; d/as-of only works with (d/db conn)
+  ;; and NOT (d/with-db conn)
+  ;; however, d/with only works with (d/with-db conn)
+  ;; and NOT (d/db conn)
+  ;; so it's hard to transact on an "empty" (with schema) datomic db
+  (defn empty-db
+    [db-fn]
+    (d/as-of (db-fn conn) (:t (first (d/tx-range conn {})))))
+  (d/with (empty-db d/db) {:tx-data [[:db/add -1 :team/name "TEST TEAM"]]}) ;; Execution Error
+  (d/with (empty-db d/with-db) {:tx-data [[:db/add -1 :team/name "TEST TEAM"]]}) ;; includes the rest of conn's db
 
-  [(d/q score-query (d/db conn) query/rules)
-   (datascript/q score-query (datomic->datascript-db (d/db conn)) query/rules)]
-  
+
+  (let [datomic-db (d/db conn)
+        datascript-db (datomic->datascript-db (d/db conn))
+        datomic-db-again (:db-after
+                          (d/with (d/as-of (d/with-db conn) (:t (first (d/tx-range conn {}))))
+                                  {:tx-data (datascript->datomic-tx-data datascript-db)}))]
+    (-> [(d/q score-query datomic-db query/rules)
+         (datascript/q score-query datascript-db query/rules)
+         (d/q score-query datomic-db-again query/rules) ;; there's two of each game, here. See above
+         ]))
+
 
   (->> (d/q '[:find ?team ?numbers ?sector (avg ?pts) (count ?a)
               :in $ % [[?team ?numbers] ...]
@@ -195,3 +214,4 @@
   (def server (start))
   (.stop server)
   (.start server))
+
