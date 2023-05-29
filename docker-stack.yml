@@ -2,12 +2,6 @@ services:
   transactor:
     image: 127.0.0.1:5000/dev-transactor
     build: ./docker/dev-transactor
-    expose:
-      - "4334"
-      - "4335"
-    ports:
-      - "4334:4334"
-      - "4335:4335"
     networks:
       hostnet: {}
 
