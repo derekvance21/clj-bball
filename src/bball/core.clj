@@ -14,7 +14,10 @@
   (:gen-class))
 
 
-(def db-uri "datomic:dev://localhost:4334/db?password=datomic")
+(def transactor-host "localhost")
+
+
+(def db-uri (str "datomic:dev://" transactor-host ":4334/db?password=datomic"))
 
 
 (d/create-database db-uri)
@@ -23,9 +26,8 @@
 (def conn (d/connect db-uri))
 
 
-
 (comment
-  
+
 
   (def client (client.d/client {:server-type :peer-server
                                 :access-key "key"
@@ -34,7 +36,10 @@
                                 :validate-hostnames false}))
 
 
-  (def client-conn (client.d/connect client {:db-name "db"})))
+  (def client-conn (client.d/connect client {:db-name "db"}))
+  
+  
+  )
 
 
 (defn datomic->datascript-tx-data
@@ -89,10 +94,29 @@
          (map datom->tx))))
 
 
+(defn datascript-game->datomic-tx-map
+  [db g]
+  (let [pattern
+        '[* {:game/teams [:team/name]
+             :game/possession [* {:possession/team [:team/name]}]}]
+        pull-result->tx-map
+        (fn pull-result->tx-map
+          [pull-result]
+          (cond
+            (set? pull-result) (vec pull-result)
+            (map? pull-result) (reduce-kv
+                                (fn [m k v] (assoc m k (pull-result->tx-map v)))
+                                {}
+                                (select-keys pull-result (map :db/ident db/schema)))
+            (vector? pull-result) (vec (map pull-result->tx-map pull-result))
+            :else pull-result))]
+    (pull-result->tx-map (d/pull pattern db g))))
+
+
 (comment
 
 
-  (d/transact conn {:tx-data db/schema})
+  (d/transact conn db/schema)
 
 
   (def db-game-files
@@ -107,7 +131,7 @@
                               (partial edn/read-string {:readers datascript/data-readers})
                               slurp)
                         db-game-files)]
-    (d/transact conn {:tx-data db-tx-data}))
+    (d/transact conn db-tx-data))
 
 
   ;; WARNING - these do not have distance data!
@@ -148,6 +172,9 @@
       (actions ?g ?t ?p ?a)
       (pts ?a ?pts)
       [?t :team/name ?team]])
+  
+
+  (d/q score-query (d/db conn) query/rules)
 
 
   ;; this still doesn't work, because no matter which order they are called,
@@ -232,6 +259,59 @@
             #inst "2023-05-23" #inst "2023-05-25")
        (sort-by #(nth % 3)))
 
+  ;; TODO - try out query-stats by adding :query-stats key to query
+  ;; ala (d/q {:query '[:find ?t :where [?t :team/name]] :args [db] :query-stats :query-stats/test
+
+  (->> (d/q '[:find ?g ?team ?player (avg ?pts) (sum ?pts)
+              :in $ %
+              :with ?a
+              :where
+              (actions ?g ?t ?p ?a)
+              [?t :team/name ?team]
+              (or [?a :action/type :action.type/bonus]
+                  [?a :action/type :action.type/shot]
+                  [?a :action/type :action.type/technical])
+              [?a :action/player ?player]
+              (pts ?a ?pts)]
+            (d/db conn) query/rules)
+       (map (fn [[g team player pts-per-score-attmpt pts]]
+              [(map :team/name (:game/teams (d/pull (d/db conn) '[{:game/teams [:team/name]}] g)))
+               team player (* 100 (/ pts-per-score-attmpt 2)) pts]))
+       (sort-by #(nth % 4) >))
+
+
+  (defn game-filter
+    [db g]
+    (let [entities (set (d/q '[:find [?e ...]
+                               :in $ % ?g
+                               :where
+                               (refs? ?g ?e)]
+                             db
+                             '[;; ?e1 refers to ?e2
+                               [(refs? ?e1 ?e2)
+                                [?e1 ?a ?e2]
+                                [?a :db/valueType :db.type/ref]]
+                               ;; ?e2 is an attribute of ?e1
+                               [(refs? ?e1 ?e2)
+                                [?e1 ?e2]]
+                               ;; ?e1 refers to ?r, which refs? ?e2
+                               [(refs? ?e1 ?e2)
+                                [?e1 ?a ?r]
+                                [?a :db/valueType :db.type/ref]
+                                (refs? ?r ?e2)]]
+                             g))]
+      (d/filter
+       db
+       (fn [_ {:keys [e a v tx]}]
+         (or (contains? entities e)
+             (= e g))))))
+
+
+  (let [db (d/db conn)
+        g (-> (d/q '[:find [?g ...] :where [?g :game/possession]] db)
+              (nth 4))]
+    (d/q score-query (game-filter db g) query/rules))
+  
 
   )
 

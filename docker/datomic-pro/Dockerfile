@@ -8,6 +8,8 @@ RUN unzip datomic-pro-1.0.6726.zip
 
 FROM maven:3.9.2-eclipse-temurin-17
 
+# I should probably copy to /opt/datomic-pro-1.0.6726
+# /opt is for this kind of thing
 COPY --from=download /datomic-pro-1.0.6726/ /datomic-pro-1.0.6726/
 
 WORKDIR /datomic-pro-1.0.6726

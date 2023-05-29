@@ -74,3 +74,34 @@ Run the uberjar
 ```sh
 java -jar target/standalone.jar
 ```
+
+## Docker
+
+### Compose
+
+Runs a transactor and peer server
+```sh
+docker compose up -d
+```
+
+### Stack
+
+Start the local image registry service:
+```sh
+docker service create --name registry --publish published=5000,target=5000 registry:2
+```
+
+Build the stack images:
+```sh
+docker compose -f docker-stack.yml build
+```
+
+Push the stack images to the local image registry:
+```sh
+docker compose -f docker-stack.yml push
+```
+
+Deploy the stack:
+```sh
+docker stack deploy --compose-file docker-stack.yml clj-bball
+```
