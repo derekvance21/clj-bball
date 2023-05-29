@@ -2,10 +2,12 @@ services:
   transactor:
     image: 127.0.0.1:5000/dev-transactor
     build: ./docker/dev-transactor
-    networks:
-      hostnet: {}
-
-networks:
-  hostnet:
-    external: true
-    name: host
+    ports:
+      - target: 4334
+        published: 4334
+        protocol: tcp
+        mode: host
+      - target: 4335
+        published: 4335
+        protocol: tcp
+        mode: host
