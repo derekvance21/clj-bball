@@ -8,3 +8,10 @@ services:
     ports:
       - "4334:4334"
       - "4335:4335"
+    networks:
+      hostnet: {}
+
+networks:
+  hostnet:
+    external: true
+    name: host
