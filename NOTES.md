@@ -72,3 +72,30 @@
     - pops the last action off the datascript db
     - if action is only one in possession, pops the possession, too
     - could result in period backtracking, which is good with the way I have it
+
+## Notes
+
+- when I ran the datomic-dev-transactor image as a container in a droplet with another container running the a clojure repl with the peer library loaded, htop showed roughly 860 MB of memory usage
+- when I was using 1GB memory droplets, once I would `(require '[datomic.api :as d])`, things would start to hang and eventually crash
+
+- here's the deal:
+- if I run the transactor with config `host=0.0.0.0` and `-p 4334:4334 -p 4335:4335`, I can `nc <private_ip> 4334` there from another droplet and connection opened.
+- however, when, from that other droplet, I create a datomic-pro docker container with `--network=host`, I can do `nc <private_ip> 4334` and get connection opened, but if I `bin/repl` and try to create-database, I get that ActiveMQ connection refused error
+
+- so, I tried to run the transactor with config `host=<private_ip>` and `-p 4334:4334 -p 4335:4335`
+- when I did that, I couldn't `nc <private_ip> 4334` from even the host droplet (with ufw allowing those ports). I'd get connection refused (indicating that a port wasn't open on that host).
+- but I could still do `nc 0.0.0.0 4334` and `nc localhost 4334` and get connection succeeded
+- but also, i get a lot of the ActiveMQNotConnectedException on the *transactor* startup, even
+
+- from inside the docker container where the transactor is running, I can reach the other droplets just fine using their public and private IP's
+
+- now:
+- when I run the transactor with config `host=<private_ip>` and `--network=host`, I can create a datomic-pro docker container with `--network=host` on a different droplet and get `create-database` to work inside `bin/repl`
+
+- the other experiment I want to do is run it as a service rather than an individual container. The idea being that the docker swarm stuff will include a viable network
+- when I run the service with the image that has `host=0.0.0.0` without publishing ports, I can enter the container and `nc -v localhost 4334` just fine, can't do `nc -v <private_ip>` from the container, and can't do `nc -v <private_ip>` from the host machine
+- when I run the service with the image that has `host=<private_ip>` without publishing ports, I get ActiveMQNotConnectedException
+
+- now I just ran some experiments starting the transactor service with --network name=my-network,alias=transactor and the transactor starting with a config `host=transactor`. But then when I try to connect to it from another container connected to the same network, I get connection refused with `nc -v transactor 4334`. I even get connection refused when inside the container with `nc -v 0.0.0.0 4334`
+
+- here was another experiment where I ran the transactor service with `host=<private_ip>` and `--network host`. Then I go to another droplet and run datomic-pro container with --network host. And when I bin/repl and try to create-database, I get :db.error/read-transactor-location-failed Could not read transactor location from storage.
