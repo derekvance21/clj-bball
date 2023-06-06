@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM datomic-pro
+FROM registry.digitalocean.com/dereks-registry/datomic-pro
 
 COPY remote-transactor.properties ./config/
 
