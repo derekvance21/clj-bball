@@ -14,7 +14,7 @@
   (:gen-class))
 
 
-(def transactor-host "localhost")
+(def transactor-host "clj-bball-docker-dev-transactor")
 
 
 (def db-uri (str "datomic:dev://" transactor-host ":4334/db?password=datomic"))
