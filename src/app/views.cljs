@@ -441,18 +441,6 @@
     ((svg-click-handler court-id court-client-dimensions court-dimensions hoop-coordinates true) e)))
 
 
-(defn svg-shot-miss
-  [attrs]
-  (let [{:keys [cx cy width height]} attrs
-        x (- cx (/ width 2))
-        y (- cy (/ height 2))
-        d [\M x y \l width height \m (- width) 0 \l width (- height)]]
-    [:path
-     (-> attrs
-         (dissoc :cx :cy :width :height)
-         (assoc :d (string/join " " d)))]))
-
-
 (defn court []
   (let [scale 0.5
         [court-width court-height :as court-dimensions] [(* 12 50) (* 12 42)]
@@ -485,16 +473,12 @@
       ]
      (when (some? shot-location)
        (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
-             icon-size 8]
-         (if (<sub [::subs/shot-make?])
-           [:circle
-            {:r icon-size :cx x :cy y
-             :fill "none"
-             :stroke "green"
-             :stroke-width 2}]
-           [svg-shot-miss (let [length (* 2 (/ icon-size (math/sqrt 2)))]
-                            {:cx x :cy y :width length :height length
-                             :stroke "red" :stroke-width 2})])))]))
+             icon-size 5]
+         [:circle
+          {:r icon-size :cx x :cy y
+           :fill "none"
+           :stroke (if (<sub [::subs/shot-make?]) "green" "red")
+           :stroke-width 2}]))]))
 
 
 (defn action-input []

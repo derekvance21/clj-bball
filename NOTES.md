@@ -2,6 +2,9 @@
 
 ## Todo
 
+- [ ] so ideally, you'd be able to load a game into the editor, and then be able to add new things
+    - so maybe later if I want to add a contested thing to the game, I could load up that game and then go through each action, not have to change anything except the contested-ness. Would save a ton of time
+- [ ] buzzer beater shots won't have a rebounder, but rn it requires one to submit the action...
 - [ ] POST endpoint to transact new game from frontend
 - [ ] get initial frontend database DB from server /db endpoint
 - [ ] add ring server to docker-stack.yml
@@ -12,7 +15,7 @@
 - [ ] check out https://github.com/alexanderkiel/datomic-free for ideas for how to insert ip addresses into transactor properties with environment variables
 - [ ] shot chart! Input: list of [:shot/angle :shot/distance] tuples. Output: icons on the court for every shot 
 - [ ] maybe disable Add button and other action buttons while sub? - I made a mistake this way once
-- [ ] delete player
+- [ ] delete player off of bench
 - [ ] use interceptors for validation - events should be very simple, and use interceptors like enrich for validation and stuff. Like subbing someone out dissoc'ing the player if they were a shoot/rebound/stealer. That should be done via an interceptor, not cond-> logic in the event.
     - [ ] RELATED: datoms with empty :ft/results are being logged. Lots of [_ :ft/results [] _]. It happens every time you set a shot. Also, when you set a shot, :ft/attempted 0 is also being set (unnecessarily)
 - [ ] I'm now using the preview db to basically transact on any action input change. So maybe I should just drop the :action part of app-db and just transact to conn every time? I guess I was originally worried about performance, but this doesn't seem to be an issue. This would also simplify adding certain action attributes like offense/players and defense/players, b/c I could just directly transact them when an action starts. And, it also allows me to do the fouled shot with a certain lineup, press sub and make substitutions after the 1st free throw, then set the missed free throw rebounder as someone who just subbed in

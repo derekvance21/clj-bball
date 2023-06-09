@@ -299,7 +299,9 @@
               (pts ?a ?pts)]
             @conn query/rules 1)
        (map #(update % 0 :team/name))
-       (sort-by #(nth % 2) >)))
+       (sort-by #(nth % 2) >))
+  
+  )
 
 
 (defn save-db
