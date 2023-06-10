@@ -19,6 +19,6 @@ output.calva-repl
 # shadow-cljs cache, port files
 /.shadow-cljs/
 
-deploy.sh
-
 env.edn
+
+.code-workspace

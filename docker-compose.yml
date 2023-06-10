@@ -14,6 +14,8 @@ services:
       - "4335:4335"
     volumes:
       - dbdata:/datomic-pro-1.0.6726/data
+    networks:
+      - backend
   
   peer-server:
     image: dev-peer-server
@@ -24,6 +26,12 @@ services:
       - "4336:4336"
     depends_on:
       - transactor
+    networks:
+      - backend
 
 volumes:
   dbdata:
+
+networks:
+  backend:
+    attachable: true
