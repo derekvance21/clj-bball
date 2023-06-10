@@ -1,5 +1,23 @@
 #!/bin/bash
 
+###################################################################
+
+# Required environment variables:
+# DATOMIC_USER_PASSWORD
+# DATOMIC_ADMIN_PASSWORD
+
+# Optional environment variables |  default
+# DATOMIC_HOST                      0.0.0.0
+# DATOMIC_ALT_HOST                  localhost
+# DATOMIC_PORT                      4334
+# DATOMIC_H2_PORT                   4335
+# DATOMIC_MEMORY_INDEX_THRESHOLD    32m
+# DATOMIC_MEMORY_INDEX_MAX          256m
+# OBJECT_CACHE_MAX                  128m
+
+###################################################################
+
+
 if [ -z "$DATOMIC_ADMIN_PASSWORD" ]; then
   echo "Environment variable DATOMIC_ADMIN_PASSWORD not set"
   exit 1

@@ -1,8 +1,7 @@
 services:
   transactor:
     image: dev-transactor
-    build: ./docker/datomic-pro
-    command: bash init/start.sh
+    build: ./docker/dev-transactor
     environment:
       DATOMIC_ALT_HOST: transactor
       DATOMIC_ADMIN_PASSWORD: admin
@@ -15,18 +14,16 @@ services:
       - "4335:4335"
     volumes:
       - dbdata:/datomic-pro-1.0.6726/data
-      - ./docker/dev-transactor:/datomic-pro-1.0.6726/init
   
   peer-server:
     image: dev-peer-server
-    build: ./docker/datomic-pro
-    command: sh -c "bin/repl < init/init.clj && bin/run -m datomic.peer-server -h peer-server -p 4336 -a key,secret -d db,datomic:dev://transactor:4334/db?password=datomic"
+    build: ./docker/peer-server
+    environment:
+      DATOMIC_DB_URI: datomic:dev://transactor:4334/db?password=datomic
     ports:
       - "4336:4336"
     depends_on:
       - transactor
-    volumes:
-      - ./docker/dev-peer-server:/datomic-pro-1.0.6726/init
 
 volumes:
   dbdata:

@@ -15,20 +15,7 @@
   (:gen-class))
 
 
-(def datomic-config
-  {:storage "dev"
-   :host (env/env :datomic-transactor-host)
-   :port 4334
-   :db (env/env :datomic-db)
-   :password (env/env :datomic-password)})
-
-
-(defn datomic-config->uri
-  [{:keys [storage host port db password]}]
-  (str "datomic:" storage "://" host ":" port "/" db "?password=" password))
-
-
-(def db-uri (datomic-config->uri datomic-config))
+(def db-uri (env/env :datomic-db-uri))
 
 
 (d/create-database db-uri)
@@ -48,7 +35,6 @@
 
 
   (def client-conn (client.d/connect client {:db-name "db"}))
-  
   
   )
 
