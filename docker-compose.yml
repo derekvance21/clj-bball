@@ -2,7 +2,11 @@ services:
   transactor:
     image: dev-transactor
     build: ./docker/datomic-pro
-    command: bin/transactor -Ddatomic.printConnectionInfo=true config/transactor.properties
+    command: bash init/start.sh
+    environment:
+      DATOMIC_ALT_HOST: transactor
+      DATOMIC_ADMIN_PASSWORD: admin
+      DATOMIC_USER_PASSWORD: datomic
     expose:
       - "4334"
       - "4335"
@@ -11,7 +15,7 @@ services:
       - "4335:4335"
     volumes:
       - dbdata:/datomic-pro-1.0.6726/data
-      - ./docker/dev-transactor:/datomic-pro-1.0.6726/config
+      - ./docker/dev-transactor:/datomic-pro-1.0.6726/init
   
   peer-server:
     image: dev-peer-server

@@ -3,6 +3,7 @@
    [bball.parser :as parser]
    [bball.db :as db]
    [bball.query :as query]
+   [bball.env :as env]
    [datomic.api :as d]
    [datomic.client.api :as client.d]
    [clojure.edn :as edn]
@@ -14,10 +15,20 @@
   (:gen-class))
 
 
-(def transactor-host "clj-bball-docker-dev-transactor")
+(def datomic-config
+  {:storage "dev"
+   :host (env/env :datomic-transactor-host)
+   :port 4334
+   :db (env/env :datomic-db)
+   :password (env/env :datomic-password)})
 
 
-(def db-uri (str "datomic:dev://" transactor-host ":4334/db?password=datomic"))
+(defn datomic-config->uri
+  [{:keys [storage host port db password]}]
+  (str "datomic:" storage "://" host ":" port "/" db "?password=" password))
+
+
+(def db-uri (datomic-config->uri datomic-config))
 
 
 (d/create-database db-uri)
@@ -172,7 +183,7 @@
       (actions ?g ?t ?p ?a)
       (pts ?a ?pts)
       [?t :team/name ?team]])
-  
+
 
   (d/q score-query (d/db conn) query/rules)
 
@@ -311,7 +322,7 @@
         g (-> (d/q '[:find [?g ...] :where [?g :game/possession]] db)
               (nth 4))]
     (d/q score-query (game-filter db g) query/rules))
-  
+
 
   )
 
@@ -331,7 +342,10 @@
 
 (defn start
   []
-  (jetty/run-jetty #'app {:port 8008 :join? false}))
+  (jetty/run-jetty #'app {:port 8008
+                          :join? false
+                          ;; (from jetty docs) :host - If null or 0.0.0.0, then bind to all interfaces.
+                          }))
 
 
 (defn -main [& args]
