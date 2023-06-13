@@ -13,7 +13,7 @@
 
 (defn ^:export uber [_]
   (clean nil)
-  (shadow.api/release :app)
+  (shadow.api/release :app) ;; TODO - this doesn't work yet?
   (build/copy-dir {:src-dirs ["src" "resources"]
                    :target-dir class-dir})
   (build/compile-clj {:basis basis

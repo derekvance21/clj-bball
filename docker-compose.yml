@@ -17,6 +17,22 @@ services:
     networks:
       - backend
   
+  app:
+    image: clj-bball-app
+    build:
+      context: .
+      dockerfile: ./docker/app/Dockerfile
+    environment:
+      DATOMIC_DB_URI: "datomic:dev://transactor:4334/db?password=datomic"
+      APP_SERVER_PORT: 4337
+    ports:
+      - "4337:4337"
+    depends_on:
+      - transactor
+    networks:
+      - backend
+      - frontend
+  
   peer-server:
     image: dev-peer-server
     build: ./docker/peer-server
@@ -34,4 +50,6 @@ volumes:
 
 networks:
   backend:
+    attachable: true
+  frontend:
     attachable: true

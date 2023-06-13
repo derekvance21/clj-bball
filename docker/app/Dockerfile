@@ -21,8 +21,9 @@ COPY . ./
 COPY --from=node_build /app/output.css ./resources/public/css/compiled/output.css
 COPY --from=node_build /app/node_modules/ ./node_modules/
 
+# maybe run npx shadow-cljs release here?
+# rn, it's in build.clj.
+
 RUN clj -T:build uber
 
 CMD ["java", "-jar", "target/standalone.jar"]
-
-EXPOSE 8008

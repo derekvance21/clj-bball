@@ -1,6 +1,6 @@
 (ns app.datascript
   (:require
-   [bball.db :as bball.db]
+   [bball.schema :as bball.schema]
    [app.db :as db]
    [bball.query :as query]
    [cljs.reader :as reader]
@@ -16,18 +16,7 @@
 
 
 (def schema
-  (->> bball.db/schema
-       (remove #(= "action.type" (namespace (:db/ident %)))) ;; removes enums
-       (map
-        (fn [{:db/keys [ident valueType] :as sch}]
-          [ident
-           (select-keys sch [:db/cardinality :db/unique :db/index :db/tupleAttrs :db/isComponent :db/doc
-                             (when (case valueType
-                                     :db.type/ref (not= "type" (name ident))
-                                     :db.type/tuple (contains? sch :db/tupleAttrs) ;; TODO - probably no need to do this - just remove non-refs
-                                     false)
-                               :db/valueType)])]))
-       (into {})))
+  (bball.schema/datomic->datascript-schema bball.schema/schema))
 
 
 (def empty-db (d/empty-db schema))

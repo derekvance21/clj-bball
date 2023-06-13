@@ -1,7 +1,7 @@
 (ns bball.test.query-test
   (:require [clojure.test :as t :refer [is deftest testing]]
             [bball.query :as query]
-            [bball.db :as db]
+            [bball.schema :as schema]
             [bball.parser :as parser]
             [clojure.edn :as edn]
             [datomic.client.api :as d]))
@@ -9,13 +9,15 @@
 (def ^:dynamic *conn*)
 
 (deftest game-query
-  (binding [*conn* (let [client (d/client db/dev-config)
+  (binding [*conn* (let [client (d/client {:server-type :dev-local
+                                           :storage-dir :mem
+                                           :system "ci"})
                          db {:db-name "clj-bball-db-test"}]
                      (d/delete-database client db)
                      (d/create-database client db)
                      (d/connect client db))]
 
-    (d/transact *conn* {:tx-data db/schema})
+    (d/transact *conn* {:tx-data schema/schema})
     (d/transact *conn* {:tx-data [(-> "resources/games/2022-09-06-Vegas-Seattle.edn" slurp edn/read-string parser/parse)]})
     
     (testing "FT%"
