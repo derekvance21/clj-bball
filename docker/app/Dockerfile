@@ -1,28 +1,21 @@
 # syntax=docker/dockerfile:1
 
-FROM node:20-alpine AS node_build
+FROM clojure:tools-deps
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash
+RUN apt-get install -y nodejs
 
 WORKDIR /app
 
-COPY package* ./
+COPY build.clj deps.edn shadow-cljs.edn package* tailwind.config.js input.css ./
+COPY src src/
+COPY resources/public/index.html resources/public/index.html
 
 RUN npm install
 
-COPY tailwind.config.js input.css ./
-COPY src/ ./src/
+RUN npx tailwindcss -i input.css -o resources/public/css/compiled/output.css --minify
 
-RUN npx tailwindcss -i input.css -o output.css --minify
-
-FROM clojure:tools-deps
-
-WORKDIR /app
-
-COPY . ./
-COPY --from=node_build /app/output.css ./resources/public/css/compiled/output.css
-COPY --from=node_build /app/node_modules/ ./node_modules/
-
-# maybe run npx shadow-cljs release here?
-# rn, it's in build.clj.
+RUN npx shadow-cljs release app
 
 RUN clj -T:build uber
 

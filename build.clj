@@ -1,7 +1,6 @@
 (ns build
   (:require
-   [clojure.tools.build.api :as build]
-   [shadow.cljs.devtools.api :as shadow.api]))
+   [clojure.tools.build.api :as build]))
 
 
 (def class-dir "target/classes")
@@ -13,7 +12,6 @@
 
 (defn ^:export uber [_]
   (clean nil)
-  (shadow.api/release :app) ;; TODO - this doesn't work yet?
   (build/copy-dir {:src-dirs ["src" "resources"]
                    :target-dir class-dir})
   (build/compile-clj {:basis basis
