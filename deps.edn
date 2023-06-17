@@ -6,7 +6,6 @@
         datascript/datascript {:mvn/version "1.4.2"}
         ring/ring-core {:mvn/version "1.10.0"}
         ring/ring-jetty-adapter {:mvn/version "1.10.0"}
-        ring/ring-devel {:mvn/version "1.10.0"}
         ring/ring-defaults {:mvn/version "0.3.4"}
         compojure/compojure {:mvn/version "1.7.0"}}
  :aliases {:dev {:jvm-opts ["--add-opens=java.base/java.nio=ALL-UNNAMED"

@@ -24,7 +24,7 @@ services:
       dockerfile: ./docker/app/Dockerfile
     environment:
       DATOMIC_DB_URI: "datomic:dev://transactor:4334/db?password=datomic"
-      APP_SERVER_PORT: 4337
+      APP_SERVER_PORT: "4337"
     ports:
       - "4337:4337"
     depends_on:

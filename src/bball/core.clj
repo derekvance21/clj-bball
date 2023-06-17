@@ -34,7 +34,7 @@
 (defn -main [& args]
   (let [opts (apply hash-map (map edn/read-string args))
         {:keys [dev]} opts]
-    (println (str "starting app!" (when dev " [DEV]")))
+    (println (str "Serving app at port" (parse-long (env/env :APP_SERVER_PORT)) (when dev " [DEV]")))
     (start)))
 
 
