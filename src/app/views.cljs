@@ -375,7 +375,7 @@
   []
   (let [possessions (<sub [::subs/preview-possessions])
         preview-entities (<sub [::subs/preview-entities])]
-    [:div.my-4
+    [:div
      [:h2.text-xl "Possessions"]
      [:ol.max-h-64.overflow-auto.flex.flex-col-reverse
       (for [possession possessions]
@@ -442,7 +442,7 @@
 
 
 (defn court []
-  (let [scale 0.5
+  (let [scale 0.8
         [court-width court-height :as court-dimensions] [(* 12 50) (* 12 42)]
         court-client-dimensions [(* scale court-width) (* scale court-height)]
         hoop-coordinates [(/ court-width 2) 63]
@@ -487,9 +487,9 @@
                          [e]
                          (.preventDefault e)
                          (re-frame/dispatch [::events/add-action]))}
-     [:div.flex.flex-col.items-start
+     [:div.flex.flex-col.items-start.gap-2
       [court]
-      [:div.my-2.flex.gap-2
+      [:div.flex.gap-2
        [button
         {:class "px-2 py-1"
          :selected? (= @type :action.type/turnover)
@@ -507,12 +507,19 @@
         "Technical"]]
       [:div.flex.gap-2
        (when (= @type :action.type/shot)
-         (let [foul? (<sub [::subs/foul?])]
-           [button
-            {:class "px-2 py-1"
-             :selected? foul?
-             :on-click #(re-frame/dispatch [::events/set-shot-foul? (not foul?)])}
-            "Foul?"]))
+         [:div.flex.gap-2
+          (let [make? (<sub [::subs/shot-make?])]
+            [button
+             {:class "px-2 py-1"
+              :selected? make?
+              :on-click #(re-frame/dispatch [::events/set-shot-make? (not make?)])}
+             "Make?"])
+          (let [foul? (<sub [::subs/foul?])]
+            [button
+             {:class "px-2 py-1"
+              :selected? foul?
+              :on-click #(re-frame/dispatch [::events/set-shot-foul? (not foul?)])}
+             "Foul?"])])
        [:ul.flex.gap-1
         (for [[idx make?] (zipmap (range) (<sub [::subs/ft-results]))]
           [:li {:key idx}
@@ -529,16 +536,16 @@
                          #(re-frame/dispatch [::events/add-ft-attempted])
                          #(re-frame/dispatch [::events/pop-ft-attempted]))}
             (if add-ft? "+" "-")]))]
-      [:div.my-2
+      [:div.flex.gap-2
        (let [disabled? (and (nil? (<sub [::subs/action])) (not (<sub [::subs/possessions?])))]
-         [:button.self-start.bg-orange-500.hover:bg-orange-700.text-white.font-bold.py-1.px-2.rounded-full
+         [:button.bg-orange-500.hover:bg-orange-700.text-white.font-bold.py-1.px-2.rounded-full
           {:type "button"
            :class (when disabled? "opacity-50 cursor-not-allowed")
            :disabled disabled?
            :on-click #(re-frame/dispatch [::events/undo-last-action])}
           "Undo"])
        (let [disabled? (not (<sub [::subs/valid?]))]
-         [:button.self-start.ml-2.bg-blue-500.hover:bg-blue-700.text-white.font-bold.py-1.px-2.rounded-full
+         [:button.bg-blue-500.hover:bg-blue-700.text-white.font-bold.py-1.px-2.rounded-full
           {:type "submit"
            :class (when disabled? "opacity-50 cursor-not-allowed")
            :disabled disabled?}
@@ -547,21 +554,30 @@
 
 (defn new-game
   []
-  [:button.self-start.mt-8.bg-red-500.hover:bg-red-700.text-white.font-bold.py-1.px-2.rounded-full
+  [:button.bg-red-500.hover:bg-red-700.text-white.font-bold.py-1.px-2.rounded-full
    {:type "button"
     :on-click #(re-frame/dispatch [::events/new-game])}
    "New Game"])
 
 
+(defn submit-game
+  []
+  [:button.self-start.bg-purple-700.text-white.font-bold.py-1.px-2.rounded-full
+   {:type "button"
+    :on-click #(println "SUBMIT")}
+   "Submit"])
+
+
 (defn main-panel []
-  [:div
-   [:div.container.mx-4.my-4.flex.justify-between.gap-4
-    {:class "w-11/12"}
-    [players-input]
-    [:div.flex.flex-col.flex-1
-     [action-input]
-     [new-game]]
-    [:div.flex.flex-col.flex-1
-     [stats]
-     [possessions]]]])
+  [:div.container.mx-4.my-4.flex.justify-between.gap-4
+   {:class "w-11/12"}
+   [players-input]
+   [:div.flex.flex-col.flex-1.gap-24
+    [action-input]
+    [:div.flex.gap-2
+     [new-game]
+     [submit-game]]]
+   [:div.flex.flex-col.flex-1.gap-4
+    [stats]
+    [possessions]]])
 
