@@ -1,11 +1,13 @@
 (ns bball.core
   (:require
+   [datomic.api :as datomic]
    [bball.db :as db]
    [bball.env :as env]
    [clojure.edn :as edn]
    [ring.adapter.jetty :as jetty]
    [ring.middleware.defaults :as defaults]
-   [compojure.core :refer [defroutes GET]]
+   [ring.util.request :as request]
+   [compojure.core :refer [defroutes GET POST]]
    [compojure.route :as route])
   (:gen-class))
 
@@ -16,11 +18,16 @@
   (GET "/db" [] {:headers {"Access-Control-Allow-Origin" "*"
                            "Content-Type" "application/edn"}
                  :body (pr-str (db/datomic->datascript-db (db/get-db)))})
+  (POST "/db" [] (fn [req]
+                   (let [tx-data (edn/read-string (request/body-string req))]
+                     @(datomic/transact (db/get-connection) tx-data)
+                     {:body (pr-str (db/datomic->datascript-db (db/get-db)))
+                      :headers {"Access-Control-Allow-Origin" "*"}})))
   (route/not-found "Not Found"))
 
 
 (def app
-  (defaults/wrap-defaults #'app-routes defaults/site-defaults))
+  (defaults/wrap-defaults #'app-routes (assoc-in defaults/site-defaults [:security :anti-forgery] false)))
 
 
 (defn start
