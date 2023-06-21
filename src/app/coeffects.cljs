@@ -1,17 +1,15 @@
 (ns app.coeffects
   (:require
    [app.datascript :as ds]
-   [datascript.core :as d]
    [re-frame.core :as re-frame]))
 
 
 (re-frame/reg-cofx
- ::local-storage-datascript-db
+ ::local-storage-game
  (fn [cofx _]
-   (let [ls-db (ds/local-storage->db)]
-     (if (d/db? ls-db)
-       (assoc cofx :ls-datascript-db ls-db)
-       cofx))))
+   (if-some [game-tx-map (ds/local-storage->game)]
+     (assoc cofx :ls-game game-tx-map)
+     cofx)))
 
 
 (re-frame/reg-cofx

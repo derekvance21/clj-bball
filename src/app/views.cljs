@@ -556,7 +556,7 @@
   []
   [:button.bg-red-500.hover:bg-red-700.text-white.font-bold.py-1.px-2.rounded-full
    {:type "button"
-    :on-click #(re-frame/dispatch [::events/new-game])}
+    :on-click #(re-frame/dispatch [::events/start-new-game])}
    "New Game"])
 
 
@@ -564,13 +564,13 @@
   []
   [:button.self-start.bg-purple-700.text-white.font-bold.py-1.px-2.rounded-full
    {:type "button"
-    :on-click #(println "SUBMIT")}
+    :on-click #(re-frame/dispatch [::events/submit-game])}
    "Submit"])
 
 
-(defn main-panel []
-  [:div.container.mx-4.my-4.flex.justify-between.gap-4
-   {:class "w-11/12"}
+(defn game-input
+  []
+  [:div.flex.justify-between.gap-4
    [players-input]
    [:div.flex.flex-col.flex-1.gap-24
     [action-input]
@@ -580,4 +580,18 @@
    [:div.flex.flex-col.flex-1.gap-4
     [stats]
     [possessions]]])
+
+
+(defn analysis
+  []
+  [:div
+   [:p "game1"]])
+
+
+(defn main-panel
+  []
+  [:div.container.mx-4.my-4
+   {:class "w-11/12"}
+   [game-input]
+   [analysis]])
 

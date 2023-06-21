@@ -1,55 +1,74 @@
 (ns app.events
   (:require
+   [bball.query :as query]
    [re-frame.core :as re-frame]
-   [app.datascript :as ds]
+   [app.datascript :as datascript]
    [app.db :as db]
    [app.coeffects :as cofx]
    [app.effects :as fx]
    [app.interceptors :as interceptors]
+   [cljs.reader :as reader]
    [datascript.core :as d]))
 
 
 (re-frame/reg-event-fx
- ::initialize-ds-with-local-storage
- [(re-frame/inject-cofx ::cofx/local-storage-datascript-db)]
- (fn [{:keys [ls-datascript-db]} _]
-   (let [game-id (d/q
-                  '[:find ?g .
-                    :where [?g :game/teams]]
-                  ls-datascript-db)
-         players (->> (ds/game->team-players ls-datascript-db game-id)
-                      (map (fn [[team-id players]]
-                             [team-id {:on-court players}]))
-                      (into {})) ;; TODO - use last action's players as initial players map
-         ]
-     {:db {:game-id game-id
-           :players players}
-      ::fx/ds ls-datascript-db})))
-
-
-(re-frame/reg-event-fx
- ::initialize-blank-ds
- [(re-frame/inject-cofx ::cofx/local-storage-datascript-db)]
- (fn [_ _]
-   (let [game-tempid -1
-         team1-tempid -2
-         team2-tempid -3
-         {:keys [db-after tempids]} (d/with ds/empty-db [{:db/id game-tempid
-                                                          :game/teams [{:db/id team1-tempid :team/name "Home"}
-                                                                       {:db/id team2-tempid :team/name "Away"}]}])
-         game-id (get tempids game-tempid)]
-     {:db (assoc db/init-db :game-id game-id)
-      ::fx/ds db-after})))
-
-
-(re-frame/reg-event-fx
  ::initialize
+ (fn [_ _]
+   {:db db/init-db
+    ::fx/fetch {:resource "http://localhost:8900/db"
+                :options {:method :GET}
+                :on-success (fn [text]
+                              (let [remote-db (try
+                                                (reader/read-string text)
+                                                (catch js/Object e (.error js/console e)))]
+                                (re-frame/dispatch (if (d/db? remote-db)
+                                                     [::initialize-remote remote-db]
+                                                     [::initialize-local]))))
+                :on-failure (fn [error]
+                              (.error js/console error)
+                              (re-frame/dispatch [::initialize-local]))}}))
+
+
+(re-frame/reg-event-fx
+ ::initialize-remote
+ (fn [{:keys [db]} [_ remote-db]]
+   (let [game-id (d/q '[:find ?g . :where [?g :game/possession]] remote-db)]
+     {:db (assoc db :game-id game-id)
+      :fx [[::fx/ds remote-db]
+           [:dispatch [::transact-local-storage-game]]]})))
+
+
+(re-frame/reg-event-fx
+ ::initialize-local
+ (fn [_ _]
+   {:fx [[::fx/ds (datascript/empty-db)]
+         [:dispatch [::transact-local-storage-game]]]}))
+
+
+(re-frame/reg-event-fx
+ ::transact-local-storage-game
  [cofx/inject-ds
-  (re-frame/inject-cofx ::cofx/local-storage-datascript-db)]
- (fn [{:keys [ls-datascript-db]} _]
-   {:fx [[:dispatch (if (some? ls-datascript-db)
-                      [::initialize-ds-with-local-storage]
-                      [::initialize-blank-ds])]]}))
+  (re-frame/inject-cofx ::cofx/local-storage-game)]
+ (fn [{:keys [ds db ls-game]} _]
+   (if (some? ls-game)
+     (let [{:keys [db-after tempids]} (d/with ds [(assoc ls-game :db/id -1)])
+           game-id (get tempids -1)]
+       {:db (assoc db :game-id game-id)
+        ::fx/ds db-after})
+     (when-not (contains? db :game-id)
+       {:fx [[:dispatch [::start-new-game]]]}))))
+
+
+(re-frame/reg-event-fx
+ ::start-new-game
+ [cofx/inject-ds]
+ (fn [{:keys [ds db]} _]
+   (let [game-tempid -1
+         start-tx-map [{:db/id game-tempid :game/teams [{:team/name "Home"} {:team/name "Away"}]}]
+         {:keys [db-after tempids]} (d/with ds start-tx-map)
+         game-id (get tempids game-tempid)]
+     {:db (assoc db :game-id game-id)
+      ::fx/ds db-after})))
 
 
 (re-frame/reg-event-db
@@ -199,7 +218,7 @@
    {:db
     (-> db
         (assoc-in [:init :init/period]
-                  (-> (ds/last-possession ds (:game-id db))
+                  (-> (datascript/last-possession ds (:game-id db))
                       (get :possession/period 0)
                       inc))
         (dissoc :action))}))
@@ -218,7 +237,7 @@
   interceptors/ds->local-storage]
  (fn [{:keys [ds db]} _]
    (let [{:keys [action game-id players init]} db
-         tx-data [[:db.fn/call ds/append-action-tx-data game-id action players init]]
+         tx-data [[:db.fn/call datascript/append-action-tx-data game-id action players init]]
          new-ds (d/db-with ds tx-data)]
      {:db (-> db
               (dissoc :init :action)
@@ -245,7 +264,7 @@
    (if (some? (:action db))
      {:db (dissoc db :action)}
      (let [{:keys [game-id]} db
-           new-ds (d/db-with ds [[:db.fn/call ds/undo-last-action-tx-data game-id]])]
+           new-ds (d/db-with ds [[:db.fn/call datascript/undo-last-action-tx-data game-id]])]
        {::fx/ds new-ds}))))
 
 
@@ -311,13 +330,6 @@
    (update-in db [:players team-id :on-bench] (fnil disj #{}) player)))
 
 
-(re-frame/reg-event-fx
- ::new-game
- (fn [_ _]
-   {:db db/init-db
-    :fx [[:dispatch [::initialize-blank-ds]]]}))
-
-
 (re-frame/reg-event-db
  ::add-ft-attempted
  (fn [db _]
@@ -349,4 +361,32 @@
  ::toggle-sub?
  (fn [db _]
    (update-in db [:sub?] not)))
+
+
+
+(re-frame/reg-event-fx
+ ::submit-game
+ [cofx/inject-ds]
+ (fn [{:keys [ds db]}]
+   {::fx/fetch
+    {:url "http://localhost:8900/db"
+     :method "POST"
+     :body [(datascript/datascript-game->datomic-tx-map ds (:game-id db))]
+     :on-success (fn [text]
+                   (def remote-db (reader/read-string text)))
+     :on-failure println}}))
+
+
+(def score-query
+  '[:find ?g ?team (sum ?pts)
+    :in $ %
+    :with ?a
+    :where
+    (actions ?g ?t ?p ?a)
+    (pts ?a ?pts)
+    [?t :team/name ?team]])
+
+(d/q score-query
+     remote-db
+     query/rules)
 

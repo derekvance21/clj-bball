@@ -92,25 +92,6 @@
          (map datom->tx))))
 
 
-(defn datascript-game->datomic-tx-map
-  [db g]
-  (let [pattern
-        '[* {:game/teams [:team/name]
-             :game/possession [* {:possession/team [:team/name]}]}]
-        pull-result->tx-map
-        (fn pull-result->tx-map
-          [pull-result]
-          (cond
-            (set? pull-result) (vec pull-result)
-            (map? pull-result) (reduce-kv
-                                (fn [m k v] (assoc m k (pull-result->tx-map v)))
-                                {}
-                                (select-keys pull-result (map :db/ident schema/schema)))
-            (vector? pull-result) (vec (map pull-result->tx-map pull-result))
-            :else pull-result))]
-    (pull-result->tx-map (d/pull pattern db g))))
-
-
 (comment
 
   

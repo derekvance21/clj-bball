@@ -38,9 +38,9 @@
      ;; TODO - I think this if statement isn't needed. ft-players is set for ft events, so it'll be a ft?
      (if (db/ft? (:action db))
        (when-not (every? (fn [[team-id players]]
-                       (and (contains? players :on-court-ft)
-                            (contains? players :on-bench-ft)))
-                     (:players db))
+                           (and (contains? players :on-court-ft)
+                                (contains? players :on-bench-ft)))
+                         (:players db))
          (update db :players (fn [players-map]
                                (->> players-map
                                     (map (fn [[team-id team-players]]
@@ -86,6 +86,9 @@
   (re-frame/->interceptor
    :id ::ds->local-storage
    :after (fn [context]
-            (when-some [new-ds (re-frame/get-effect context ::fx/ds)]
-              (ds/db->local-storage new-ds))
-            context)))
+            (let [ds (re-frame/get-effect context ::fx/ds)
+                  db (re-frame/get-effect context :db)
+                  game-id (:game-id db)]
+              (if (and (some? ds) (some? db))
+                (ds/game->local-storage ds game-id)
+                context)))))

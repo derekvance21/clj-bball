@@ -1,11 +1,17 @@
 (ns app.datascript
   (:require
-   [bball.schema :as bball.schema]
+   [bball.schema :as schema]
    [app.db :as db]
    [bball.query :as query]
    [cljs.reader :as reader]
    [datascript.core :as d]
    [reagent.core :as reagent]))
+
+
+(def schema (schema/datomic->datascript-schema schema/schema))
+
+
+(defn empty-db [] (d/empty-db schema))
 
 
 (defn create-ratom-conn
@@ -15,27 +21,40 @@
    (reagent/atom (d/empty-db schema) :meta {:listeners (atom {})})))
 
 
-(def schema
-  (bball.schema/datomic->datascript-schema bball.schema/schema))
-
-
-(def empty-db (d/empty-db schema))
-
-
 (defonce conn (create-ratom-conn schema))
 
 
-(def db-local-storage-key "datascript-db")
+(defn datascript-game->tx-map
+  [db g datomic-schema]
+  (let [pattern
+        '[* {:game/teams [:team/name]
+             :game/possession [* {:possession/team [:team/name]}]}]
+        pull-result->tx-map
+        (fn pull-result->tx-map
+          [pull-result]
+          (cond
+            (set? pull-result) (vec pull-result)
+            (map? pull-result) (reduce-kv
+                                (fn [m k v] (assoc m k (pull-result->tx-map v)))
+                                {}
+                                (select-keys pull-result (map :db/ident datomic-schema)))
+            (vector? pull-result) (vec (map pull-result->tx-map pull-result))
+            :else pull-result))]
+    (pull-result->tx-map (d/pull pattern db g))))
 
 
-(defn db->local-storage
-  [db]
-  (.setItem js/localStorage db-local-storage-key (pr-str db)))
+(def game-local-storage-key "current-game")
 
 
-(defn local-storage->db
+(defn game->local-storage
+  [db g]
+  (let [tx-map (datascript-game->tx-map db g schema/schema)]
+    (.setItem js/localStorage game-local-storage-key (pr-str tx-map))))
+
+
+(defn local-storage->game
   []
-  (some-> (.getItem js/localStorage db-local-storage-key)
+  (some-> (.getItem js/localStorage game-local-storage-key)
           reader/read-string))
 
 
