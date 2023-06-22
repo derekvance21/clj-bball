@@ -552,6 +552,18 @@
           "Add"])]]]))
 
 
+(defn game-selector
+  []
+  [:select
+   {:on-change #(re-frame/dispatch [::events/set-game (-> % .-target .-value parse-long)])
+    :value (<sub [::subs/game-id])}
+   (for [game-id (<sub [::subs/game-ids])]
+     [:option
+      {:key game-id
+       :value game-id}
+      (str game-id)])])
+
+
 (defn new-game
   []
   [:button.bg-red-500.hover:bg-red-700.text-white.font-bold.py-1.px-2.rounded-full
@@ -576,7 +588,8 @@
     [action-input]
     [:div.flex.gap-2
      [new-game]
-     [submit-game]]]
+     [submit-game]
+     [game-selector]]]
    [:div.flex.flex-col.flex-1.gap-4
     [stats]
     [possessions]]])

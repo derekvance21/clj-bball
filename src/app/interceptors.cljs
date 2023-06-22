@@ -87,8 +87,8 @@
    :id ::ds->local-storage
    :after (fn [context]
             (let [ds (re-frame/get-effect context ::fx/ds)
-                  db (re-frame/get-effect context :db)
-                  game-id (:game-id db)]
-              (if (and (some? ds) (some? db))
-                (ds/game->local-storage ds game-id)
-                context)))))
+                  {:keys [game-id]} (re-frame/get-coeffect context :db)]
+              (when (and (some? ds) (some? game-id))
+                (ds/game->local-storage ds game-id))
+              context))))
+

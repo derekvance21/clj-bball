@@ -135,6 +135,16 @@
 
 
 (re-frame/reg-sub
+ ::game-ids
+ :<- [::datascript-db]
+ (fn [db _]
+   (d/q '[:find [?g ...]
+          :where
+          [?g :game/teams ?t]]
+        db)))
+
+
+(re-frame/reg-sub
  ::team-has-possession?
  (fn [_]
    (re-frame/subscribe [::team]))

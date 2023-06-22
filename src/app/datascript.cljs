@@ -25,8 +25,9 @@
 
 
 (defn datascript-game->tx-map
-  [db g datomic-schema]
-  (let [pattern
+  [db g]
+  (let [schema-keys (map :db/ident schema/schema)
+        pattern
         '[* {:game/teams [:team/name]
              :game/possession [* {:possession/team [:team/name]}]}]
         pull-result->tx-map
@@ -37,10 +38,10 @@
             (map? pull-result) (reduce-kv
                                 (fn [m k v] (assoc m k (pull-result->tx-map v)))
                                 {}
-                                (select-keys pull-result (map :db/ident datomic-schema)))
+                                (select-keys pull-result schema-keys))
             (vector? pull-result) (vec (map pull-result->tx-map pull-result))
             :else pull-result))]
-    (pull-result->tx-map (d/pull pattern db g))))
+    (pull-result->tx-map (d/pull db pattern g))))
 
 
 (def game-local-storage-key "current-game")
@@ -48,7 +49,7 @@
 
 (defn game->local-storage
   [db g]
-  (let [tx-map (datascript-game->tx-map db g schema/schema)]
+  (let [tx-map (datascript-game->tx-map db g)]
     (.setItem js/localStorage game-local-storage-key (pr-str tx-map))))
 
 
@@ -294,6 +295,24 @@
              (and (not [?p :possession/team ?t])
                   [(ground ?defense) [?player ...]]))]
        db g))
+
+
+(defn get-players-map
+  [db g]
+  (let [last-poss (last-possession db g)
+        offense-team-id (get-in last-poss [:possession/team :db/id])
+        defense-team-id (:db/id (other-team-db db g offense-team-id))
+        last-action (last-action last-poss)
+        offense (set (:offense/players last-action))
+        defense (set (:defense/players last-action))
+        all-players (into {} (game->team-players db g))
+        on-court-players {offense-team-id offense
+                          defense-team-id defense}]
+    (merge-with
+     (fn [player-set on-court-player-set]
+       {:on-court on-court-player-set
+        :on-bench (apply disj player-set on-court-player-set)})
+     all-players on-court-players)))
 
 
 (comment

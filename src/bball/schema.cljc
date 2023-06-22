@@ -117,6 +117,12 @@
     :db/cardinality :db.cardinality/one
     :db/doc "the number of minutes this game lasted"}
    ;; TODO - why is this named plurally? Also, might want to refactor into :game/team1 :game/team2. Or even a tuple
+   ;; THIS SHOULD BE A TUPLE. IT'LL MAKE QUERIES EASIER. TO just go:
+   ;; :where
+   ;; [?g :game/teams ?teams]
+   ;; [(untuple ?teams) ?t1 ?t2]
+   ;; rn, if you want to query for game teams,
+   ;; you end up getting two rows [g t1] and [g t2] and are unable to get [g t1 t2]
    {:db/ident :game/teams
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/many
