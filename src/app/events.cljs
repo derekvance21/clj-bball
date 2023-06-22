@@ -14,8 +14,7 @@
 (re-frame/reg-event-fx
  ::initialize
  (fn [_ _]
-   {:db db/init-db
-    ::fx/fetch {:resource "http://localhost:8900/db"
+   {::fx/fetch {:resource "http://localhost:8900/db"
                 :options {:method :GET}
                 :on-success (fn [text]
                               (let [remote-db (try
@@ -32,8 +31,9 @@
 (re-frame/reg-event-fx
  ::initialize-remote
  (fn [{:keys [db]} [_ remote-db]]
-   (let [game-id (d/q '[:find ?g . :where [?g :game/possession]] remote-db)]
-     {:db (assoc db :game-id game-id)
+   (let [game-id (d/q '[:find ?g . :where [?g :game/possession]] remote-db)
+         players (datascript/get-players-map remote-db game-id)]
+     {:db (assoc db :game-id game-id :players players)
       :fx [[::fx/ds remote-db]
            [:dispatch [::transact-local-storage-game]]]})))
 
@@ -52,8 +52,9 @@
  (fn [{:keys [ds db ls-game]} _]
    (if (some? ls-game)
      (let [{:keys [db-after tempids]} (d/with ds [(assoc ls-game :db/id -1)])
-           game-id (get tempids -1)]
-       {:db (assoc db :game-id game-id)
+           game-id (get tempids -1)
+           players (datascript/get-players-map db-after game-id)]
+       {:db (assoc db :game-id game-id :players players)
         ::fx/ds db-after})
      (when-not (contains? db :game-id)
        {:fx [[:dispatch [::start-new-game]]]}))))
@@ -67,8 +68,18 @@
          start-tx-map [{:db/id game-tempid :game/teams [{:team/name "Home"} {:team/name "Away"}]}]
          {:keys [db-after tempids]} (d/with ds start-tx-map)
          game-id (get tempids game-tempid)]
-     {:db (assoc db :game-id game-id)
-      ::fx/ds db-after})))
+     {:fx [[::fx/ds db-after]
+           [:db (-> db
+                    (assoc :game-id game-id :init {:init/period 1})
+                    (dissoc :players))]]})))
+
+
+(re-frame/reg-event-fx
+ ::set-game
+ [cofx/inject-ds]
+ (fn [{:keys [ds db]} [_ game-id]]
+   (let [players (datascript/get-players-map ds game-id)]
+     {:db (assoc db :game-id game-id :players players)})))
 
 
 (re-frame/reg-event-db
@@ -371,7 +382,7 @@
    {::fx/fetch
     {:url "http://localhost:8900/db"
      :method "POST"
-     :body [(datascript/datascript-game->datomic-tx-map ds (:game-id db))]
+     :body [(datascript/datascript-game->tx-map ds (:game-id db))]
      :on-success (fn [text]
                    (def remote-db (reader/read-string text)))
      :on-failure println}}))
