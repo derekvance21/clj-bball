@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: ./docker/app/Dockerfile
     environment:
-      DATOMIC_DB_URI: "datomic:dev://transactor:4334/db?password=datomic"
+      DATOMIC_DB_URI: "datomic:dev://transactor:4334/clj-bball?password=datomic"
       APP_SERVER_PORT: "4337"
     ports:
       - "4337:4337"
@@ -37,7 +37,7 @@ services:
     image: dev-peer-server
     build: ./docker/peer-server
     environment:
-      DATOMIC_DB_URI: datomic:dev://transactor:4334/db?password=datomic
+      DATOMIC_DB_URI: datomic:dev://transactor:4334/clj-bball?password=datomic
     ports:
       - "4336:4336"
     depends_on:

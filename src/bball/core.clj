@@ -19,9 +19,10 @@
                            "Content-Type" "application/edn"}
                  :body (pr-str (db/datomic->datascript-db (db/get-db)))})
   (POST "/db" [] (fn [req]
-                   (let [tx-data (edn/read-string (request/body-string req))]
-                     @(datomic/transact (db/get-connection) tx-data)
-                     {:body (pr-str (db/datomic->datascript-db (db/get-db)))
+                   (let [tx-data (edn/read-string (request/body-string req))
+                         tx-result (deref (datomic/transact (db/get-connection) tx-data))
+                         db-after (:db-after tx-result)]
+                     {:body (pr-str (db/datomic->datascript-db db-after))
                       :headers {"Access-Control-Allow-Origin" "*"}})))
   (route/not-found "Not Found"))
 

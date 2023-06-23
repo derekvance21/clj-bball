@@ -140,7 +140,8 @@
  (fn [db _]
    (d/q '[:find [?g ...]
           :where
-          [?g :game/teams ?t]]
+          [?g :game/home-team]
+          [?g :game/away-team]]
         db)))
 
 
