@@ -28,7 +28,8 @@
   [db g]
   (let [schema-keys (map :db/ident schema/schema)
         pattern
-        '[* {:game/teams [:team/name]
+        '[* {:game/home-team [:team/name]
+             :game/away-team [:team/name]
              :game/possession [* {:possession/team [:team/name]}]}]
         pull-result->tx-map
         (fn pull-result->tx-map
@@ -61,7 +62,8 @@
 
 (defn teams
   [db g]
-  (:game/teams (d/pull db '[{:game/teams [*]}] g)))
+  ((juxt :game/home-team :game/away-team) (d/pull db '[{:game/home-team [*]
+                                                        :game/away-team [*]}] g)))
 
 
 (defn ppp
@@ -285,7 +287,8 @@
   (d/q '[:find ?t (distinct ?player)
          :in $ ?g
          :where
-         [?g :game/teams ?t]
+         (or [?g :game/home-team ?t]
+             [?g :game/away-team ?t])
          [?g :game/possession ?p]
          [?p :possession/action ?a]
          [?a :offense/players ?offense]

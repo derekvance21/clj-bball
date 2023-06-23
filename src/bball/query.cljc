@@ -43,7 +43,6 @@
 
              ;; MAP
              ; this should probably be ?g ?p ?t ?a to help me remember better, mirroring the order below
-             ; TODO - rename these "plays"
              [(actions ?g ?t ?p ?a)
               [?g :game/possession ?p]
               [?p :possession/team ?t]

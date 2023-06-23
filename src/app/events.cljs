@@ -65,7 +65,7 @@
  [cofx/inject-ds]
  (fn [{:keys [ds db]} _]
    (let [game-tempid -1
-         start-tx-map [{:db/id game-tempid :game/teams [{:team/name "Home"} {:team/name "Away"}]}]
+         start-tx-map [{:db/id game-tempid :game/home-team {:team/name "Home"} :game/away-team {:team/name "Away"}}]
          {:keys [db-after tempids]} (d/with ds start-tx-map)
          game-id (get tempids game-tempid)]
      {:fx [[::fx/ds db-after]

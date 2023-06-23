@@ -556,7 +556,7 @@
   []
   [:select
    {:on-change #(re-frame/dispatch [::events/set-game (-> % .-target .-value parse-long)])
-    :value (<sub [::subs/game-id])}
+    :value (or (<sub [::subs/game-id]) "")}
    (for [game-id (<sub [::subs/game-ids])]
      [:option
       {:key game-id

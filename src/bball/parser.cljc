@@ -205,5 +205,6 @@
 (defn parse
   [[init-parser commands]]
   (as-> (reduce reducer init-parser commands) parser
-    (assoc-in parser [:game :game/teams] (-> parser :teams vals vec))
+    (assoc-in parser [:game :game/home-team] (-> parser :teams vals first))
+    (assoc-in parser [:game :game/away-team] (-> parser :teams vals second))
     (get parser :game)))

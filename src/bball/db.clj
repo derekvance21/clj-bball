@@ -10,21 +10,6 @@
    [bball.query :as query]))
 
 
-;; these take on different values at program start. But won't change once the jar file is running
-(comment
-  (def now (java.util.Date.))
-  (def app-server-port (env/env :APP_SERVER_PORT)))
-
-
-;; but for some reason, if you do (def conn (d/connect ...))
-;; and try to build the uberjar, if you don't have the transactor running it'll error out
-
-;; so I think compile-clj is kind of doing a dry run through the top-level defs or something.
-;; but then on runtime startup with java -jar ..., it'll redefine those vars.
-
-;; like, if you put (def ex (throw (Exception.))), the build will fail
-
-
 (def db-uri (env/env :DATOMIC_DB_URI))
 
 
@@ -94,7 +79,7 @@
 
 (comment
 
-  
+
   (def client (client.d/client {:server-type :peer-server
                                 :access-key "key"
                                 :secret "secret"
@@ -250,23 +235,6 @@
 
   ;; TODO - try out query-stats by adding :query-stats key to query
   ;; ala (d/q {:query '[:find ?t :where [?t :team/name]] :args [db] :query-stats :query-stats/test
-
-  (->> (d/q '[:find ?g ?team ?player (avg ?pts) (sum ?pts)
-              :in $ %
-              :with ?a
-              :where
-              (actions ?g ?t ?p ?a)
-              [?t :team/name ?team]
-              (or [?a :action/type :action.type/bonus]
-                  [?a :action/type :action.type/shot]
-                  [?a :action/type :action.type/technical])
-              [?a :action/player ?player]
-              (pts ?a ?pts)]
-            (d/db (get-connection)) query/rules)
-       (map (fn [[g team player pts-per-score-attmpt pts]]
-              [(map :team/name (:game/teams (d/pull (d/db (get-connection)) '[{:game/teams [:team/name]}] g)))
-               team player (* 100 (/ pts-per-score-attmpt 2)) pts]))
-       (sort-by #(nth % 4) >))
 
 
   (defn game-filter

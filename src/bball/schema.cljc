@@ -7,85 +7,120 @@
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
     :db/doc "the enumerated type of an action"}
+
    {:db/ident :action/order
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the order this action happened in its possession"}
+
    {:db/ident :action/player
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the number of the player performing the action"}
+
+
+   ;; action/type's
+   {:db/ident :action.type/turnover}
+
+   {:db/ident :action.type/bonus}
+
+   {:db/ident :action.type/technical}
+
+   {:db/ident :action.type/shot}
+
+
+   ;; free throw
    {:db/ident :ft/made
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the number of made free throws in this action"}
+
    {:db/ident :ft/attempted
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the number of attempted free throws in this action"}
 
-   ;; action/type's
-   {:db/ident :action.type/turnover}
-   {:db/ident :action.type/bonus}
-   {:db/ident :action.type/technical}
-   {:db/ident :action.type/shot}
+   {:db/ident :ft/results
+    :db/valueType :db.type/tuple
+    :db/tupleType :db.type/boolean
+    :db/cardinality :db.cardinality/one
+    :db/doc "the miss/make results of the free throw action"}
+
 
    ;; shot
    {:db/ident :shot/distance
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the distance from the hoop in feet the shot was attempted from"}
+
    {:db/ident :shot/angle
     :db/valueType :db.type/float
     :db/cardinality :db.cardinality/one
     :db/doc "the angle in turns from the center of the court the shot was attempted from"}
+
    {:db/ident :shot/value
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the value of the shot attempted, 2 or 3"}
+
    {:db/ident :shot/make?
     :db/valueType :db.type/boolean
     :db/cardinality :db.cardinality/one
     :db/doc "whether or not the shot was made"}
+
+   {:db/ident :shot/foul?
+    :db/valueType :db.type/boolean
+    :db/cardinality :db.cardinality/one
+    :db/doc "whether or not there was a shooting foul on the shot attempt"}
+
    {:db/ident :block/player
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the number player of the blocker of the shot attempt"}
+
 
    ;; rebound
    {:db/ident :rebound/player
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the number player of the rebounder"}
+
    {:db/ident :rebound/off?
     :db/valueType :db.type/boolean
     :db/cardinality :db.cardinality/one
     :db/doc "whether or not the rebound was an offensive rebound"}
+
    {:db/ident :rebound/team?
     :db/valueType :db.type/boolean
     :db/cardinality :db.cardinality/one
     :db/doc "whether or not the rebound was a team offensive rebound"}
 
+
+   ;; offense/defense
    {:db/ident :offense/players
     :db/valueType :db.type/tuple
     :db/tupleTypes [:db.type/long :db.type/long :db.type/long :db.type/long :db.type/long]
     :db/cardinality :db.cardinality/one
     :db/doc "the numbers of the offensive players on the floor"}
+
    {:db/ident :defense/players
     :db/valueType :db.type/tuple
     :db/tupleTypes [:db.type/long :db.type/long :db.type/long :db.type/long :db.type/long]
     :db/cardinality :db.cardinality/one
     :db/doc "the numbers of the defensive players on the floor"}
 
+
    ;; turnover
    {:db/ident :steal/player
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the number player of the stealer of the turnover"}
+
    {:db/ident :charge/player
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the number player of the charge taker for the turnover"}
+
 
    ;; possession
    {:db/ident :possession/action
@@ -93,18 +128,22 @@
     :db/cardinality :db.cardinality/many
     :db/isComponent true
     :db/doc "the actions of this possession"}
+
    {:db/ident :possession/team
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/one
     :db/doc "the team with the ball on this possession"}
+
    {:db/ident :possession/order
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the order this possession happened in its game"}
+
    {:db/ident :possession/period
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the period of the game this possession happened in"}
+
 
    ;; game
    {:db/ident :game/possession
@@ -112,25 +151,35 @@
     :db/cardinality :db.cardinality/many
     :db/isComponent true
     :db/doc "the possessions of this game"}
+
    {:db/ident :game/minutes
     :db/valueType :db.type/long
     :db/cardinality :db.cardinality/one
     :db/doc "the number of minutes this game lasted"}
-   ;; TODO - why is this named plurally? Also, might want to refactor into :game/team1 :game/team2. Or even a tuple
-   ;; THIS SHOULD BE A TUPLE. IT'LL MAKE QUERIES EASIER. TO just go:
-   ;; :where
-   ;; [?g :game/teams ?teams]
-   ;; [(untuple ?teams) ?t1 ?t2]
-   ;; rn, if you want to query for game teams,
-   ;; you end up getting two rows [g t1] and [g t2] and are unable to get [g t1 t2]
+
+   ;; DEPRECATED - see :game/home-team and :game/away-team
    {:db/ident :game/teams
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/many
     :db/doc "the teams playing in this game"}
+   
+   ;; :game/teams makes it annoying to query for the teams in the game
+   ;; with this, one query result row can have the game and both teams
+   {:db/ident :game/home-team
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "the home team in the game. This does not mean the team was playing at their home gym, however."}
+
+   {:db/ident :game/away-team
+    :db/valueType :db.type/ref
+    :db/cardinality :db.cardinality/one
+    :db/doc "the home team in the game. This does not mean the team was playing at their home gym, however."}
+
    {:db/ident :game/datetime
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
     :db/doc "the datetime this game started"}
+
 
    ;; team
    {:db/ident :team/name
@@ -149,8 +198,8 @@
           [ident
            (select-keys sch [:db/cardinality :db/unique :db/index :db/tupleAttrs :db/isComponent :db/doc
                              (when (case valueType
-                                     :db.type/ref (not= "type" (name ident))
-                                     :db.type/tuple (contains? sch :db/tupleAttrs) ;; TODO - probably no need to do this - just remove non-refs
+                                     :db.type/ref (not= "type" (name ident)) ;; to not include valueType for :action/type
+                                     :db.type/tuple (contains? sch :db/tupleAttrs) ;; in case I use composite tuples later, which datascript supports
                                      false)
                                :db/valueType)])]))
        (into {})))
