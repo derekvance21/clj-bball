@@ -60,6 +60,11 @@
           reader/read-string))
 
 
+(defn clear-ls-game
+  []
+  (.removeItem js/localStorage game-local-storage-key))
+
+
 (defn teams
   [db g]
   ((juxt :game/home-team :game/away-team) (d/pull db '[{:game/home-team [*]
@@ -287,8 +292,6 @@
   (d/q '[:find ?t (distinct ?player)
          :in $ ?g
          :where
-         (or [?g :game/home-team ?t]
-             [?g :game/away-team ?t])
          [?g :game/possession ?p]
          [?p :possession/action ?a]
          [?a :offense/players ?offense]
