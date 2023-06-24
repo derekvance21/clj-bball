@@ -25,6 +25,32 @@
   (d/db (get-connection)))
 
 
+;; I SHOULD USE THIS
+;; THIS SHOULD BE SHARED BETWEEN CLJ/CLJS
+;; BUT MAYBE JUST HAVE THE PATTERN AND FUNCTION BE DB-AGNOSTIC
+(defn datascript-game->tx-map
+  [db g]
+  (let [schema-keys (map :db/ident schema/schema)
+        pattern
+        '[* {:game/home-team [:team/name]
+             :game/away-team [:team/name]
+             :game/possession [* {:possession/team [:team/name]}]}]
+        pull-result->tx-map
+        (fn pull-result->tx-map
+          [pull-result]
+          (cond
+            (set? pull-result) (vec pull-result)
+            (map? pull-result) (reduce-kv
+                                (fn [m k v] (assoc m k (pull-result->tx-map v)))
+                                {}
+                                (select-keys pull-result schema-keys))
+            (vector? pull-result) (vec (map pull-result->tx-map pull-result))
+            :else pull-result))]
+    (pull-result->tx-map (d/pull db pattern g))))
+
+
+;; THIS ISN'T A COMPLETE SOLUTION!
+;; [(true? ?b)] gets assertions, but it won't get the most recent assertion
 (defn datomic->datascript-tx-data
   [db]
   (vec
@@ -65,19 +91,38 @@
   (let [schema (->> schema/schema
                     (map (juxt :db/ident identity))
                     (into {}))
+        ->tuple (fn [coll tuple-type]
+                  (let [pred (case tuple-type
+                               :db.type/boolean boolean?)]
+                    (vec (take (max 2 (count (filter pred coll))) (concat coll (repeat nil))))))
         datom->tx (fn [{:keys [e a v]}]
                     (let [ref? (and (= :db.type/ref (get-in schema [a :db/valueType]))
-                                    (number? v))]
+                                    (number? v))
+                          tuple-type? (and (= :db.type/tuple (get-in schema [a :db/valueType]))
+                                           (contains? (get schema a) :db/tupleType))]
                       [:db/add (- e) a (cond
                                          ref? (- v)
+                                         tuple-type? (->tuple v (get-in schema [a :db/tupleType]))
                                          (coll? v) (vec v)
                                          :else v)]))]
     (->> (datascript/datoms db :eavt)
          (filter (fn [{:keys [a]}] (contains? schema a)))
+         (remove (fn [{:keys [a v]}] (and (= a :ft/results) (empty? v))))
          (map datom->tx))))
 
 
+
+
 (comment
+
+  (def score-query
+    '[:find ?g (pull ?t [*]) (sum ?pts)
+      :keys game-id team points
+      :in $ %
+      :with ?a
+      :where
+      (actions ?g ?t ?p ?a)
+      (pts ?a ?pts)])
 
 
   (def client (client.d/client {:server-type :peer-server
@@ -90,7 +135,70 @@
   (def client-conn (client.d/connect client {:db-name "db"}))
 
 
-  (d/transact (get-connection) schema/schema)
+  @(d/transact (get-connection) schema/schema)
+
+
+  (d/q score-query
+       (-> (get-db)
+           (d/with [{:game/home-team {:team/name "Miami Heat"}
+                     :game/away-team {:team/name "Golden State Warriors"}
+                     :game/datetime #inst "2023-11-01T19:30-04:00"
+                     :game/minutes 48
+                     :game/possession [{:possession/order 1
+                                        :possession/period 1
+                                        :possession/team {:team/name "Miami Heat"}
+                                        :possession/action [{:action/order 1
+                                                             :action/player 7
+                                                             :action/type :action.type/turnover
+                                                             :steal/player 30}]}
+                                       {:possession/order 2
+                                        :possession/period 1
+                                        :possession/team {:team/name "Golden State Warriors"}
+                                        :possession/action [{:action/order 1
+                                                             :action/player 22
+                                                             :action/type :action.type/shot
+                                                             :shot/value 3
+                                                             :shot/make? true
+                                                             :shot/distance 288}]}]}])
+           :db-after)
+       query/rules)
+  
+
+  (-> (get-db)
+      (d/with [{:game/home-team {:team/name "Miami Heat"}
+                :game/away-team {:team/name "Golden State Warriors"}
+                :game/datetime #inst "2023-11-01T19:30-04:00"
+                :game/minutes 48
+                :game/possession [{:possession/order 1
+                                   :possession/period 1
+                                   :possession/team {:team/name "Miami Heat"}
+                                   :possession/action [{:action/order 1
+                                                        :action/player 7
+                                                        :action/type :action.type/turnover
+                                                        :steal/player 30}]}
+                                  {:possession/order 2
+                                   :possession/period 1
+                                   :possession/team {:team/name "Golden State Warriors"}
+                                   :possession/action [{:action/order 1
+                                                        :action/player 22
+                                                        :action/type :action.type/shot
+                                                        :shot/value 3
+                                                        :shot/make? true
+                                                        :shot/distance 288}]}]}])
+      :db-after
+      ((fn [db]
+        (d/pull db '[*]
+                [:game/home-team+away-team+datetime
+                 [(d/entid db [:team/name "Miami Heat"])
+                  (d/entid db [:team/name "Golden State Warriors"])
+                  #inst "2023-11-01T19:30-04:00"]])))
+      )
+  
+  ;; when you refer to the :game/home-team+away-team+datetime tuple,
+  ;; it has to be integer refs for home-team and away-team. So use d/entid
+  ;; whereas when you transact for the first time, you can use upsert maps
+  
+
 
 
   (def db-game-files
@@ -98,9 +206,11 @@
      "resources/games/2023-02-25-Zillah-Blaine.edn"
      "resources/games/2023-02-18-Northwest-Blaine.edn"
      "resources/games/2023-02-14-Blaine-Nooksack-Valley.edn"
-     "resources/games/2023-02-11-Lynden-Christian-Blaine.edn"])
+     "resources/games/2023-02-11-Lynden-Christian-Blaine.edn"
+     "resources/games/2023-02-08-Blaine-Meridian.edn"])
 
 
+  ;; TODO - use datascript-game->datomic-tx-map
   (for [db-tx-data (map (comp datascript->datomic-tx-data
                               (partial edn/read-string {:readers datascript/data-readers})
                               slurp)
@@ -138,14 +248,6 @@
     )
 
 
-  (def score-query
-    '[:find ?g ?team (sum ?pts)
-      :in $ %
-      :with ?a
-      :where
-      (actions ?g ?t ?p ?a)
-      (pts ?a ?pts)
-      [?t :team/name ?team]])
 
 
   (d/q score-query (d/db (get-connection)) query/rules)

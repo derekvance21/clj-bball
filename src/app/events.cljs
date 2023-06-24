@@ -14,12 +14,18 @@
 (re-frame/reg-event-fx
  ::initialize
  (fn [_ _]
+   ;; TODO - this is a problem to fetch this and then have to wait for it to come back
+   ;; b/c you might end up waiting ~10s+ for the response to come back
+   ;; so do you:
+   ;; 1. only send over game transaction maps and then transact them in the background?
+   ;; 2. do something else?
    {::fx/fetch {:resource "http://localhost:8900/db"
                 :options {:method :GET}
                 :on-success (fn [text]
                               (let [remote-db (try
                                                 (reader/read-string text)
-                                                (catch js/Object e (.error js/console e)))]
+                                                (catch js/Object e
+                                                  (.error js/console e)))]
                                 (re-frame/dispatch (if (d/db? remote-db)
                                                      [::initialize-remote remote-db]
                                                      [::initialize-local]))))
@@ -31,11 +37,13 @@
 (re-frame/reg-event-fx
  ::initialize-remote
  (fn [{:keys [db]} [_ remote-db]]
-   (let [game-id (d/q '[:find ?g . :where [?g :game/possession]] remote-db)
-         players (datascript/get-players-map remote-db game-id)]
-     {:db (assoc db :game-id game-id :players players)
-      :fx [[::fx/ds remote-db]
-           [:dispatch [::transact-local-storage-game]]]})))
+   (merge
+    {:fx [[::fx/ds remote-db]
+          [:dispatch [::transact-local-storage-game]]]}
+    (when-some [game-id (d/q '[:find ?g . :where [?g :game/possession]] remote-db)]
+      {:db (assoc db
+                  :game-id game-id
+                  :players (datascript/get-players-map remote-db game-id))}))))
 
 
 (re-frame/reg-event-fx
@@ -45,12 +53,15 @@
          [:dispatch [::transact-local-storage-game]]]}))
 
 
+;; TODO - there needs to be much better error checking here
+;; ls-game could be stale or invalid but still some? and map?
+;; which would put the app in a crumby state
 (re-frame/reg-event-fx
  ::transact-local-storage-game
  [cofx/inject-ds
   (re-frame/inject-cofx ::cofx/local-storage-game)]
  (fn [{:keys [ds db ls-game]} _]
-   (if (some? ls-game)
+   (if (and (some? ls-game) (map? ls-game))
      (let [{:keys [db-after tempids]} (d/with ds [(assoc ls-game :db/id -1)])
            game-id (get tempids -1)
            players (datascript/get-players-map db-after game-id)]
@@ -68,6 +79,7 @@
          start-tx-map [{:db/id game-tempid :game/home-team {:team/name "Home"} :game/away-team {:team/name "Away"}}]
          {:keys [db-after tempids]} (d/with ds start-tx-map)
          game-id (get tempids game-tempid)]
+     ;; [console warning] re-frame: ":fx" effect should not contain a :db effect
      {:fx [[::fx/ds db-after]
            [:db (-> db
                     (assoc :game-id game-id :init {:init/period 1})

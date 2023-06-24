@@ -162,7 +162,7 @@
     :db/valueType :db.type/ref
     :db/cardinality :db.cardinality/many
     :db/doc "the teams playing in this game"}
-   
+
    ;; :game/teams makes it annoying to query for the teams in the game
    ;; with this, one query result row can have the game and both teams
    {:db/ident :game/home-team
@@ -175,10 +175,27 @@
     :db/cardinality :db.cardinality/one
     :db/doc "the home team in the game. This does not mean the team was playing at their home gym, however."}
 
+   {:db/ident :game/neutral-site?
+    :db/valueType :db.type/boolean
+    :db/cardinality :db.cardinality/one
+    :db/doc "whether or not the home team was playing in their own gym"}
+
+   {:db/ident :game/location
+    :db/valueType :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc "the name of the place where the game took place. ex: Yakima Valley Sundome (Yakima, WA)"}
+
    {:db/ident :game/datetime
     :db/valueType :db.type/instant
     :db/cardinality :db.cardinality/one
     :db/doc "the datetime this game started"}
+
+   {:db/ident :game/home-team+away-team+datetime
+    :db/valueType :db.type/tuple
+    :db/tupleAttrs [:game/home-team :game/away-team :game/datetime]
+    :db/cardinality :db.cardinality/one
+    :db/unique :db.unique/identity
+    :db/doc "unique game is a tuple of the teams playing (both refs) and a time"}
 
 
    ;; team
