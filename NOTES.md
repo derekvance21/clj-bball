@@ -2,6 +2,7 @@
 
 ## Todo
 
+- [ ] bug where, if you have in your db teams already with :team/name and you try to create new game, you can't set the team name from home/away to an already existing :team/name
 - [ ] free throw lane violation? Rn, counts as a 'miss', but really it's something else
 - [ ] so ideally, you'd be able to load a game into the editor, and then be able to add new things
     - so maybe later if I want to add a contested thing to the game, I could load up that game and then go through each action, not have to change anything except the contested-ness. Would save a ton of time
