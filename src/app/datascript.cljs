@@ -330,3 +330,10 @@
        (.click))
      (.revokeObjectURL js/URL url))))
 
+(comment
+  (let [filename "2023-07-06-Home-Away.edn"
+        game-id (get @re-frame.db/app-db :game-id)
+        game-map (datascript-game->tx-map @conn game-id)]
+    (save-file filename game-map))
+  ;
+  )
