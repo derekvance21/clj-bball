@@ -28,6 +28,8 @@
 ;; I SHOULD USE THIS
 ;; THIS SHOULD BE SHARED BETWEEN CLJ/CLJS
 ;; BUT MAYBE JUST HAVE THE PATTERN AND FUNCTION BE DB-AGNOSTIC
+;; need to dissoc :ft/results []
+;; and :ft/results [false nil] type-thing
 (defn datascript-game->tx-map
   [db g]
   (let [schema-keys (map :db/ident schema/schema)

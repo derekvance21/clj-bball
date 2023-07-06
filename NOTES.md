@@ -2,6 +2,7 @@
 
 ## Todo
 
+- [ ] free throw lane violation? Rn, counts as a 'miss', but really it's something else
 - [ ] so ideally, you'd be able to load a game into the editor, and then be able to add new things
     - so maybe later if I want to add a contested thing to the game, I could load up that game and then go through each action, not have to change anything except the contested-ness. Would save a ton of time
 - [ ] buzzer beater shots won't have a rebounder, but rn it requires one to submit the action...

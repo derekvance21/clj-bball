@@ -8,7 +8,9 @@
 (re-frame/reg-fx
  ::ds
  (fn [db]
-   (when (and (not (identical? @ds/conn db))
+   (when (and (not
+               (identical? @ds/conn db) ;; identical? != = . ((juxt = identical?) db (d/db-with db [])) => [true false]
+               )
               (d/db? db))
      (reset! ds/conn db) ;; d/reset-conn! has to produce a transaction report, but underneath just runs reset!
      )))

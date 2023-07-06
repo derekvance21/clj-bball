@@ -26,7 +26,9 @@
 
 (defn datascript-game->tx-map
   [db g]
-  (let [schema-keys (map :db/ident schema/schema)
+  (let [schema-keys (->> schema/schema
+                         (remove :db/tupleAttrs)
+                         (map :db/ident))
         pattern
         '[* {:game/home-team [:team/name]
              :game/away-team [:team/name]
@@ -37,7 +39,8 @@
           (cond
             (set? pull-result) (vec pull-result)
             (map? pull-result) (reduce-kv
-                                (fn [m k v] (assoc m k (pull-result->tx-map v)))
+                                (fn [m k v]
+                                  (assoc m k (pull-result->tx-map v)))
                                 {}
                                 (select-keys pull-result schema-keys))
             (vector? pull-result) (vec (map pull-result->tx-map pull-result))
@@ -202,19 +205,6 @@
        db query/rules g))
 
 
-(comment
-  (d/q '[:find (pull ?a [*])
-         :where
-         [?g :game/possession ?p]
-         [?p :possession/action ?a]
-         [?a :offense/players ?o-players]
-         [?a :defense/players ?d-players]
-         [?p :possession/team 3]
-         [(set ?o-players) ?o-players-set]
-         [(contains? ?o-players-set 11)]]
-       @conn))
-
-
 (defn action-change-possession?
   [{:action/keys [type] off-reb? :rebound/off?}]
   (and (not off-reb?) (not= type :action.type/technical)))
@@ -286,21 +276,29 @@
     (when-some [entid (:db/id entity)]
       [[:db/retractEntity entid]])))
 
+
 #_{:clj-kondo/ignore [:datalog-syntax]}
-(defn game->team-players
+(defn game->team-players-map
   [db g]
-  (d/q '[:find ?t (distinct ?player)
-         :in $ ?g
-         :where
-         [?g :game/possession ?p]
-         [?p :possession/action ?a]
-         [?a :offense/players ?offense]
-         [?a :defense/players ?defense]
-         (or (and [?p :possession/team ?t]
-                  [(ground ?offense) [?player ...]])
-             (and (not [?p :possession/team ?t])
-                  [(ground ?defense) [?player ...]]))]
-       db g))
+  (let [player-query '[:find [?t (distinct ?player)]
+                       :in $ ?g ?t
+                       :where
+                       [?g :game/possession ?p]
+                       [?p :possession/action ?a]
+                       [?a :offense/players ?offense]
+                       [?a :defense/players ?defense]
+                       (or (and [?p :possession/team ?t]
+                                [(ground ?offense) [?player ...]])
+                           (and (not [?p :possession/team ?t])
+                                [(ground ?defense) [?player ...]]))]
+        team-query '[:find ?t .
+                     :in $ ?g ?team-type
+                     :where
+                     [?g ?team-type ?t]]
+        [home-t home-players] (d/q player-query db g (d/q team-query db g :game/home-team))
+        [away-t away-players] (d/q player-query db g (d/q team-query db g :game/away-team))]
+    {home-t home-players
+     away-t away-players}))
 
 
 (defn get-players-map
@@ -311,7 +309,7 @@
         last-action (last-action last-poss)
         offense (set (:offense/players last-action))
         defense (set (:defense/players last-action))
-        all-players (into {} (game->team-players db g))
+        all-players (game->team-players-map db g)
         on-court-players {offense-team-id offense
                           defense-team-id defense}]
     (merge-with
@@ -321,28 +319,11 @@
      all-players on-court-players)))
 
 
-(comment
-  (->> (d/q '[:find (pull ?t [:team/name]) ?player (sum ?pts) (count ?a) (avg ?pts)
-              :in $ % ?g
-      ;;  :with ?a
-              :where
-              (actions ?g ?t ?p ?a)
-              [?a :action/player ?player]
-              [?a :action/type :action.type/shot]
-              (pts ?a ?pts)]
-            @conn query/rules 1)
-       (map #(update % 0 :team/name))
-       (sort-by #(nth % 2) >))
-  
-  )
-
-
-(defn save-db
-  ([]
-   (save-db "game-db.edn"))
-  ([filename]
-   (let [db-string (pr-str @conn)
-         url (.createObjectURL js/URL (js/File. [db-string] filename))]
+(defn save-file
+  ([file]
+   (save-file "download.txt" file))
+  ([filename file]
+   (let [url (.createObjectURL js/URL (js/File. [file] filename))]
      (doto (.createElement js/document "a")
        (.setAttribute "download" filename)
        (.setAttribute "href" url)
