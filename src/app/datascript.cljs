@@ -5,7 +5,8 @@
    [bball.query :as query]
    [cljs.reader :as reader]
    [datascript.core :as d]
-   [reagent.core :as reagent]))
+   [reagent.core :as reagent]
+   [clojure.pprint :as pprint]))
 
 
 (def schema (schema/datomic->datascript-schema schema/schema))
@@ -40,7 +41,16 @@
             (set? pull-result) (vec pull-result)
             (map? pull-result) (reduce-kv
                                 (fn [m k v]
-                                  (assoc m k (pull-result->tx-map v)))
+                                  (let [ft-results? (= :ft/results k)]
+                                    (if (and ft-results? (empty? v))
+                                      m ;; don't include empty :ft/results
+                                      (assoc m k
+                                             (if ft-results?
+                                               (->> (concat v (repeat nil))
+                                                    (take (max 2 (count (filter boolean? v))))
+                                                    vec) ;; make sure :ft/results is minimum length 2, for tuple compliance
+                                               (pull-result->tx-map v) ;; otherwise, recursively apply
+                                               )))))
                                 {}
                                 (select-keys pull-result schema-keys))
             (vector? pull-result) (vec (map pull-result->tx-map pull-result))
@@ -53,11 +63,11 @@
 
 (defn game->local-storage
   [db g]
-  (let [tx-map (datascript-game->tx-map db g)]
-    (.setItem js/localStorage game-local-storage-key (pr-str tx-map))))
+  (.setItem js/localStorage game-local-storage-key
+            (datascript-game->tx-map db g)))
 
 
-(defn local-storage->game
+(defn local-storage->game-tx-map
   []
   (some-> (.getItem js/localStorage game-local-storage-key)
           reader/read-string))
@@ -334,6 +344,7 @@
   (let [filename "2023-07-06-Home-Away.edn"
         game-id (get @re-frame.db/app-db :game-id)
         game-map (datascript-game->tx-map @conn game-id)]
-    (save-file filename game-map))
+    (save-file filename
+               (with-out-str (pprint/pprint game-map))))
   ;
   )

@@ -211,6 +211,13 @@
   (->> schema
        (remove #(= "action.type" (namespace (:db/ident %)))) ;; removes enums
        (map
+        #_(juxt :db/ident
+                #(select-keys % [:db/cardinality :db/unique :db/index :db/tupleAttrs :db/isComponent :db/doc
+                                 (when (case valueType
+                                         :db.type/ref (not= "type" (name ident)) ;; to not include valueType for :action/type
+                                         :db.type/tuple (contains? % :db/tupleAttrs) ;; in case I use composite tuples later, which datascript supports
+                                         false)
+                                   :db/valueType)]))
         (fn [{:db/keys [ident valueType] :as sch}]
           [ident
            (select-keys sch [:db/cardinality :db/unique :db/index :db/tupleAttrs :db/isComponent :db/doc
