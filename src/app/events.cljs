@@ -1,6 +1,5 @@
 (ns app.events
   (:require
-   [bball.query :as query]
    [re-frame.core :as re-frame]
    [app.datascript :as datascript]
    [app.db :as db]
@@ -386,7 +385,6 @@
    (update-in db [:sub?] not)))
 
 
-
 (re-frame/reg-event-fx
  ::submit-game
  [cofx/inject-ds]
@@ -398,18 +396,4 @@
      :on-success (fn [text]
                    (def remote-db (reader/read-string text)))
      :on-failure println}}))
-
-
-(def score-query
-  '[:find ?g ?team (sum ?pts)
-    :in $ %
-    :with ?a
-    :where
-    (actions ?g ?t ?p ?a)
-    (pts ?a ?pts)
-    [?t :team/name ?team]])
-
-(d/q score-query
-     remote-db
-     query/rules)
 

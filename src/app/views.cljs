@@ -122,6 +122,10 @@
         :value @team-name
         :on-change #(reset! team-name (-> % .-target .-value))
         :on-blur #(when (not= @team-name (:team/name team))
+                    ;; TODO - update-team-name... hmm.
+                    ;; because sometimes you're setting the active team to a team that already
+                    ;; exists in the local db. So you want the game/home-team to change in that case
+                    ;; not just update :team/name
                     (re-frame/dispatch [::events/update-team-name (:db/id team) @team-name]))
         :style {:width (str (+ 2 (count @team-name)) "ch")}}])))
 
