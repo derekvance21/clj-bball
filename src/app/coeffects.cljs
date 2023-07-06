@@ -7,7 +7,7 @@
 (re-frame/reg-cofx
  ::local-storage-game
  (fn [cofx _]
-   (if-some [game-tx-map (ds/local-storage->game)]
+   (if-some [game-tx-map (ds/local-storage->game-tx-map)]
      (assoc cofx :ls-game game-tx-map)
      cofx)))
 
