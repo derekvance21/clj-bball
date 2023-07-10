@@ -313,7 +313,7 @@
   (let [{:shot/keys [make? value distance]
          ftm :ft/made fta :ft/attempted
          rebounder :rebound/player team-rebound? :rebound/team?} action
-        distance-ft (math/round (/ distance 12))]
+        distance-ft (math/floor (/ distance 12))]
     [:span
      (str value " PT (" distance-ft "') " (if make? "make " "miss "))
      (when (and (some? fta) (> fta 0))
@@ -588,27 +588,29 @@
   []
   [:div.flex.justify-between.gap-4
    [players-input]
-   [:div.flex.flex-col.flex-1.gap-24
-    [action-input]
-    [:div.flex.gap-2
-     [new-game]
-     [submit-game]
-     [game-selector]]]
-   [:div.flex.flex-col.flex-1.gap-4
-    [stats]
-    [possessions]]])
+   [action-input]])
+
+
+(defn game-controls
+  []
+  [:div.flex.gap-2
+   [new-game]
+   [submit-game]
+   [game-selector]])
 
 
 (defn analysis
   []
-  [:div
-   [:p "game1"]])
+  [:div.flex.flex-col.flex-1.gap-4
+   [stats]
+   [possessions]])
 
 
 (defn main-panel
   []
-  [:div.container.mx-4.my-4
+  [:div.container.mx-4.my-4.flex.flex-col.gap-4
    {:class "w-11/12"}
    [game-input]
-   [analysis]])
+   [analysis]
+   [game-controls]])
 
