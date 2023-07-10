@@ -341,10 +341,12 @@
      (.revokeObjectURL js/URL url))))
 
 (comment
-  (let [filename "2023-01-28-Blaine-Anacortes.edn"
+  (let [filename "2023-01-23-Mount-Vernon-Blaine.edn"
         game-id (get @re-frame.db/app-db :game-id)
         game-map (datascript-game->tx-map @conn game-id)]
     (save-file filename
                (with-out-str (pprint/pprint game-map))))
+  
+  (clear-ls-game)
   ;
   )
