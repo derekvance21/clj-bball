@@ -437,21 +437,19 @@
 (re-frame/reg-sub
  ::valid?
  :<- [::action]
- :<- [::reboundable?]
  :<- [::players]
  :<- [::team]
- (fn [[action reboundable? players team] _]
+ (fn [[action players team] _]
    (let [five-players? (->> (vals players)
                             (map :on-court)
                             (every? #(= 5 (count %))))
-         {:action/keys [player type]} action
-         rebound? (or (:rebound/team? action) (:rebound/player action))]
+         {:action/keys [player type]} action]
      (and five-players?
           (some? team)
           (some? player)
           (some? type)
-          (or (not reboundable?)
-              rebound?)))))
+          ;; (or (not reboundable?) rebound?) ;; buzzer beaters don't have a rebounder
+          ))))
 
 
 (re-frame/reg-sub
