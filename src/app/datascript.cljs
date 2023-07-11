@@ -6,7 +6,8 @@
    [cljs.reader :as reader]
    [datascript.core :as d]
    [reagent.core :as reagent]
-   [clojure.pprint :as pprint]))
+   [clojure.pprint :as pprint]
+   [bball.game-utils :as game-utils]))
 
 
 (def schema (schema/datomic->datascript-schema schema/schema))
@@ -25,46 +26,13 @@
 (defonce conn (create-ratom-conn schema))
 
 
-(defn datascript-game->tx-map
-  [db g]
-  (let [schema-keys (->> schema/schema
-                         (remove :db/tupleAttrs)
-                         (map :db/ident))
-        pattern
-        '[* {:game/home-team [:team/name]
-             :game/away-team [:team/name]
-             :game/possession [* {:possession/team [:team/name]}]}]
-        pull-result->tx-map
-        (fn pull-result->tx-map
-          [pull-result]
-          (cond
-            (set? pull-result) (vec pull-result)
-            (map? pull-result) (reduce-kv
-                                (fn [m k v]
-                                  (let [ft-results? (= :ft/results k)]
-                                    (if (and ft-results? (empty? v))
-                                      m ;; don't include empty :ft/results
-                                      (assoc m k
-                                             (if ft-results?
-                                               (->> (concat v (repeat nil))
-                                                    (take (max 2 (count (filter boolean? v))))
-                                                    vec) ;; make sure :ft/results is minimum length 2, for tuple compliance
-                                               (pull-result->tx-map v) ;; otherwise, recursively apply
-                                               )))))
-                                {}
-                                (select-keys pull-result schema-keys))
-            (vector? pull-result) (vec (map pull-result->tx-map pull-result))
-            :else pull-result))]
-    (pull-result->tx-map (d/pull db pattern g))))
-
-
 (def game-local-storage-key "current-game")
 
 
 (defn game->local-storage
   [db g]
   (.setItem js/localStorage game-local-storage-key
-            (datascript-game->tx-map db g)))
+            (game-utils/datascript-game->tx-map db g)))
 
 
 (defn local-storage->game-tx-map
@@ -341,12 +309,12 @@
      (.revokeObjectURL js/URL url))))
 
 (comment
-  (let [filename "2023-01-23-Mount-Vernon-Blaine.edn"
+  (let [filename "2023-01-05-Sedro-Woolley-Blaine.edn"
         game-id (get @re-frame.db/app-db :game-id)
-        game-map (datascript-game->tx-map @conn game-id)]
+        game-map (game-utils/datascript-game->tx-map @conn game-id)]
     (save-file filename
                (with-out-str (pprint/pprint game-map))))
-  
+
   (clear-ls-game)
   ;
   )

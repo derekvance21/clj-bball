@@ -7,7 +7,8 @@
    [app.effects :as fx]
    [app.interceptors :as interceptors]
    [cljs.reader :as reader]
-   [datascript.core :as d]))
+   [datascript.core :as d]
+   [bball.game-utils :as game-utils]))
 
 
 (re-frame/reg-event-fx
@@ -392,7 +393,7 @@
    {::fx/fetch
     {:url "http://localhost:8900/db"
      :method "POST"
-     :body [(datascript/datascript-game->tx-map ds (:game-id db))]
+     :body [(game-utils/datascript-game->tx-map ds (:game-id db))]
      :on-success (fn [text]
                    (def remote-db (reader/read-string text)))
      :on-failure println}}))
