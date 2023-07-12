@@ -318,3 +318,15 @@
   (clear-ls-game)
   ;
   )
+
+
+(def shots-query-by-player
+  '[:find (pull ?a [:shot/distance :shot/angle :shot/make?]) ?pts
+    :in $ % ?t ?numbers
+    :where
+    [?p :possession/team ?t]
+    [?p :possession/action ?a]
+    [?a :action/type :action.type/shot]
+    [?a :action/player ?player]
+    [(contains? ?numbers ?player)]
+    (pts ?a ?pts)])
