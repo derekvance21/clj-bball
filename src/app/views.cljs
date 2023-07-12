@@ -381,7 +381,7 @@
         preview-entities (<sub [::subs/preview-entities])]
     [:div
      [:h2.text-xl "Possessions"]
-     [:ol.max-h-64.overflow-auto.flex.flex-col-reverse
+     [:ol.max-h-32.overflow-auto.flex.flex-col-reverse
       (for [possession possessions]
         [:li
          {:key (:db/id possession)}
@@ -429,40 +429,44 @@
        (eucl-hoop->polar-hoop)))
 
 
+(def court-dimensions [(* 12 50) (* 12 42)])
+
+
+(def hoop-coordinates
+  (let [[court-width _] court-dimensions]
+    [(/ court-width 2) 63]))
+
+
 (defn svg-click-handler
-  [court-id court-client-dimensions court-dimensions hoop-coordinates make?]
-  (fn [e]
-    (let [[turns radius] (client->polar-hoop
-                          court-id court-client-dimensions court-dimensions hoop-coordinates
-                          [(.-clientX e) (.-clientY e)])]
-      (re-frame/dispatch [::events/set-action-shot-with-info turns (math/round radius) make?]))))
+  [court-id scale make?]
+  (let [court-client-dimensions (map #(* % scale) court-dimensions)]
+    (fn [e]
+      (let [[turns radius] (client->polar-hoop
+                            court-id court-client-dimensions court-dimensions hoop-coordinates
+                            [(.-clientX e) (.-clientY e)])]
+        (re-frame/dispatch [::events/set-action-shot-with-info turns (math/round radius) make?])))))
 
 
 (defn svg-right-click-handler
-  [court-id court-client-dimensions court-dimensions hoop-coordinates]
+  [court-id scale]
   (fn [e]
     (.preventDefault e)
-    ((svg-click-handler court-id court-client-dimensions court-dimensions hoop-coordinates true) e)))
+    ((svg-click-handler court-id scale true) e)))
 
 
-(defn court []
-  (let [scale 0.8
-        [court-width court-height :as court-dimensions] [(* 12 50) (* 12 42)]
-        court-client-dimensions [(* scale court-width) (* scale court-height)]
-        hoop-coordinates [(/ court-width 2) 63]
-        shot-location (<sub [::subs/shot-location])
+(defn court [{:keys [scale id on-click on-context-menu]} & children]
+  (let [[court-width court-height] court-dimensions
         line-width 2
-        [svg-width svg-height] (map #(* scale (+ % (* 2 line-width))) court-dimensions)
-        court-id "court"]
+        [svg-width svg-height] (map #(* scale (+ % (* 2 line-width))) court-dimensions)]
     [:svg
      {:xmlns "http://www.w3.org/2000/svg"
       :version "1.1"
       :width svg-width
       :height svg-height
       :view-box (string/join " " [(- line-width) (- line-width) (+ court-width (* 2 line-width)) (+ court-height (* 2 line-width))])
-      :on-context-menu (svg-right-click-handler court-id court-client-dimensions court-dimensions hoop-coordinates)
-      :on-click (svg-click-handler court-id court-client-dimensions court-dimensions hoop-coordinates false)}
-     [:rect {:id court-id :x 0 :y 0 :width court-width :height court-height :fill (or "none" "#dfbb85")}]
+      :on-click on-click
+      :on-context-menu on-context-menu}
+     [:rect {:id id :x 0 :y 0 :width court-width :height court-height :fill (or "none" "#dfbb85")}]
      [:g {:id "lines" :fill "none" :stroke-width line-width :stroke "black" :stroke-linecap "butt" :stroke-linejoin "miter"}
       [:rect {:x (- (/ line-width 2)) :y (- (/ line-width 2))
               :width (+ line-width court-width) :height (+ line-width court-height)}]
@@ -475,14 +479,8 @@
       [:path {:d "M 227 94 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0"}] ; left lane markings
       [:path {:d "M 371 94 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0"}] ; right lane markings
       ]
-     (when (some? shot-location)
-       (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
-             icon-size 5]
-         [:circle
-          {:r icon-size :cx x :cy y
-           :fill "none"
-           :stroke (if (<sub [::subs/shot-make?]) "green" "red")
-           :stroke-width 2}]))]))
+     (for [child children]
+       (with-meta child {:key (gensym "key-")}))]))
 
 
 (defn action-input []
@@ -492,7 +490,22 @@
                          (.preventDefault e)
                          (re-frame/dispatch [::events/add-action]))}
      [:div.flex.flex-col.items-start.gap-2
-      [court]
+      (let [shot-location (<sub [::subs/shot-location])
+            id "court"
+            scale 0.8]
+        [court
+         {:id id
+          :scale scale
+          :on-context-menu (svg-right-click-handler id scale)
+          :on-click (svg-click-handler id scale false)}
+         (when (some? shot-location)
+           (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
+                 icon-size 5]
+             [:circle
+              {:r icon-size :cx x :cy y
+               :fill "none"
+               :stroke (if (<sub [::subs/shot-make?]) "green" "red")
+               :stroke-width 2}]))])
       [:div.flex.gap-2
        [button
         {:class "px-2 py-1"
@@ -591,12 +604,21 @@
    [action-input]])
 
 
+(defn load-remote-games
+  []
+  (doseq [game events/blaine-games]
+    (re-frame/dispatch [::events/load-remote-game game])))
+
+
 (defn game-controls
   []
   [:div.flex.gap-2
    [new-game]
    [submit-game]
-   [game-selector]])
+   [game-selector]
+   [:button {:type "button"
+             :on-click load-remote-games}
+    "Add Remote Games"]])
 
 
 (defn analysis
@@ -606,11 +628,38 @@
    [possessions]])
 
 
+(defn shot-chart
+  []
+  [:div
+   [court
+    {:id "shot-chart"
+     :scale 1.8}
+    (for [{:shot/keys [angle distance make?]} (<sub [::subs/shots])]
+      (let [[x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
+            icon-size 5]
+        ^{:key (gensym "key-")}
+        [:circle
+         {:r icon-size :cx x :cy y
+          :fill "none"
+          :stroke (if make? "green" "red")
+          :stroke-width 2}]))]
+   [:div.flex.gap-2.my-2
+    [:input.rounded-full.border.border-black.px-2.py-1
+     {:type "text"
+      :value (<sub [::subs/shot-chart-team])
+      :on-change #(re-frame/dispatch [::events/set-shot-chart-team (-> % .-target .-value)])}]
+    [:input.rounded-full.border.border-black.px-2.py-1
+     {:type "text"
+      :value (<sub [::subs/shot-chart-players-input])
+      :on-change #(re-frame/dispatch [::events/set-shot-chart-players-input (-> % .-target .-value)])}]]])
+
+
 (defn main-panel
   []
   [:div.container.mx-4.my-4.flex.flex-col.gap-4
    {:class "w-11/12"}
    [game-input]
    [analysis]
-   [game-controls]])
+   [game-controls]
+   [shot-chart]])
 
