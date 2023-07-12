@@ -2001,4 +2001,5 @@
    :possession/order 125,
    :possession/period 4}],
  :game/home-team {:team/name "Blaine"},
- :game/away-team {:team/name "Meridian"}}
+ :game/away-team {:team/name "Meridian"},
+ :game/datetime #inst "2023-01-10T19:15-08:00"}
