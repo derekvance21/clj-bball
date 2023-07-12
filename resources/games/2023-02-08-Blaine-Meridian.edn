@@ -2105,4 +2105,5 @@
                      :order 128,
                      :period 4}],
        :home-team #:team{:name "Blaine"},
-       :away-team #:team{:name "Meridian"}}
+       :away-team #:team{:name "Meridian"},
+       :datetime #inst "2023-02-08T19:30-08:00"}
