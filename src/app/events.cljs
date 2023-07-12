@@ -8,7 +8,49 @@
    [app.interceptors :as interceptors]
    [cljs.reader :as reader]
    [datascript.core :as d]
+   [clojure.string :as string]
    [bball.game-utils :as game-utils]))
+
+(def blaine-games
+  ["2023-01-05-Sedro-Woolley-Blaine.edn"
+   "2023-01-10-Blaine-Meridian.edn"
+   "2023-01-12-Blaine-Lynden.edn"
+   "2023-01-16-Mount-Baker-Blaine.edn"
+   "2023-01-20-Blaine-Burlington-Edison.edn"
+   "2023-01-23-Mount-Vernon-Blaine.edn"
+   "2023-01-26-Blaine-Lynden-Christian.edn"
+   "2023-01-28-Blaine-Anacortes.edn"
+   "2023-02-01-Sehome-Blaine.edn"
+   "2023-02-02-Blaine-Ferndale.edn"
+   "2023-02-08-Blaine-Meridian.edn"
+   "2023-02-11-Lynden-Christian-Blaine.edn"
+   "2023-02-14-Blaine-Nooksack-Valley.edn"
+   "2023-02-18-Northwest-Blaine.edn"
+   "2023-02-25-Zillah-Blaine.edn"
+   "2023-03-04-lynden-christian-nooksack-valley.edn"])
+
+
+(re-frame/reg-event-fx
+ ::load-remote-game
+ (fn [_ [_ remote-file]]
+   {::fx/fetch {:resource (str "http://localhost:8900/games/" remote-file)
+                :options {:method :GET}
+                :on-success (fn [text]
+                              (let [tx-map (try
+                                             (reader/read-string text)
+                                             (catch js/Object e
+                                               (.error js/console e)))]
+                                (when (map? tx-map)
+                                  (re-frame/dispatch [::transact-game-tx-map tx-map]))))
+                :on-failure (fn [error]
+                              (.error js/console error))}}))
+
+
+(re-frame/reg-event-fx
+ ::transact-game-tx-map
+ [cofx/inject-ds]
+ (fn [{:keys [ds]} [_ tx-map]]
+   {::fx/ds (d/db-with ds [tx-map])}))
 
 
 (re-frame/reg-event-fx
@@ -397,4 +439,17 @@
      :on-success (fn [text]
                    (def remote-db (reader/read-string text)))
      :on-failure println}}))
+
+
+(re-frame/reg-event-db
+ ::set-shot-chart-players-input
+ (fn [db [_ players-input]]
+   (assoc-in db [:shot-chart :players-input] players-input)))
+
+
+(re-frame/reg-event-db
+ ::set-shot-chart-team
+ (fn [db [_ team]]
+   (assoc-in db [:shot-chart :team] team)))
+
 

@@ -1,9 +1,11 @@
 (ns app.subs
   (:require
-   [re-frame.core :as re-frame]
-   [datascript.core :as d]
    [app.datascript :as ds]
-   [app.db :as db]))
+   [app.db :as db]
+   [bball.query :as query]
+   [clojure.string :as string]
+   [datascript.core :as d]
+   [re-frame.core :as re-frame]))
 
 
 (re-frame/reg-sub
@@ -287,6 +289,37 @@
          distance (get-in db [:action :shot/distance])]
      (when (and (some? angle) (some? distance))
        [angle distance]))))
+
+
+(re-frame/reg-sub
+ ::shot-chart-team
+ (fn [db]
+   (get-in db [:shot-chart :team])))
+
+
+(re-frame/reg-sub
+ ::shot-chart-players-input
+ (fn [db]
+   (get-in db [:shot-chart :players-input])))
+
+
+(re-frame/reg-sub
+ ::shot-chart-players
+ :<- [::shot-chart-players-input]
+ (fn [players-input]
+   (->> (string/split players-input #"\s+")
+        (map parse-long)
+        (filter number?))))
+
+
+(re-frame/reg-sub
+ ::shots
+ :<- [::datascript-db]
+ :<- [::shot-chart-team]
+ :<- [::shot-chart-players]
+ (fn [[db team players] _]
+   (->> (d/q ds/shots-query-by-player db query/rules [:team/name team] (set players))
+        (map first))))
 
 
 (re-frame/reg-sub

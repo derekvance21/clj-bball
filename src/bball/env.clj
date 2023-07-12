@@ -11,6 +11,7 @@
 
 
 (defn env
-  [k]
-  (get env-map k (System/getenv (name k))))
-
+  ([k]
+   (env k nil))
+  ([k not-found]
+   (get env-map k (or (System/getenv (name k)) not-found))))

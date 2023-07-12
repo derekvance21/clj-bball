@@ -6,7 +6,7 @@
                        :offense/players [24 15 32 25 10],
                        :defense/players [4 21 13 22 2],
                        :steal/player 13}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 1,
                      :period 1}
         #:possession{:action
@@ -23,7 +23,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 2,
                      :period 1}
         #:possession{:action
@@ -51,7 +51,7 @@
                        :shot/value 2,
                        :defense/players [4 21 13 22 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 3,
                      :period 1}
         #:possession{:action
@@ -68,7 +68,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 4,
                      :period 1}
         #:possession{:action
@@ -111,7 +111,7 @@
                        :shot/value 2,
                        :defense/players [4 21 13 22 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 5,
                      :period 1}
         #:possession{:action
@@ -126,7 +126,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 6,
                      :period 1}
         #:possession{:action
@@ -143,7 +143,7 @@
                        :shot/value 2,
                        :defense/players [4 21 13 22 2],
                        :ft/made 2}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 7,
                      :period 1}
         #:possession{:action
@@ -153,7 +153,7 @@
                        :offense/players [20 1 13 12 2],
                        :defense/players [24 33 25 35 10],
                        :steal/player 35}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 8,
                      :period 1}
         #:possession{:action
@@ -183,7 +183,7 @@
                        :shot/value 2,
                        :defense/players [20 1 13 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 9,
                      :period 1}
         #:possession{:action
@@ -218,7 +218,7 @@
                        :action/player 1,
                        :offense/players [20 1 13 12 2],
                        :defense/players [24 33 25 35 10]}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 10,
                      :period 1}
         #:possession{:action
@@ -235,7 +235,7 @@
                        :shot/value 2,
                        :defense/players [20 1 4 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 11,
                      :period 1}
         #:possession{:action
@@ -250,7 +250,7 @@
                        :shot/value 2,
                        :defense/players [24 33 25 35 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 12,
                      :period 1}
         #:possession{:action
@@ -280,7 +280,7 @@
                        :shot/value 2,
                        :defense/players [20 1 4 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 13,
                      :period 1}
         #:possession{:action
@@ -289,7 +289,7 @@
                        :action/player 12,
                        :offense/players [4 21 13 12 2],
                        :defense/players [24 15 32 33 35]}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 14,
                      :period 1}
         #:possession{:action
@@ -306,7 +306,7 @@
                        :shot/value 2,
                        :defense/players [4 21 13 22 12],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 15,
                      :period 1}
         #:possession{:action
@@ -315,7 +315,7 @@
                        :action/player 4,
                        :offense/players [4 21 13 22 12],
                        :defense/players [24 15 32 33 35]}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 16,
                      :period 1}
         #:possession{:action
@@ -324,7 +324,7 @@
                        :action/player 15,
                        :offense/players [24 15 32 33 25],
                        :defense/players [1 21 13 22 2]}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 17,
                      :period 1}
         #:possession{:action
@@ -341,7 +341,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 33 25],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 18,
                      :period 1}
         #:possession{:action
@@ -358,7 +358,7 @@
                        :shot/value 2,
                        :defense/players [20 1 21 13 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 19,
                      :period 1}
         #:possession{:action
@@ -388,7 +388,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 20,
                      :period 1}
         #:possession{:action
@@ -397,7 +397,7 @@
                        :action/player 32,
                        :offense/players [24 15 32 25 10],
                        :defense/players [20 1 21 13 2]}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 21,
                      :period 1}
         #:possession{:action
@@ -414,7 +414,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 22,
                      :period 1}
         #:possession{:action
@@ -431,7 +431,7 @@
                        :shot/value 2,
                        :defense/players [20 1 21 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 23,
                      :period 1}
         #:possession{:action
@@ -448,7 +448,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 24,
                      :period 1}
         #:possession{:action
@@ -465,7 +465,7 @@
                        :shot/value 3,
                        :defense/players [20 1 4 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 25,
                      :period 1}
         #:possession{:action
@@ -488,7 +488,7 @@
                        :offense/players [1 13 22 12 2],
                        :defense/players [24 15 32 25 10],
                        :steal/player 24}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 26,
                      :period 2}
         #:possession{:action
@@ -503,7 +503,7 @@
                        :shot/value 2,
                        :defense/players [1 13 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 27,
                      :period 2}
         #:possession{:action
@@ -522,7 +522,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 28,
                      :period 2}
         #:possession{:action
@@ -537,7 +537,7 @@
                        :shot/value 2,
                        :defense/players [4 21 13 22 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 29,
                      :period 2}
         #:possession{:action
@@ -547,7 +547,7 @@
                        :offense/players [4 21 13 22 2],
                        :defense/players [24 32 33 25 10],
                        :steal/player 10}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 30,
                      :period 2}
         #:possession{:action
@@ -556,7 +556,7 @@
                        :action/player 10,
                        :offense/players [24 32 33 25 10],
                        :defense/players [4 21 13 22 2]}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 31,
                      :period 2}
         #:possession{:action
@@ -575,7 +575,7 @@
                        :shot/value 2,
                        :defense/players [24 32 33 25 10],
                        :ft/made 1}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 32,
                      :period 2}
         #:possession{:action
@@ -585,7 +585,7 @@
                        :offense/players [24 32 33 25 10],
                        :defense/players [20 4 21 13 12],
                        :steal/player 4}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 33,
                      :period 2}
         #:possession{:action
@@ -600,7 +600,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 33 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 34,
                      :period 2}
         #:possession{:action
@@ -615,7 +615,7 @@
                        :shot/value 2,
                        :defense/players [20 1 21 13 12],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 35,
                      :period 2}
         #:possession{:action
@@ -632,7 +632,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 33 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 36,
                      :period 2}
         #:possession{:action
@@ -647,7 +647,7 @@
                        :shot/value 2,
                        :defense/players [20 1 21 13 12],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 37,
                      :period 2}
         #:possession{:action
@@ -662,7 +662,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 33 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 38,
                      :period 2}
         #:possession{:action
@@ -679,7 +679,7 @@
                        :shot/value 2,
                        :defense/players [20 1 21 13 12],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 39,
                      :period 2}
         #:possession{:action
@@ -689,7 +689,7 @@
                        :offense/players [20 1 21 13 12],
                        :defense/players [24 15 32 33 10],
                        :steal/player 33}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 40,
                      :period 2}
         #:possession{:action
@@ -704,7 +704,7 @@
                        :shot/value 2,
                        :defense/players [1 21 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 41,
                      :period 2}
         #:possession{:action
@@ -719,7 +719,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 33 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 42,
                      :period 2}
         #:possession{:action
@@ -734,7 +734,7 @@
                        :shot/value 2,
                        :defense/players [1 21 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 43,
                      :period 2}
         #:possession{:action
@@ -751,7 +751,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 33 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 44,
                      :period 2}
         #:possession{:action
@@ -766,7 +766,7 @@
                        :shot/value 2,
                        :defense/players [1 21 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 45,
                      :period 2}
         #:possession{:action
@@ -781,7 +781,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 33 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 46,
                      :period 2}
         #:possession{:action
@@ -798,7 +798,7 @@
                        :shot/value 2,
                        :defense/players [20 4 21 13 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 47,
                      :period 2}
         #:possession{:action
@@ -828,7 +828,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 33 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 48,
                      :period 2}
         #:possession{:action
@@ -845,7 +845,7 @@
                        :shot/value 2,
                        :defense/players [20 4 21 13 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 49,
                      :period 2}
         #:possession{:action
@@ -855,7 +855,7 @@
                        :offense/players [20 4 21 13 2],
                        :defense/players [24 15 32 33 10],
                        :steal/player 32}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 50,
                      :period 2}
         #:possession{:action
@@ -870,7 +870,7 @@
                        :shot/value 2,
                        :defense/players [20 4 21 13 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 51,
                      :period 2}
         #:possession{:action
@@ -885,7 +885,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 33 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 52,
                      :period 2}
         #:possession{:action
@@ -908,7 +908,7 @@
                        :offense/players [24 15 33 25 10],
                        :defense/players [1 13 22 12 2],
                        :steal/player 12}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 53,
                      :period 2}
         #:possession{:action
@@ -923,7 +923,7 @@
                        :shot/value 2,
                        :defense/players [24 15 33 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 54,
                      :period 2}
         #:possession{:action
@@ -933,7 +933,7 @@
                        :offense/players [24 15 33 25 10],
                        :defense/players [1 13 22 12 2],
                        :steal/player 2}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 55,
                      :period 2}
         #:possession{:action
@@ -950,7 +950,7 @@
                        :shot/value 2,
                        :defense/players [4 21 13 22 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 56,
                      :period 3}
         #:possession{:action
@@ -965,7 +965,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 57,
                      :period 3}
         #:possession{:action
@@ -980,7 +980,7 @@
                        :shot/value 2,
                        :defense/players [4 21 13 22 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 58,
                      :period 3}
         #:possession{:action
@@ -997,7 +997,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 59,
                      :period 3}
         #:possession{:action
@@ -1012,7 +1012,7 @@
                        :shot/value 2,
                        :defense/players [4 21 13 22 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 60,
                      :period 3}
         #:possession{:action
@@ -1029,7 +1029,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 61,
                      :period 3}
         #:possession{:action
@@ -1046,7 +1046,7 @@
                        :shot/value 2,
                        :defense/players [4 21 13 22 2],
                        :ft/made 1}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 62,
                      :period 3}
         #:possession{:action
@@ -1056,7 +1056,7 @@
                        :offense/players [20 21 13 12 2],
                        :defense/players [24 15 32 25 10],
                        :steal/player 24}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 63,
                      :period 3}
         #:possession{:action
@@ -1071,7 +1071,7 @@
                        :shot/value 2,
                        :defense/players [20 21 13 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 64,
                      :period 3}
         #:possession{:action
@@ -1086,7 +1086,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 65,
                      :period 3}
         #:possession{:action
@@ -1095,7 +1095,7 @@
                        :action/player 32,
                        :offense/players [24 15 32 25 10],
                        :defense/players [20 1 21 12 2]}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 66,
                      :period 3}
         #:possession{:action
@@ -1112,7 +1112,7 @@
                        :shot/value 2,
                        :defense/players [24 33 25 35 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 67,
                      :period 3}
         #:possession{:action
@@ -1122,7 +1122,7 @@
                        :offense/players [24 33 25 35 10],
                        :defense/players [20 1 13 12 2],
                        :steal/player 2}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 68,
                      :period 3}
         #:possession{:action
@@ -1139,7 +1139,7 @@
                        :shot/value 2,
                        :defense/players [24 33 25 35 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 69,
                      :period 3}
         #:possession{:action
@@ -1158,7 +1158,7 @@
                        :shot/value 2,
                        :defense/players [1 4 13 22 12],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 70,
                      :period 3}
         #:possession{:action
@@ -1175,7 +1175,7 @@
                        :shot/value 3,
                        :defense/players [24 15 33 25 35],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 71,
                      :period 3}
         #:possession{:action
@@ -1192,7 +1192,7 @@
                        :shot/value 2,
                        :defense/players [4 13 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 72,
                      :period 3}
         #:possession{:action
@@ -1201,7 +1201,7 @@
                        :action/player 4,
                        :offense/players [4 13 22 12 2],
                        :defense/players [24 15 32 33 35]}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 73,
                      :period 3}
         #:possession{:action
@@ -1211,7 +1211,7 @@
                        :offense/players [24 15 32 33 25],
                        :defense/players [20 21 13 12 2],
                        :steal/player 21}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 74,
                      :period 3}
         #:possession{:action
@@ -1226,7 +1226,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 33 25],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 75,
                      :period 3}
         #:possession{:action
@@ -1243,7 +1243,7 @@
                        :shot/value 3,
                        :defense/players [20 21 13 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 76,
                      :period 3}
         #:possession{:action
@@ -1260,7 +1260,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 33 25],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 77,
                      :period 3}
         #:possession{:action
@@ -1269,7 +1269,7 @@
                        :action/player 32,
                        :offense/players [24 15 32 33 25],
                        :defense/players [20 21 13 12 2]}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 78,
                      :period 3}
         #:possession{:action
@@ -1286,7 +1286,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 79,
                      :period 3}
         #:possession{:action
@@ -1301,7 +1301,7 @@
                        :shot/value 2,
                        :defense/players [20 21 13 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 80,
                      :period 3}
         #:possession{:action
@@ -1310,7 +1310,7 @@
                        :action/player 20,
                        :offense/players [20 21 13 12 2],
                        :defense/players [24 15 32 25 10]}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 81,
                      :period 3}
         #:possession{:action
@@ -1320,7 +1320,7 @@
                        :offense/players [24 15 32 25 10],
                        :defense/players [20 21 13 12 2],
                        :steal/player 2}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 82,
                      :period 3}
         #:possession{:action
@@ -1337,7 +1337,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 83,
                      :period 3}
         #:possession{:action
@@ -1346,7 +1346,7 @@
                        :action/player 24,
                        :offense/players [24 15 32 25 10],
                        :defense/players [20 21 13 12 2]}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 84,
                      :period 3}
         #:possession{:action
@@ -1363,7 +1363,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 85,
                      :period 4}
         #:possession{:action
@@ -1380,7 +1380,7 @@
                        :shot/value 2,
                        :defense/players [1 13 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 86,
                      :period 4}
         #:possession{:action
@@ -1397,7 +1397,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 1}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 87,
                      :period 4}
         #:possession{:action
@@ -1414,7 +1414,7 @@
                        :shot/value 2,
                        :defense/players [1 13 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 88,
                      :period 4}
         #:possession{:action
@@ -1424,7 +1424,7 @@
                        :offense/players [1 13 22 12 2],
                        :defense/players [24 15 32 25 10],
                        :steal/player 24}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 89,
                      :period 4}
         #:possession{:action
@@ -1465,7 +1465,7 @@
                        :shot/value 2,
                        :defense/players [20 4 21 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 90,
                      :period 4}
         #:possession{:action
@@ -1482,7 +1482,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 1}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 91,
                      :period 4}
         #:possession{:action
@@ -1492,7 +1492,7 @@
                        :offense/players [24 15 32 25 10],
                        :defense/players [20 4 21 13 2],
                        :steal/player 13}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 92,
                      :period 4}
         #:possession{:action
@@ -1509,7 +1509,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 93,
                      :period 4}
         #:possession{:action
@@ -1518,7 +1518,7 @@
                        :action/player 25,
                        :offense/players [24 15 32 25 10],
                        :defense/players [20 4 21 13 2]}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 94,
                      :period 4}
         #:possession{:action
@@ -1533,7 +1533,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 95,
                      :period 4}
         #:possession{:action
@@ -1550,7 +1550,7 @@
                        :shot/value 3,
                        :defense/players [4 21 13 22 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 96,
                      :period 4}
         #:possession{:action
@@ -1559,7 +1559,7 @@
                        :action/player 12,
                        :offense/players [1 13 22 12 2],
                        :defense/players [24 32 33 25 10]}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 97,
                      :period 4}
         #:possession{:action
@@ -1576,7 +1576,7 @@
                        :shot/value 2,
                        :defense/players [1 13 22 12 2],
                        :ft/made 2}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 98,
                      :period 4}
         #:possession{:action
@@ -1606,7 +1606,7 @@
                        :shot/value 2,
                        :defense/players [24 32 33 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 99,
                      :period 4}
         #:possession{:action
@@ -1621,7 +1621,7 @@
                        :shot/value 2,
                        :defense/players [20 21 13 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 100,
                      :period 4}
         #:possession{:action
@@ -1638,7 +1638,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 101,
                      :period 4}
         #:possession{:action
@@ -1655,7 +1655,7 @@
                        :shot/value 3,
                        :defense/players [20 21 13 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 102,
                      :period 4}
         #:possession{:action
@@ -1672,7 +1672,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 103,
                      :period 4}
         #:possession{:action
@@ -1686,7 +1686,7 @@
                        :action/type :action.type/bonus,
                        :defense/players [21 13 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 104,
                      :period 4}
         #:possession{:action
@@ -1701,7 +1701,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 105,
                      :period 4}
         #:possession{:action
@@ -1718,7 +1718,7 @@
                        :shot/value 2,
                        :defense/players [21 13 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 106,
                      :period 4}
         #:possession{:action
@@ -1735,7 +1735,7 @@
                        :shot/value 2,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 107,
                      :period 4}
         #:possession{:action
@@ -1750,7 +1750,7 @@
                        :shot/value 2,
                        :defense/players [21 13 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 108,
                      :period 4}
         #:possession{:action
@@ -1773,7 +1773,7 @@
                        :offense/players [21 13 22 12 2],
                        :defense/players [24 15 32 25 10],
                        :steal/player 25}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 109,
                      :period 4}
         #:possession{:action
@@ -1787,7 +1787,7 @@
                        :action/type :action.type/bonus,
                        :defense/players [21 13 22 12 2],
                        :ft/made 0}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 110,
                      :period 4}
         #:possession{:action
@@ -1804,7 +1804,7 @@
                        :shot/value 3,
                        :defense/players [24 15 32 25 10],
                        :ft/made 0}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 111,
                      :period 4}
         #:possession{:action
@@ -1816,7 +1816,7 @@
                        :ft/results [true true],
                        :offense/players [24 15 32 25 10],
                        :defense/players [21 13 22 12 2]}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 112,
                      :period 4}
         #:possession{:action
@@ -1852,7 +1852,7 @@
                        :offense/players [21 13 22 12 2],
                        :defense/players [24 15 32 25 10],
                        :steal/player 24}],
-                     :team #:team{:name "Lynden Christian"},
+                     :team #:team{:name "Lynden Christian Girls"},
                      :order 113,
                      :period 4}
         #:possession{:action
@@ -1864,8 +1864,9 @@
                        :ft/results [true true],
                        :offense/players [24 15 32 25 10],
                        :defense/players [21 13 22 12 2]}],
-                     :team #:team{:name "Nooksack Valley"},
+                     :team #:team{:name "Nooksack Valley Girls"},
                      :order 114,
                      :period 4}],
-       :home-team #:team{:name "Lynden Christian"},
-       :away-team #:team{:name "Nooksack Valley"}}
+       :home-team #:team{:name "Lynden Christian Girls"},
+       :away-team #:team{:name "Nooksack Valley Girls"},
+       :datetime #inst "2023-03-04T15:00-08:00"}
