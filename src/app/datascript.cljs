@@ -297,6 +297,18 @@
      all-players on-court-players)))
 
 
+(def shots-query-by-player
+  '[:find (pull ?a [:shot/distance :shot/angle :shot/make?]) ?pts
+    :in $ % ?t ?numbers
+    :where
+    [?p :possession/team ?t]
+    [?p :possession/action ?a]
+    [?a :action/type :action.type/shot]
+    [?a :action/player ?player]
+    [(contains? ?numbers ?player)]
+    (pts ?a ?pts)])
+
+
 (defn save-file
   ([file]
    (save-file "download.txt" file))
@@ -309,7 +321,7 @@
      (.revokeObjectURL js/URL url))))
 
 (comment
-  (let [filename "2023-01-05-Sedro-Woolley-Blaine.edn"
+  (let [filename "2023-01-02-Nooksack-Valley-Blaine.edn"
         game-id (get @re-frame.db/app-db :game-id)
         game-map (game-utils/datascript-game->tx-map @conn game-id)]
     (save-file filename
@@ -320,13 +332,3 @@
   )
 
 
-(def shots-query-by-player
-  '[:find (pull ?a [:shot/distance :shot/angle :shot/make?]) ?pts
-    :in $ % ?t ?numbers
-    :where
-    [?p :possession/team ?t]
-    [?p :possession/action ?a]
-    [?a :action/type :action.type/shot]
-    [?a :action/player ?player]
-    [(contains? ?numbers ?player)]
-    (pts ?a ?pts)])
