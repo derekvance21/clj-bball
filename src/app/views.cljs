@@ -492,7 +492,7 @@
      [:div.flex.flex-col.items-start.gap-2
       (let [shot-location (<sub [::subs/shot-location])
             id "court"
-            scale 0.8]
+            scale 0.6]
         [court
          {:id id
           :scale scale
@@ -633,7 +633,7 @@
   [:div
    [court
     {:id "shot-chart"
-     :scale 1}
+     :scale 0.8}
     (for [{:shot/keys [angle distance make?]} (<sub [::subs/shots])]
       (let [[x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
             icon-size 5]

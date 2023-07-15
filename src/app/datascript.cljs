@@ -321,7 +321,7 @@
      (.revokeObjectURL js/URL url))))
 
 (comment
-  (let [filename "2023-01-02-Nooksack-Valley-Blaine.edn"
+  (let [filename "2022-12-16-Squalicum-Blaine.edn"
         game-id (get @re-frame.db/app-db :game-id)
         game-map (game-utils/datascript-game->tx-map @conn game-id)]
     (save-file filename
@@ -330,5 +330,4 @@
   (clear-ls-game)
   ;
   )
-
 
