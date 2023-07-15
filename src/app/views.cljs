@@ -381,7 +381,7 @@
         preview-entities (<sub [::subs/preview-entities])]
     [:div
      [:h2.text-xl "Possessions"]
-     [:ol.max-h-32.overflow-auto.flex.flex-col-reverse
+     [:ol.max-h-32.overflow-auto.flex.flex-col
       (for [possession possessions]
         [:li
          {:key (:db/id possession)}
@@ -633,7 +633,7 @@
   [:div
    [court
     {:id "shot-chart"
-     :scale 1.8}
+     :scale 1}
     (for [{:shot/keys [angle distance make?]} (<sub [::subs/shots])]
       (let [[x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
             icon-size 5]
