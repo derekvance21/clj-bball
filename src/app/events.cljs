@@ -26,11 +26,11 @@
    "2023-01-28-Blaine-Anacortes.edn"
    "2023-02-01-Sehome-Blaine.edn"
    "2023-02-02-Blaine-Ferndale.edn"
-   #_"2023-02-08-Blaine-Meridian.edn"
-   #_"2023-02-11-Lynden-Christian-Blaine.edn"
-   #_"2023-02-14-Blaine-Nooksack-Valley.edn"
-   #_"2023-02-18-Northwest-Blaine.edn"
-   #_"2023-02-25-Zillah-Blaine.edn"
+   "2023-02-08-Blaine-Meridian.edn"
+   "2023-02-11-Lynden-Christian-Blaine.edn"
+   "2023-02-14-Blaine-Nooksack-Valley.edn"
+   "2023-02-18-Northwest-Blaine.edn"
+   "2023-02-25-Zillah-Blaine.edn"
 
    ])
 
