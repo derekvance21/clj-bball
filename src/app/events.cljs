@@ -8,11 +8,15 @@
    [app.interceptors :as interceptors]
    [cljs.reader :as reader]
    [datascript.core :as d]
-   [clojure.string :as string]
    [bball.game-utils :as game-utils]))
 
 (def blaine-games
-  ["2023-01-05-Sedro-Woolley-Blaine.edn"
+  ["2022-12-06-Blaine-Bellingham.edn"
+   "2022-12-10-Oak-Harbor-Blaine.edn"
+   "2022-12-14-Blaine-Lakewood.edn"
+   "2022-12-16-Squalicum-Blaine.edn"
+   "2023-01-02-Nooksack-Valley-Blaine.edn"
+   "2023-01-05-Sedro-Woolley-Blaine.edn"
    "2023-01-10-Blaine-Meridian.edn"
    "2023-01-12-Blaine-Lynden.edn"
    "2023-01-16-Mount-Baker-Blaine.edn"
@@ -22,12 +26,13 @@
    "2023-01-28-Blaine-Anacortes.edn"
    "2023-02-01-Sehome-Blaine.edn"
    "2023-02-02-Blaine-Ferndale.edn"
-   "2023-02-08-Blaine-Meridian.edn"
-   "2023-02-11-Lynden-Christian-Blaine.edn"
-   "2023-02-14-Blaine-Nooksack-Valley.edn"
-   "2023-02-18-Northwest-Blaine.edn"
-   "2023-02-25-Zillah-Blaine.edn"
-   "2023-03-04-lynden-christian-nooksack-valley.edn"])
+   #_"2023-02-08-Blaine-Meridian.edn"
+   #_"2023-02-11-Lynden-Christian-Blaine.edn"
+   #_"2023-02-14-Blaine-Nooksack-Valley.edn"
+   #_"2023-02-18-Northwest-Blaine.edn"
+   #_"2023-02-25-Zillah-Blaine.edn"
+
+   ])
 
 
 (re-frame/reg-event-fx
