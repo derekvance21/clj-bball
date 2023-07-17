@@ -380,6 +380,33 @@
          (filter #(>= (:shots %) 10))
          ((fn [results] (conj results total-result)))
          (sort-by :pps >)))
+  ;; (all conference and non-dome games)
+  ;; => ({:player #{1}, :sector "0-3", :pps 1.5614035087719298, :shots 57}
+  ;;     {:player #{3}, :sector "0-3", :pps 1.5098039215686274, :shots 51}
+  ;;     {:player #{4}, :sector "0-3", :pps 1.5, :shots 18}
+  ;;     {:player #{35}, :sector "0-3", :pps 1.4411764705882353, :shots 34}
+  ;;     {:player #{2 5}, :sector "0-3", :pps 1.3793103448275863, :shots 29}
+  ;;     {:player #{35}, :sector "3P-24", :pps 1.3529411764705883, :shots 51}
+  ;;     {:player #{42}, :sector "0-3", :pps 1.2790697674418605, :shots 86}
+  ;;     {:player #{1}, :sector "3P-24", :pps 1.263157894736842, :shots 95}
+  ;;     {:player #{3}, :sector "3-10", :pps 1.1466666666666667, :shots 150}
+  ;;     {:pps 1.0969125214408233, :shots 1166}
+  ;;     {:player #{42}, :sector "3P-24", :pps 1.0188679245283019, :shots 53}
+  ;;     {:player #{4}, :sector "3P-24", :pps 1, :shots 49}
+  ;;     {:player #{1}, :sector "3-10", :pps 1, :shots 77}
+  ;;     {:player #{35}, :sector "24+", :pps 1, :shots 59}
+  ;;     {:player #{3}, :sector "3P-24", :pps 0.9622641509433962, :shots 53}
+  ;;     {:player #{2 5}, :sector "3P-24", :pps 0.95, :shots 60}
+  ;;     {:player #{20}, :sector "0-3", :pps 0.9473684210526315, :shots 19}
+  ;;     {:player #{35}, :sector "3-10", :pps 0.9387755102040817, :shots 49}
+  ;;     {:player #{4}, :sector "3-10", :pps 0.7931034482758621, :shots 29}
+  ;;     {:player #{42}, :sector "3-10", :pps 0.6153846153846154, :shots 26}
+  ;;     {:player #{1}, :sector "10-3P", :pps 0.5833333333333334, :shots 24}
+  ;;     {:player #{35}, :sector "10-3P", :pps 0.5833333333333334, :shots 24}
+  ;;     {:player #{2 5}, :sector "3-10", :pps 0.55, :shots 20}
+  ;;     {:player #{20}, :sector "3-10", :pps 0.3125, :shots 16})
+
+  ;; (just conference games)
   ;; => ({:player #{1}, :sector "0-3", :pps 1.5853658536585367, :shots 41}
   ;;     {:player #{4}, :sector "0-3", :pps 1.5384615384615385, :shots 13}
   ;;     {:player #{3}, :sector "0-3", :pps 1.4864864864864864, :shots 37}
