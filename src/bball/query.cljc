@@ -99,6 +99,15 @@
               (not [?a :rebound/off? true])
               [(ground 0) ?count]]
 
+             [(off-rebs-player ?a ?player ?count)
+              [?a :rebound/player ?player]
+              [?a :rebound/off? true]
+              [(ground 1) ?count]]
+             [(off-rebs-player ?a ?player ?count)
+              (or (not [?a :rebound/player ?player])
+                  (not [?a :rebound/off? true]))
+              [(ground 0) ?count]]
+
              [(tos ?a ?count)
               [?a :action/type :action.type/turnover]
               [(ground 1) ?count]]

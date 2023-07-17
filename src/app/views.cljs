@@ -65,6 +65,7 @@
         team1-preview-score (<sub [::subs/preview-team-score t1])
         team2-preview-score (<sub [::subs/preview-team-score t2])]
     [:div
+     ;; TODO - refactor this into "score"
      [:div.flex.justify-between.items-center
       [:h2.text-xl
        (:team/name team1)]
