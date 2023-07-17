@@ -351,6 +351,67 @@
 
 
 (comment
+  (->> (d/q '[:find ?feet (avg ?pts) (count ?a)
+              :keys feet pps shots
+              :in $ % ?t
+              :where
+              (actions ?g ?t ?p ?a)
+              [?a :shot/distance ?inches]
+              [(quot ?inches 12) ?feet]
+              (pts ?a ?pts)]
+            @conn
+            query/rules
+            [:team/name "Blaine"])
+       (filter #(>= (:shots %) 10))
+       (sort-by :pps >))
+  ;; => ({:feet 1, :pps 1.603305785123967, :shots 121}
+  ;;     {:feet 8, :pps 1.3571428571428572, :shots 14}
+  ;;     {:feet 25, :pps 1.3181818181818181, :shots 22}
+  ;;     {:feet 2, :pps 1.2289156626506024, :shots 166}
+  ;;     {:feet 21, :pps 1.199004975124378, :shots 201}
+  ;;     {:feet 5, :pps 1.1219512195121952, :shots 82}
+  ;;     {:feet 20, :pps 1.08, :shots 50}
+  ;;     {:feet 10, :pps 1, :shots 10}
+  ;;     {:feet 24, :pps 1, :shots 18}
+  ;;     {:feet 4, :pps 0.9888888888888889, :shots 90}
+  ;;     {:feet 22, :pps 0.9767441860465116, :shots 86}
+  ;;     {:feet 3, :pps 0.9514563106796117, :shots 103}
+  ;;     {:feet 26, :pps 0.8823529411764706, :shots 17}
+  ;;     {:feet 23, :pps 0.8181818181818182, :shots 33}
+  ;;     {:feet 6, :pps 0.6739130434782609, :shots 46}
+  ;;     {:feet 7, :pps 0.65625, :shots 32})
+
+  ;; => ({:feet 0, :pps 1.5555555555555556, :shots 9}
+  ;;     {:feet 1, :pps 1.603305785123967, :shots 121}
+  ;;     {:feet 2, :pps 1.2289156626506024, :shots 166}
+  ;;     {:feet 3, :pps 0.9514563106796117, :shots 103}
+  ;;     {:feet 4, :pps 0.9888888888888889, :shots 90}
+  ;;     {:feet 5, :pps 1.1219512195121952, :shots 82}
+  ;;     {:feet 6, :pps 0.6739130434782609, :shots 46}
+  ;;     {:feet 7, :pps 0.65625, :shots 32}
+  ;;     {:feet 8, :pps 1.3571428571428572, :shots 14}
+  ;;     {:feet 9, :pps 0.8571428571428571, :shots 7}
+  ;;     {:feet 10, :pps 1, :shots 10}
+  ;;     {:feet 11, :pps 0.4, :shots 5}
+  ;;     {:feet 12, :pps 1.5, :shots 4}
+  ;;     {:feet 13, :pps 0.6666666666666666, :shots 6}
+  ;;     {:feet 14, :pps 0.5714285714285714, :shots 7}
+  ;;     {:feet 15, :pps 0.25, :shots 8}
+  ;;     {:feet 16, :pps 0.8, :shots 5}
+  ;;     {:feet 17, :pps 0, :shots 8}
+  ;;     {:feet 18, :pps 1.2, :shots 5}
+  ;;     {:feet 19, :pps 0.6666666666666666, :shots 3}
+  ;;     {:feet 20, :pps 1.08, :shots 50}
+  ;;     {:feet 21, :pps 1.199004975124378, :shots 201}
+  ;;     {:feet 22, :pps 0.9767441860465116, :shots 86}
+  ;;     {:feet 23, :pps 0.8181818181818182, :shots 33}
+  ;;     {:feet 24, :pps 1, :shots 18}
+  ;;     {:feet 25, :pps 1.3181818181818181, :shots 22}
+  ;;     {:feet 26, :pps 0.8823529411764706, :shots 17}
+  ;;     {:feet 27, :pps 0.5, :shots 6}
+  ;;     {:feet 28, :pps 0, :shots 2})
+
+
   (let [total-result (d/q '[:find [(avg ?pts) (count-distinct ?a)]
                             :keys pps shots
                             :in $ % ?t
@@ -365,7 +426,6 @@
                 :keys player sector pps shots
                 :in $ % ?t [?numbers ...]
                 :where
-                [?t :team/name ?team]
                 (actions ?g ?t ?p ?a)
                 [?a :action/player ?player]
                 [(contains? ?numbers ?player)]
@@ -380,6 +440,54 @@
          (filter #(>= (:shots %) 10))
          ((fn [results] (conj results total-result)))
          (sort-by :pps >)))
+  ;; => ({:player #{3}, :sector "0-4", :pps 1.4666666666666666, :shots 75}
+  ;;     {:player #{1}, :sector "0-4", :pps 1.4352941176470588, :shots 85}
+  ;;     {:player #{35}, :sector "0-4", :pps 1.3191489361702127, :shots 47}
+  ;;     {:player #{1}, :sector "3P", :pps 1.26, :shots 100}
+  ;;     {:player #{2 5}, :sector "0-4", :pps 1.2571428571428571, :shots 35}
+  ;;     {:player #{4}, :sector "0-4", :pps 1.2222222222222223, :shots 27}
+  ;;     {:player #{42}, :sector "0-4", :pps 1.1717171717171717, :shots 99}
+  ;;     {:player #{35}, :sector "3P", :pps 1.1636363636363636, :shots 110}
+  ;;     {:player #{3}, :sector "4-10", :pps 1.1031746031746033, :shots 126}
+  ;;     {:pps 1.0969125214408233, :shots 1166}
+  ;;     {:player #{42}, :sector "3P", :pps 1.0188679245283019, :shots 53}
+  ;;     {:player #{4}, :sector "3P", :pps 1, :shots 49}
+  ;;     {:player #{2 5}, :sector "3P", :pps 0.95, :shots 60}
+  ;;     {:player #{3}, :sector "3P", :pps 0.9444444444444444, :shots 54}
+  ;;     {:player #{35}, :sector "4-10", :pps 0.9166666666666666, :shots 36}
+  ;;     {:player #{1}, :sector "4-10", :pps 0.8979591836734694, :shots 49}
+  ;;     {:player #{4}, :sector "4-10", :pps 0.85, :shots 20}
+  ;;     {:player #{42}, :sector "4-10", :pps 0.7692307692307693, :shots 13}
+  ;;     {:player #{20}, :sector "0-4", :pps 0.7307692307692307, :shots 26}
+  ;;     {:player #{1}, :sector "10-3P", :pps 0.5833333333333334, :shots 24}
+  ;;     {:player #{35}, :sector "10-3P", :pps 0.5833333333333334, :shots 24}
+  ;;     {:player #{2 5}, :sector "4-10", :pps 0.5, :shots 14})
+
+  ;; (all conference and non-dome games)
+  ;; => ({:player #{3}, :sector "0-4", :pps 1.4666666666666666, :shots 75}
+  ;;     {:player #{1}, :sector "0-4", :pps 1.4352941176470588, :shots 85}
+  ;;     {:player #{35}, :sector "3P-24", :pps 1.3529411764705883, :shots 51}
+  ;;     {:player #{35}, :sector "0-4", :pps 1.3191489361702127, :shots 47}
+  ;;     {:player #{1}, :sector "3P-24", :pps 1.263157894736842, :shots 95}
+  ;;     {:player #{2 5}, :sector "0-4", :pps 1.2571428571428571, :shots 35}
+  ;;     {:player #{4}, :sector "0-4", :pps 1.2222222222222223, :shots 27}
+  ;;     {:player #{42}, :sector "0-4", :pps 1.1717171717171717, :shots 99}
+  ;;     {:player #{3}, :sector "4-10", :pps 1.1031746031746033, :shots 126}
+  ;;     {:pps 1.0969125214408233, :shots 1166}
+  ;;     {:player #{42}, :sector "3P-24", :pps 1.0188679245283019, :shots 53}
+  ;;     {:player #{4}, :sector "3P-24", :pps 1, :shots 49}
+  ;;     {:player #{35}, :sector "24+", :pps 1, :shots 59}
+  ;;     {:player #{3}, :sector "3P-24", :pps 0.9622641509433962, :shots 53}
+  ;;     {:player #{2 5}, :sector "3P-24", :pps 0.95, :shots 60}
+  ;;     {:player #{35}, :sector "4-10", :pps 0.9166666666666666, :shots 36}
+  ;;     {:player #{1}, :sector "4-10", :pps 0.8979591836734694, :shots 49}
+  ;;     {:player #{4}, :sector "4-10", :pps 0.85, :shots 20}
+  ;;     {:player #{42}, :sector "4-10", :pps 0.7692307692307693, :shots 13}
+  ;;     {:player #{20}, :sector "0-4", :pps 0.7307692307692307, :shots 26}
+  ;;     {:player #{1}, :sector "10-3P", :pps 0.5833333333333334, :shots 24}
+  ;;     {:player #{35}, :sector "10-3P", :pps 0.5833333333333334, :shots 24}
+  ;;     {:player #{2 5}, :sector "4-10", :pps 0.5, :shots 14})
+
   ;; (all conference and non-dome games)
   ;; => ({:player #{1}, :sector "0-3", :pps 1.5614035087719298, :shots 57}
   ;;     {:player #{3}, :sector "0-3", :pps 1.5098039215686274, :shots 51}
@@ -406,31 +514,54 @@
   ;;     {:player #{2 5}, :sector "3-10", :pps 0.55, :shots 20}
   ;;     {:player #{20}, :sector "3-10", :pps 0.3125, :shots 16})
 
-  ;; (just conference games)
-  ;; => ({:player #{1}, :sector "0-3", :pps 1.5853658536585367, :shots 41}
-  ;;     {:player #{4}, :sector "0-3", :pps 1.5384615384615385, :shots 13}
-  ;;     {:player #{3}, :sector "0-3", :pps 1.4864864864864864, :shots 37}
-  ;;     {:player #{42}, :sector "0-3", :pps 1.3968253968253967, :shots 63}
-  ;;     {:player #{35}, :sector "0-3", :pps 1.3666666666666667, :shots 30}
-  ;;     {:player #{35}, :sector "3P-24", :pps 1.3421052631578947, :shots 38}
-  ;;     {:player #{1}, :sector "3P-24", :pps 1.3285714285714285, :shots 70}
-  ;;     {:player #{2 5}, :sector "0-3", :pps 1.28, :shots 25}
-  ;;     {:player #{4}, :sector "3P-24", :pps 1.1818181818181819, :shots 33}
-  ;;     {:player #{3}, :sector "3-10", :pps 1.1764705882352942, :shots 119}
-  ;;     {:pps 1.1228861330326945, :shots 887}
-  ;;     {:player #{35}, :sector "24+", :pps 1.0666666666666667, :shots 45}
-  ;;     {:player #{1}, :sector "3-10", :pps 1.0634920634920635, :shots 63}
-  ;;     {:player #{20}, :sector "0-3", :pps 1.0588235294117647, :shots 17}
-  ;;     {:player #{42}, :sector "3P-24", :pps 1, :shots 36}
-  ;;     {:player #{2 5}, :sector "3P-24", :pps 0.9545454545454546, :shots 44}
-  ;;     {:player #{35}, :sector "3-10", :pps 0.875, :shots 40}
-  ;;     {:player #{4}, :sector "3-10", :pps 0.7727272727272727, :shots 22}
-  ;;     {:player #{3}, :sector "3P-24", :pps 0.7692307692307693, :shots 39}
-  ;;     {:player #{42}, :sector "3-10", :pps 0.7272727272727273, :shots 22}
-  ;;     {:player #{1}, :sector "10-3P", :pps 0.6666666666666666, :shots 15}
-  ;;     {:player #{35}, :sector "10-3P", :pps 0.6666666666666666, :shots 15}
-  ;;     {:player #{2 5}, :sector "3-10", :pps 0.5555555555555556, :shots 18}
-  ;;     {:player #{20}, :sector "3-10", :pps 0.38461538461538464, :shots 13})
+  (let [total-result (d/q '[:find [(avg ?pts) (count-distinct ?a)]
+                            :keys pps shots
+                            :in $ % ?blaine
+                            :where
+                            (actions ?g ?t ?p ?a)
+                            (not [?p :possession/team ?blaine])
+                            [?a :shot/value]
+                            (pts ?a ?pts)]
+                          @conn
+                          query/rules
+                          [:team/name "Blaine"])]
+    (->> (d/q '[:find ?sector (avg ?pts) (count ?a)
+                :keys sector pps shots
+                :in $ % ?blaine
+                :where
+                (actions ?g ?t ?p ?a)
+                (not [?p :possession/team ?blaine])
+                [?a :shot/distance ?inches]
+                [?a :shot/value ?value]
+                (sector ?value ?inches ?sector)
+                (pts ?a ?pts)]
+              @conn
+              query/rules
+              [:team/name "Blaine"])
+         ((fn [results] (conj results total-result)))
+         (sort-by :pps >)))
+  ;; => ({:sector "0-4", :pps 1.2692307692307692, :shots 442}
+  ;;     {:pps 0.9983108108108109, :shots 1184}
+  ;;     {:sector "3P", :pps 0.9175531914893617, :shots 376}
+  ;;     {:sector "4-10", :pps 0.7954545454545454, :shots 264}
+  ;;     {:sector "10-3P", :pps 0.6470588235294118, :shots 102})
+
+  ;; all shots by non-Blaine players
+  ;; => ({:sector "0-4", :pps 1.2692307692307692, :shots 442}
+  ;;     {:sector "24+", :pps 1.065217391304348, :shots 92}
+  ;;     {:pps 0.9983108108108109, :shots 1184}
+  ;;     {:sector "3P-24", :pps 0.8697183098591549, :shots 284}
+  ;;     {:sector "4-10", :pps 0.7954545454545454, :shots 264}
+  ;;     {:sector "10-3P", :pps 0.6470588235294118, :shots 102})
+
+  ;; all shots by non-Blaine players
+  ;; => ({:sector "0-3", :pps 1.3168044077134986, :shots 363}
+  ;;     {:sector "24+", :pps 1.065217391304348, :shots 92}
+  ;;     {:pps 0.9983108108108109, :shots 1184}
+  ;;     {:sector "3P-24", :pps 0.8697183098591549, :shots 284}
+  ;;     {:sector "3-10", :pps 0.8542274052478134, :shots 343}
+  ;;     {:sector "10-3P", :pps 0.6470588235294118, :shots 102}) 
+
   )
 
 (comment
