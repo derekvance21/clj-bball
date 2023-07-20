@@ -2109,4 +2109,5 @@
    :possession/order 124,
    :possession/period 4}],
  :game/home-team {:team/name "Lynden Christian"},
- :game/away-team {:team/name "Blaine"}}
+ :game/away-team {:team/name "Blaine"}
+ :game/datetime #inst "2023-02-11T19:00-07:00"}

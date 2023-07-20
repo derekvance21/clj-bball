@@ -2040,4 +2040,5 @@
                      :order 117,
                      :period 4}],
        :home-team #:team{:name "Blaine"},
-       :away-team #:team{:name "Nooksack Valley"}}
+       :away-team #:team{:name "Nooksack Valley"},
+       :game/datetime #inst "2023-02-14T19:30-07:00"}

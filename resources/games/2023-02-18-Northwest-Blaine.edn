@@ -1877,4 +1877,5 @@
                      :order 116,
                      :period 4}],
        :home-team #:team{:name "Northwest"},
-       :away-team #:team{:name "Blaine"}}
+       :away-team #:team{:name "Blaine"},
+       :game/datetime #inst "2023-02-18T19:00-07:00"}
