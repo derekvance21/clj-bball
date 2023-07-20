@@ -2389,4 +2389,5 @@
    :possession/order 128,
    :possession/period 4}],
  :game/home-team {:team/name "Sedro-Woolley"},
- :game/away-team {:team/name "Blaine"}}
+ :game/away-team {:team/name "Blaine"},
+ :game/datetime #inst "2023-01-05T19:15-07:00"}

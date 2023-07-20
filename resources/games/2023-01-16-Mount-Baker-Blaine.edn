@@ -2297,4 +2297,5 @@
    :possession/order 129,
    :possession/period 4}],
  :game/home-team {:team/name "Mount Baker"},
- :game/away-team {:team/name "Blaine"}}
+ :game/away-team {:team/name "Blaine"},
+ :game/datetime #inst "2023-01-16T19:15-07:00"}

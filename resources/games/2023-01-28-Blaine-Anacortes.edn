@@ -2277,4 +2277,5 @@
    :possession/order 133,
    :possession/period 4}],
  :game/home-team {:team/name "Blaine"},
- :game/away-team {:team/name "Anacortes"}}
+ :game/away-team {:team/name "Anacortes"},
+ :game/datetime #inst "2023-01-28T19:15-07:00"}

@@ -2154,4 +2154,5 @@
    :possession/order 128,
    :possession/period 4}],
  :game/home-team {:team/name "Blaine"},
- :game/away-team {:team/name "Burlington-Edison"}}
+ :game/away-team {:team/name "Burlington-Edison"},
+ :game/datetime #inst "2023-01-20T19:15-07:00"}
