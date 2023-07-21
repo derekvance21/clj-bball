@@ -299,15 +299,32 @@
 
 
 (def shots-query-by-player
-  '[:find (pull ?a [:shot/distance :shot/angle :shot/make?]) ?pts
-    :in $ % ?t ?numbers
+  '[:find
+    (pull ?g [:game/datetime {:game/home-team [:team/name]
+                              :game/away-team [:team/name]}])
+    (pull ?t [:team/name])
+    (pull ?a [:action/player :shot/distance :shot/angle :shot/make?]) ?pts
+    :keys game team action pts
+    :in $ % [?g ...] [?t ...] [?number ...] ?offensive-players ?subset?
     :where
-    [?p :possession/team ?t]
-    [?p :possession/action ?a]
-    [?a :action/type :action.type/shot]
-    [?a :action/player ?player]
-    [(contains? ?numbers ?player)]
+    (actions ?g ?t ?p ?a)
+    [?a :action/type :action.type/shot] ;; TODO - have something to show turnovers?
+    [?a :offense/players ?offense]
+    [(set ?offense) ?offense-set]
+    [(?subset? ?offensive-players ?offense-set)]
+    [?a :action/player ?number]
     (pts ?a ?pts)])
+
+
+(comment
+  (def shots-query-by-player-map
+    '{:find [(pull ?a [:shot/distance :shot/angle :shot/make?]) ?pts],
+      :in [$ % [?g ...] [?t ...] [?number ...]],
+      :where [(actions ?g ?t ?p ?a)
+              [?a :action/type :action.type/shot]
+              [?a :action/player ?number]
+              (pts ?a ?pts)]})
+  )
 
 
 (def ft-pct-query
@@ -662,6 +679,221 @@
 ;;     {:player 20, :possessions 449, :netrtg -1.0921799912625687}
 ;;     {:player 10, :possessions 171, :netrtg -10.975609756097555}
 ;;     {:player 30, :possessions 120, :netrtg -26.66666666666667})
+  )
+
+(comment
+  (defn off-reb-rate
+    [db g]
+    (d/q '[:find ?t (avg ?off-rebs)
+           :in $ %
+           :with ?a
+           :where
+           (actions ?g ?t ?p ?a)
+           (rebound? ?a)
+           (off-rebs ?a ?off-rebs)]
+         db query/rules g))
+
+  (->> (d/q '[:find
+              (pull ?t [:team/name])
+              (avg ?off-rebs)
+              :keys team off-reb-rate
+              :in $ %
+              :with ?a
+              :where
+              (actions ?g ?t ?p ?a)
+              (rebound? ?a)
+              (off-rebs ?a ?off-rebs)]
+            @conn query/rules)
+       (map (fn [result] (-> result
+                             (update :team :team/name)
+                             (assoc :offreb% (* 100 (:off-reb-rate result)))
+                             (dissoc :off-reb-rate))))
+       (sort-by :offreb% >))
+  ;; => ({:team "Sedro-Woolley", :offreb% 50}
+  ;;     {:team "Lynden", :offreb% 45.83333333333333}
+  ;;     {:team "Sehome", :offreb% 43.333333333333336}
+  ;;     {:team "Burlington-Edison", :offreb% 42.857142857142854}
+  ;;     {:team "Northwest", :offreb% 38.46153846153847}
+  ;;     {:team "Ferndale", :offreb% 38.23529411764706}
+  ;;     {:team "Anacortes", :offreb% 37.5}
+  ;;     {:team "Nooksack Valley", :offreb% 36.84210526315789}
+  ;;     {:team "Blaine", :offreb% 33.0188679245283}
+  ;;     {:team "Mount Vernon", :offreb% 32.432432432432435}
+  ;;     {:team "Meridian", :offreb% 28.57142857142857}
+  ;;     {:team "Mount Baker", :offreb% 28.57142857142857}
+  ;;     {:team "Bellingham", :offreb% 26.190476190476193}
+  ;;     {:team "Lynden Christian", :offreb% 25.423728813559322}
+  ;;     {:team "Zillah", :offreb% 25}
+  ;;     {:team "Squalicum", :offreb% 24}
+  ;;     {:team "Oak Harbor", :offreb% 18.91891891891892}
+  ;;     {:team "Lakewood", :offreb% 3.3333333333333335}) 
+
+  ;; Blaine was 10-10 on winning offensive rebounding
+  (->> (d/q '[:find
+              ?g
+              (pull ?t [:team/name])
+              (avg ?off-rebs)
+              :keys g team off-reb-rate
+              :in $ %
+              :with ?a
+              :where
+              (actions ?g ?t ?p ?a)
+              (rebound? ?a)
+              (off-rebs ?a ?off-rebs)]
+            @conn query/rules)
+       (map (fn [result] (-> result
+                             (update :team :team/name)
+                             (assoc :offreb% (* 100 (:off-reb-rate result)))
+                             (dissoc :off-reb-rate))))
+       (group-by :g)
+       vals
+       (map (fn [teams] (->> teams
+                             (map #(dissoc % :g))
+                             (sort-by :offreb% >))))
+       (sort-by (fn [[winner loser]] (= "Blaine" (:team winner)))))
+  ;; => (({:team "Sehome", :offreb% 43.333333333333336} {:team "Blaine", :offreb% 12.5})
+  ;;     ({:team "Northwest", :offreb% 38.46153846153847} {:team "Blaine", :offreb% 23.076923076923077})
+  ;;     ({:team "Lynden Christian", :offreb% 29.03225806451613} {:team "Blaine", :offreb% 27.906976744186046})
+  ;;     ({:team "Sedro-Woolley", :offreb% 50} {:team "Blaine", :offreb% 35.13513513513514})
+  ;;     ({:team "Lynden", :offreb% 45.83333333333333} {:team "Blaine", :offreb% 25.806451612903224})
+  ;;     ({:team "Anacortes", :offreb% 37.5} {:team "Blaine", :offreb% 17.24137931034483})
+  ;;     ({:team "Burlington-Edison", :offreb% 42.857142857142854} {:team "Blaine", :offreb% 36.666666666666664})
+  ;;     ({:team "Nooksack Valley", :offreb% 38.88888888888889} {:team "Blaine", :offreb% 23.52941176470588})
+  ;;     ({:team "Zillah", :offreb% 25} {:team "Blaine", :offreb% 22.22222222222222})
+  ;;     ({:team "Mount Vernon", :offreb% 32.432432432432435} {:team "Blaine", :offreb% 21.21212121212121})
+  ;;     ({:team "Blaine", :offreb% 32.35294117647059} {:team "Oak Harbor", :offreb% 18.91891891891892})
+  ;;     ({:team "Blaine", :offreb% 36} {:team "Lynden Christian", :offreb% 21.428571428571427})
+  ;;     ({:team "Blaine", :offreb% 42.10526315789473} {:team "Bellingham", :offreb% 26.190476190476193})
+  ;;     ({:team "Blaine", :offreb% 34.78260869565217} {:team "Meridian", :offreb% 25})
+  ;;     ({:team "Blaine", :offreb% 40} {:team "Meridian", :offreb% 32.142857142857146})
+  ;;     ({:team "Blaine", :offreb% 36.11111111111111} {:team "Nooksack Valley", :offreb% 35})
+  ;;     ({:team "Blaine", :offreb% 48.275862068965516} {:team "Ferndale", :offreb% 38.23529411764706})
+  ;;     ({:team "Blaine", :offreb% 60} {:team "Mount Baker", :offreb% 28.57142857142857})
+  ;;     ({:team "Blaine", :offreb% 44.11764705882353} {:team "Lakewood", :offreb% 3.3333333333333335})
+  ;;     ({:team "Blaine", :offreb% 36} {:team "Squalicum", :offreb% 24}))
+
+  ;
+  )
+
+(comment
+  (->> (d/q '[:find ?offense-set (sum ?pts) (count-distinct ?p)
+              :keys offense total-pts possessions
+              :in $ % ?t
+              :with ?a
+              :where
+              (actions ?g ?t ?p ?a)
+              [?a :offense/players ?offense]
+              [(set ?offense) ?offense-set]
+              (pts ?a ?pts)]
+            @conn
+            query/rules
+            [:team/name "Blaine"])
+       (map (fn [result]
+              (update result :offense
+                      (fn [players]
+                        (->> players
+                             (map (fn [player]
+                                    (if (contains? #{2 5} player)
+                                      #{2 5}
+                                      player)))
+                             set)))))
+       (group-by :offense)
+       ((fn [results]
+          (update-vals results
+                       (fn [results]
+                         (apply merge-with + (map #(dissoc % :offense) results))))))
+       (map (fn [[offense result]]
+              (assoc result :offense offense)))
+       (map (fn [{:keys [total-pts possessions] :as result}]
+              (assoc result :offrtg (-> total-pts
+                                        (/ possessions)
+                                        (* 100)))))
+       (filter (fn [{:keys [possessions]}]
+                 (> possessions 20)))
+       ((juxt #(sort-by :offrtg > %) #(sort-by :possessions > %))))
+  ;; => [({:total-pts 244, :possessions 190, :offense #{1 4 3 35 #{2 5}}, :offrtg 128.42105263157896}
+  ;;      {:total-pts 33, :possessions 26, :offense #{20 1 3 35 42}, :offrtg 126.92307692307692}
+  ;;      {:total-pts 24, :possessions 21, :offense #{4 3 35 #{2 5} 42}, :offrtg 114.28571428571428}
+  ;;      {:total-pts 60, :possessions 56, :offense #{20 1 3 35 #{2 5}}, :offrtg 107.14285714285714}
+  ;;      {:total-pts 430, :possessions 402, :offense #{1 4 3 35 42}, :offrtg 106.96517412935323}
+  ;;      {:total-pts 104, :possessions 103, :offense #{1 4 3 #{2 5} 42}, :offrtg 100.97087378640776}
+  ;;      {:total-pts 188, :possessions 189, :offense #{1 3 35 #{2 5} 42}, :offrtg 99.47089947089947}
+  ;;      {:total-pts 34, :possessions 35, :offense #{1 4 35 #{2 5} 42}, :offrtg 97.14285714285714}
+  ;;      {:total-pts 22, :possessions 29, :offense #{20 1 4 3 #{2 5}}, :offrtg 75.86206896551724}
+  ;;      {:total-pts 10, :possessions 22, :offense #{20 1 4 3 35}, :offrtg 45.45454545454545})
+
+  ;;     ({:total-pts 430, :possessions 402, :offense #{1 4 3 35 42}, :offrtg 106.96517412935323}
+  ;;      {:total-pts 244, :possessions 190, :offense #{1 4 3 35 #{2 5}}, :offrtg 128.42105263157896}
+  ;;      {:total-pts 188, :possessions 189, :offense #{1 3 35 #{2 5} 42}, :offrtg 99.47089947089947}
+  ;;      {:total-pts 104, :possessions 103, :offense #{1 4 3 #{2 5} 42}, :offrtg 100.97087378640776}
+  ;;      {:total-pts 60, :possessions 56, :offense #{20 1 3 35 #{2 5}}, :offrtg 107.14285714285714}
+  ;;      {:total-pts 34, :possessions 35, :offense #{1 4 35 #{2 5} 42}, :offrtg 97.14285714285714}
+  ;;      {:total-pts 22, :possessions 29, :offense #{20 1 4 3 #{2 5}}, :offrtg 75.86206896551724}
+  ;;      {:total-pts 33, :possessions 26, :offense #{20 1 3 35 42}, :offrtg 126.92307692307692}
+  ;;      {:total-pts 10, :possessions 22, :offense #{20 1 4 3 35}, :offrtg 45.45454545454545}
+  ;;      {:total-pts 24, :possessions 21, :offense #{4 3 35 #{2 5} 42}, :offrtg 114.28571428571428})]
+
+
+  (->> (d/q '[:find ?defense-set (sum ?pts) (count-distinct ?p)
+              :keys defense total-pts possessions
+              :in $ % ?t
+              :with ?a
+              :where
+              (actions ?g ?ot ?p ?a)
+              (or [?g :game/home-team ?t]
+                  [?g :game/away-team ?t])
+              (not [?p :possession/team ?t])
+              [?a :defense/players ?defense]
+              [(set ?defense) ?defense-set]
+              (pts ?a ?pts)]
+            @conn
+            query/rules
+            [:team/name "Blaine"])
+       (map (fn [result]
+              (update result :defense
+                      (fn [players]
+                        (->> players
+                             (map (fn [player]
+                                    (if (contains? #{2 5} player)
+                                      #{2 5}
+                                      player)))
+                             set)))))
+       (group-by :defense)
+       ((fn [results]
+          (update-vals results
+                       (fn [results]
+                         (apply merge-with + (map #(dissoc % :defense) results))))))
+       (map (fn [[defense result]]
+              (assoc result :defense defense)))
+       (map (fn [{:keys [total-pts possessions] :as result}]
+              (assoc result :defrtg (-> total-pts
+                                        (/ possessions)
+                                        (* 100)))))
+       (filter (fn [{:keys [possessions]}]
+                 (> possessions 20)))
+       ((juxt #(sort-by :defrtg < %) #(sort-by :possessions > %))))
+  ;; => [({:total-pts 16, :possessions 23, :defense #{4 3 35 #{2 5} 42}, :defrtg 69.56521739130434}
+  ;;      {:total-pts 20, :possessions 25, :defense #{20 1 4 3 35}, :defrtg 80}
+  ;;      {:total-pts 26, :possessions 31, :defense #{20 1 4 3 #{2 5}}, :defrtg 83.87096774193549}
+  ;;      {:total-pts 98, :possessions 112, :defense #{1 4 3 #{2 5} 42}, :defrtg 87.5}
+  ;;      {:total-pts 36, :possessions 41, :defense #{1 4 35 #{2 5} 42}, :defrtg 87.8048780487805}
+  ;;      {:total-pts 49, :possessions 55, :defense #{20 1 3 35 #{2 5}}, :defrtg 89.0909090909091}
+  ;;      {:total-pts 172, :possessions 186, :defense #{1 4 3 35 #{2 5}}, :defrtg 92.47311827956989}
+  ;;      {:total-pts 176, :possessions 184, :defense #{1 3 35 #{2 5} 42}, :defrtg 95.65217391304348}
+  ;;      {:total-pts 380, :possessions 390, :defense #{1 4 3 35 42}, :defrtg 97.43589743589743}
+  ;;      {:total-pts 31, :possessions 27, :defense #{20 1 3 35 42}, :defrtg 114.81481481481481})
+
+  ;;     ({:total-pts 380, :possessions 390, :defense #{1 4 3 35 42}, :defrtg 97.43589743589743}
+  ;;      {:total-pts 172, :possessions 186, :defense #{1 4 3 35 #{2 5}}, :defrtg 92.47311827956989}
+  ;;      {:total-pts 176, :possessions 184, :defense #{1 3 35 #{2 5} 42}, :defrtg 95.65217391304348}
+  ;;      {:total-pts 98, :possessions 112, :defense #{1 4 3 #{2 5} 42}, :defrtg 87.5}
+  ;;      {:total-pts 49, :possessions 55, :defense #{20 1 3 35 #{2 5}}, :defrtg 89.0909090909091}
+  ;;      {:total-pts 36, :possessions 41, :defense #{1 4 35 #{2 5} 42}, :defrtg 87.8048780487805}
+  ;;      {:total-pts 26, :possessions 31, :defense #{20 1 4 3 #{2 5}}, :defrtg 83.87096774193549}
+  ;;      {:total-pts 31, :possessions 27, :defense #{20 1 3 35 42}, :defrtg 114.81481481481481}
+  ;;      {:total-pts 20, :possessions 25, :defense #{20 1 4 3 35}, :defrtg 80}
+  ;;      {:total-pts 16, :possessions 23, :defense #{4 3 35 #{2 5} 42}, :defrtg 69.56521739130434})]
+
   )
 
 

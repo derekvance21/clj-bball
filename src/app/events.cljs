@@ -453,8 +453,18 @@
 
 
 (re-frame/reg-event-db
- ::set-shot-chart-team
- (fn [db [_ team]]
-   (assoc-in db [:shot-chart :team] team)))
+ ::set-shot-chart-offense-input
+ (fn [db [_ offense-input]]
+   (assoc-in db [:shot-chart :offense-input] offense-input)))
 
+
+(re-frame/reg-event-db
+ ::set-shot-chart-teams
+ (fn [db [_ team-ids]]
+   (assoc-in db [:shot-chart :teams] team-ids)))
+
+(re-frame/reg-event-db
+ ::set-shot-chart-games
+ (fn [db [_ games-set]]
+   (assoc-in db [:shot-chart :games] games-set)))
 
