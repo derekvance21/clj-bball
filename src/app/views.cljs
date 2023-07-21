@@ -5,7 +5,8 @@
    [cljs.math :as math]
    [clojure.string :as string]
    [re-frame.core :as re-frame]
-   [reagent.core :as reagent]))
+   [reagent.core :as reagent]
+   [re-com.core :refer [at selection-list]]))
 
 
 (def <sub  (comp deref re-frame/subscribe))
@@ -57,7 +58,7 @@
 
 
 (defn stats []
-  (let [[team1 team2] (<sub [::subs/teams])
+  (let [[team1 team2] (<sub [::subs/game-teams])
         t1 (:db/id team1)
         t2 (:db/id team2)
         team1-score (<sub [::subs/team-score t1])
@@ -284,7 +285,7 @@
 
 (defn players-input
   []
-  (let [[team1 team2] (<sub [::subs/teams])
+  (let [[team1 team2] (<sub [::subs/game-teams])
         sub? (<sub [::subs/sub?])]
     [:div.flex.flex-col.gap-2
      [team-players-input team1]
@@ -389,9 +390,9 @@
          [render-possession possession {:preview-entities preview-entities}]])]]))
 
 
-(defn court-bounding-rect-xy
-  [court-id]
-  (let [bounding-client-rect (.getBoundingClientRect (.getElementById js/document court-id))]
+(defn bounding-rect-xy
+  [id]
+  (let [bounding-client-rect (.getBoundingClientRect (.getElementById js/document id))]
     [(.-left bounding-client-rect)
      (.-top bounding-client-rect)]))
 
@@ -418,7 +419,7 @@
 
 (defn client->eucl-court
   [court-id [court-client-width court-client-height] [court-width court-height] [x y]]
-  (let [[rect-x rect-y] (court-bounding-rect-xy court-id)]
+  (let [[rect-x rect-y] (bounding-rect-xy court-id)]
     [(-> x (- rect-x) (/ court-client-width) (* court-width))
      (-> y (- rect-y) (/ court-client-height) (* court-height))]))
 
@@ -616,43 +617,157 @@
   [:div.flex.gap-2
    [new-game]
    [submit-game]
-   [game-selector]
    [:button {:type "button"
              :on-click load-remote-games}
     "Add Remote Games"]])
 
 
-(defn analysis
+(defn game-stats
   []
   [:div.flex.flex-col.flex-1.gap-4
    [stats]
    [possessions]])
 
 
+(defn shot
+  [{:keys [on-mouse-enter on-mouse-leave]} action pts]
+  (let [{:shot/keys [angle distance]} action
+        [x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
+        icon-size 5
+        color (get {0 "#c0c0c0"
+                    1 "#ace1af"
+                    2 "#3cd070"
+                    3 "#008000"
+                    4 "#8a2be2"}
+                   pts "gray")]
+    [:g
+     [:circle
+      {:r icon-size :cx x :cy y
+       :fill-opacity 0
+       :stroke color
+       :stroke-width 2
+       :on-mouse-enter (on-mouse-enter x y)
+       :on-mouse-leave on-mouse-leave}]]))
+
+
+(defn shot-information
+  [hovered? shot-info]
+  (when @hovered?
+    (let [{:keys [game team action x y]} @shot-info
+          {:game/keys [home-team away-team datetime]} game
+          team-home? (= team home-team)
+          {opponent-name :team/name} (if team-home? away-team home-team)
+          {:action/keys [player]} action
+          {team-name :team/name} team
+          width (first court-dimensions)
+          right-side? (> x (/ width 2))]
+      [:text
+       {:text-anchor (if right-side? "end" "start")}
+       [:tspan
+        {:x x :dx (if right-side? -15 15) :y y}
+        (str "#" player " " team-name (if team-home? " vs. " " @ ") opponent-name)]
+       [:tspan
+        {:x x :dx (if right-side? -15 15) :y y :dy 20}
+        (second (string/split (.toDateString datetime) #" " 2))]])))
+
+
 (defn shot-chart
   []
-  [:div
-   [court
-    {:id "shot-chart"
-     :scale 0.8}
-    (for [{:shot/keys [angle distance make?]} (<sub [::subs/shots])]
-      (let [[x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
-            icon-size 5]
-        ^{:key (gensym "key-")}
-        [:circle
-         {:r icon-size :cx x :cy y
-          :fill "none"
-          :stroke (if make? "green" "red")
-          :stroke-width 2}]))]
-   [:div.flex.gap-2.my-2
-    [:input.rounded-full.border.border-black.px-2.py-1
-     {:type "text"
-      :value (<sub [::subs/shot-chart-team])
-      :on-change #(re-frame/dispatch [::events/set-shot-chart-team (-> % .-target .-value)])}]
-    [:input.rounded-full.border.border-black.px-2.py-1
-     {:type "text"
-      :value (<sub [::subs/shot-chart-players-input])
-      :on-change #(re-frame/dispatch [::events/set-shot-chart-players-input (-> % .-target .-value)])}]]])
+  (let [hovered? (reagent/atom false)
+        shot-info (reagent/atom {})]
+    [court
+     {:id "shot-chart"
+      :scale 0.8}
+     (for [{:keys [game team action pts]} (<sub [::subs/shots])]
+       ^{:key (gensym "key-")}
+       [shot {:on-mouse-enter (fn [x y]
+                                (fn [e]
+                                  (reset! shot-info
+                                          {:game game
+                                           :team team
+                                           :action action
+                                           :x x
+                                           :y y})
+                                  (reset! hovered? true)))
+              :on-mouse-leave #(reset! hovered? false)}
+        action pts])
+     [shot-information hovered? shot-info]]))
+
+
+(defn analysis-players-selector
+  []
+  [:input.rounded-full.border.border-black.px-2.py-1
+   {:type "text"
+    :value (<sub [::subs/shot-chart-players-input])
+    :on-change #(re-frame/dispatch [::events/set-shot-chart-players-input (-> % .-target .-value)])}])
+
+
+(defn analysis-offense-selector
+  []
+  [:input.rounded-full.border.border-black.px-2.py-1
+   {:type "text"
+    :value (<sub [::subs/shot-chart-offense-input])
+    :on-change #(re-frame/dispatch [::events/set-shot-chart-offense-input (-> % .-target .-value)])}])
+
+
+(defn analysis-teams-selector
+  []
+  (let [teams          (sort-by :team/name (<sub [::subs/teams]))
+        selections     (<sub [::subs/shot-chart-teams])]
+    [selection-list :src (at)
+     :height     "160px"
+     :model          selections
+     :choices        teams
+     :label-fn       :team/name
+     :id-fn :db/id
+     :multi-select?  false
+     :on-change      (fn [sel]
+                       (re-frame/dispatch
+                        [::events/set-shot-chart-teams sel]))]))
+
+
+(defn analysis-games-selector
+  []
+  (let [games (sort-by :game/datetime (<sub [::subs/games]))
+        selections (<sub [::subs/shot-chart-games])]
+    [selection-list :src (at)
+           ;; :width          "391px"      ;; manual hack for width of variation panel A+B 1024px
+     :height     "160px"       ;; based on compact style @ 19px x 5 rows
+     :model          selections
+     :choices        games
+     :label-fn       (fn [{:game/keys [home-team away-team datetime]}]
+                       (str (:team/name away-team) " at " (:team/name home-team)
+                            ", " (when datetime
+                                   (.toDateString datetime))))
+     :id-fn :db/id
+     :multi-select?  true
+     :on-change      (fn [sel]
+                       (re-frame/dispatch
+                        [::events/set-shot-chart-games sel]))]))
+
+
+(defn analysis-stats
+  []
+  (let [{:keys [pts possessions offrtg]
+         :or {pts 0 possessions 0 offrtg 0}} (<sub [::subs/ppp])]
+    [:div
+     [:p (str "Points: " pts)]
+     [:p (str "Possessions: " possessions)]
+     [:p (str "OffRtg: " (.toFixed offrtg 2))]]))
+
+
+(defn analysis
+  []
+  [:div.flex.flex-col.items-start
+   [:div.flex.gap-2
+    [shot-chart]
+    [analysis-stats]]
+   [analysis-players-selector]
+   [analysis-offense-selector]
+   [:div.flex
+    [analysis-teams-selector]
+    [analysis-games-selector]]])
+
 
 
 (defn main-panel
@@ -660,7 +775,6 @@
   [:div.container.mx-4.my-4.flex.flex-col.gap-4
    {:class "w-11/12"}
    [game-input]
-   [analysis]
+   [game-stats]
    [game-controls]
-   [shot-chart]])
-
+   [analysis]])

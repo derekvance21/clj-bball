@@ -164,7 +164,7 @@
                                                              :shot/distance 288}]}]}])
            :db-after)
        query/rules)
-  
+
 
   (-> (get-db)
       (d/with [{:game/home-team {:team/name "Miami Heat"}
@@ -189,17 +189,16 @@
                                                         :shot/distance 288}]}]}])
       :db-after
       ((fn [db]
-        (d/pull db '[*]
-                [:game/home-team+away-team+datetime
-                 [(d/entid db [:team/name "Miami Heat"])
-                  (d/entid db [:team/name "Golden State Warriors"])
-                  #inst "2023-11-01T19:30-04:00"]])))
-      )
-  
+         (d/pull db '[*]
+                 [:game/home-team+away-team+datetime
+                  [(d/entid db [:team/name "Miami Heat"])
+                   (d/entid db [:team/name "Golden State Warriors"])
+                   #inst "2023-11-01T19:30-04:00"]]))))
+
   ;; when you refer to the :game/home-team+away-team+datetime tuple,
   ;; it has to be integer refs for home-team and away-team. So use d/entid
   ;; whereas when you transact for the first time, you can use upsert maps
-  
+
 
 
 
