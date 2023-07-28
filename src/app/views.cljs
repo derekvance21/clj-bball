@@ -694,6 +694,9 @@
      [shot-information hovered? shot-info]]))
 
 
+;; TODO - make this a reagent component,
+;; set on-blur
+;; set on debounce
 (defn analysis-players-selector
   []
   [:input.rounded-full.border.border-black.px-2.py-1
@@ -714,7 +717,8 @@
   []
   (let [teams          (sort-by :team/name (<sub [::subs/teams]))
         selections     (<sub [::subs/shot-chart-teams])]
-    [selection-list :src (at)
+    [selection-list
+     :src (at)
      :height     "160px"
      :model          selections
      :choices        teams
@@ -730,7 +734,8 @@
   []
   (let [games (sort-by :game/datetime (<sub [::subs/games]))
         selections (<sub [::subs/shot-chart-games])]
-    [selection-list :src (at)
+    [selection-list
+     :src (at)
            ;; :width          "391px"      ;; manual hack for width of variation panel A+B 1024px
      :height     "160px"       ;; based on compact style @ 19px x 5 rows
      :model          selections
@@ -748,12 +753,35 @@
 
 (defn analysis-stats
   []
-  (let [{:keys [pts possessions offrtg]
-         :or {pts 0 possessions 0 offrtg 0}} (<sub [::subs/ppp])]
-    [:div
-     [:p (str "Points: " pts)]
-     [:p (str "Possessions: " possessions)]
-     [:p (str "OffRtg: " (.toFixed offrtg 2))]]))
+  (let [players-input? (seq (<sub [::subs/shot-chart-players-input]))
+        {:keys [pts possessions pts-per-75 offrtg]
+         :or {pts 0 possessions 0 offrtg 0 pts-per-75 0}} (if players-input?
+                                                            (<sub [::subs/points-per-75])
+                                                            (<sub [::subs/ppp]))
+        ts% (or (<sub [::subs/true-shooting]) 0)
+        offreb (or (<sub [::subs/offensive-rebounding-rate]) 0)
+        turnover-rate (or (<sub [::subs/turnovers-per-play]) 0)
+        ft-rate (or (<sub [::subs/free-throw-rate]) 0)
+        efg% (or (<sub [::subs/effective-field-goal-percentage]) 0)]
+    [:div.flex.justify-between.gap-4
+     [:div
+      [:p (str "Points: " pts)]
+      [:p (str "Possessions: " possessions)]
+      (if players-input?
+        [:p (str "Points/75: " (.toFixed pts-per-75 2))]
+        [:p (str "OffRtg: " (.toFixed offrtg 2))])
+      [:p (str "TS%: " (.toFixed ts% 2))]
+      [:p (str "eFG%: " (.toFixed efg% 2))]
+      [:p (str "OffReb%: " (.toFixed (* 100 offreb) 2))]
+      [:p (str "TO%: " (.toFixed (* 100 turnover-rate) 2))]
+      [:p (str "FTRate: " (.toFixed (* 100 ft-rate) 2))]]
+     (when-not players-input?
+       (let [{pts-allowed :pts defensive-possessions :possessions defrtg :defrtg
+              :or {pts-allowed 0 defensive-possessions 0 defrtg 0}} (<sub [::subs/defensive-ppp])]
+         [:div
+          [:p (str "Points: " pts-allowed)]
+          [:p (str "Possessions: " defensive-possessions)]
+          [:p (str "DefRtg: " (.toFixed defrtg 2))]]))]))
 
 
 (defn analysis

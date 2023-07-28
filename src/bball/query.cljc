@@ -54,11 +54,27 @@
               (not [?a :ft/made])
               [(ground 0) ?count]]
 
+             [(fts-player ?a ?player ?fts)
+              [?a :action/player ?player]
+              [?a :ft/made ?fts]]
+             [(fts-player ?a ?player ?fts)
+              (not [?a :action/player ?player])
+              [(ground 0) ?fts]]
+             
              [(fg-pts ?a ?pts)
               [?a :shot/make? true]
               [?a :shot/value ?pts]]
              [(fg-pts ?a ?pts)
               (not [?a :shot/make? true])
+              [(ground 0) ?pts]]
+
+             [(fg-pts-player ?a ?player ?pts)
+              [?a :shot/make? true]
+              [?a :action/player ?player]
+              [?a :shot/value ?pts]]
+             [(fg-pts-player ?a ?player ?pts)
+              (or (not [?a :shot/make? true])
+                  (not [?a :action/player ?player]))
               [(ground 0) ?pts]]
 
              [(fgas ?a ?count)
@@ -90,6 +106,11 @@
              [(pts ?a ?pts)
               (fts ?a ?fts)
               (fg-pts ?a ?fg-pts)
+              [(+ ?fts ?fg-pts) ?pts]]
+
+             [(pts-player ?a ?player ?pts)
+              (fts-player ?a ?player ?fts)
+              (fg-pts-player ?a ?player ?fg-pts)
               [(+ ?fts ?fg-pts) ?pts]]
 
              [(off-rebs ?a ?count)
