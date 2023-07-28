@@ -298,59 +298,6 @@
      all-players on-court-players)))
 
 
-(def shots-query-by-player
-  '[:find
-    (pull ?g [:game/datetime {:game/home-team [:team/name]
-                              :game/away-team [:team/name]}])
-    (pull ?t [:team/name])
-    (pull ?a [:action/player :shot/distance :shot/angle :shot/make?]) ?pts
-    :keys game team action pts
-    :in $ % [?g ...] [?t ...] [?number ...] ?offensive-players ?subset?
-    :where
-    (actions ?g ?t ?p ?a)
-    [?a :action/type :action.type/shot] ;; TODO - have something to show turnovers?
-    [?a :offense/players ?offense]
-    [(set ?offense) ?offense-set]
-    [(?subset? ?offensive-players ?offense-set)]
-    [?a :action/player ?number]
-    (pts ?a ?pts)])
-
-
-(comment
-  (def shots-query-by-player-map
-    '{:find [(pull ?a [:shot/distance :shot/angle :shot/make?]) ?pts],
-      :in [$ % [?g ...] [?t ...] [?number ...]],
-      :where [(actions ?g ?t ?p ?a)
-              [?a :action/type :action.type/shot]
-              [?a :action/player ?number]
-              (pts ?a ?pts)]})
-  )
-
-
-(def ft-pct-query
-  '[:find [(sum ?made) (sum ?attempted)]
-    :in $ %
-    :with ?a
-    :where
-    (actions ?g ?t ?p ?a)
-    [?a :ft/attempted ?attempted]
-    [?a :ft/made ?made]])
-
-
-(def off-reb-rate-by-player
-  '[:find ?player-numbers (avg ?off-rebs)
-    :keys player off-reb-rate
-    :in $ % ?t [?player-numbers ...]
-    :with ?a
-    :where
-    (actions ?g ?t ?p ?a)
-    (rebound? ?a)
-    [?a :offense/players ?offense]
-    [(ground ?offense) [?player ...]]
-    [(contains? ?player-numbers ?player)]
-    (off-rebs-player ?a ?player ?off-rebs)])
-
-
 (comment
   (d/q '[:find [(avg ?pts) (count-distinct ?a)]
          :keys pps shots

@@ -6,7 +6,8 @@
    [clojure.string :as string]
    [clojure.set]
    [datascript.core :as d]
-   [re-frame.core :as re-frame]))
+   [re-frame.core :as re-frame]
+   [datascript.parser :as datascript-parser]))
 
 
 (re-frame/reg-sub
@@ -295,7 +296,7 @@
 (re-frame/reg-sub
  ::shot-chart-teams
  (fn [db]
-   (get-in db [:shot-chart :teams])))
+   (get-in db [:shot-chart :teams] #{})))
 
 
 (re-frame/reg-sub
@@ -333,69 +334,271 @@
 (re-frame/reg-sub
  ::shot-chart-games
  (fn [db _]
-   (get-in db [:shot-chart :games])))
+   (get-in db [:shot-chart :games] #{})))
+
+
+(re-frame/reg-sub
+ ::defensive-filters
+ :<- [::shot-chart-games]
+ :<- [::shot-chart-teams]
+ :<- [::shot-chart-offense]
+ (fn [[games teams defense] _]
+   (remove nil?
+           [(when (seq games)
+              {:in '[[?g ...]]
+               :args [games]
+               :where '[(or [?g :game/home-team ?dt]
+                            [?g :game/away-team ?dt])]})
+            (when (seq teams)
+              {:in '[[?dt ...]]
+               :args [teams]
+               :where '[(not [?p :possession/team ?dt])]})
+            (when (seq defense)
+              {:in '[?defense-subset subset?]
+               :where '[[?a :defense/players ?defense-tuple]
+                        [(set ?defense-tuple) ?defense]
+                        [(subset? ?defense-subset ?defense)]]
+               :args [defense clojure.set/subset?]})])))
+
+
+(defn q+
+  [base-query filters & args]
+  (let [query-map (datascript-parser/query->map base-query)
+        input-clauses-filters (map #(dissoc % :args) filters)
+        filter-args (mapcat :args filters)
+        query-with-filters (apply merge-with concat query-map
+                                  input-clauses-filters)]
+    (apply d/q query-with-filters (concat args filter-args))))
 
 
 (re-frame/reg-sub
  ::ppp
  :<- [::datascript-db]
+ :<- [::filters]
+ (fn [[db filters] _]
+   (let [base-query '[:find [(sum ?pts) (count-distinct ?p)]
+                      :keys pts possessions
+                      :in $ %
+                      :with ?a
+                      :where
+                      (actions ?g ?t ?p ?a)
+                      (pts ?a ?pts)]
+         {:keys [pts possessions] :as result} (q+ base-query filters db query/rules)]
+     (assoc result :offrtg (* 100 (/ pts possessions))))))
+
+
+(re-frame/reg-sub
+ ::defensive-ppp
+ :<- [::datascript-db]
+ :<- [::defensive-filters]
+ (fn [[db filters] _]
+   (let [base-query '[:find [(sum ?pts) (count-distinct ?p)]
+                      :keys pts possessions
+                      :in $ %
+                      :with ?a
+                      :where
+                      (actions ?g ?t ?p ?a)
+                      (pts ?a ?pts)]
+         {:keys [pts possessions] :as result} (q+ base-query filters db query/rules)]
+     (assoc result :defrtg (* 100 (/ pts possessions))))))
+
+
+(re-frame/reg-sub
+ ::true-shooting
+ :<- [::datascript-db]
+ :<- [::filters]
+ (fn [[db filters] _]
+   (let [base-query '[:find (avg ?pts) .
+                      :in $ %
+                      :with ?a
+                      :where
+                      (actions ?g ?t ?p ?a)
+                      (not [?a :action/type :action.type/turnover])
+                      (pts ?a ?pts)]
+         pps (q+ base-query filters db query/rules)]
+     (* pps 50))))
+
+
+(re-frame/reg-sub
+ ::free-throw-rate
+ :<- [::datascript-db]
+ :<- [::filters]
+ (fn [[db filters] _]
+   (let [ftm-query '[:find (sum ?ftm) .
+                     :in $ %
+                     :with ?a
+                     :where
+                     (actions ?g ?t ?p ?a)
+                     [?a :ft/made ?ftm]]
+         ftm (q+ ftm-query filters db query/rules)
+         fga-query '[:find (count-distinct ?a) .
+                     :in $ %
+                     :where
+                     (actions ?g ?t ?p ?a)
+                     (fga? ?a)]
+         fga (q+ fga-query filters db query/rules)]
+     (/ ftm fga))))
+
+
+(re-frame/reg-sub
+ ::effective-field-goal-percentage
+ :<- [::datascript-db]
+ :<- [::filters]
+ (fn [[db filters] _]
+   (let [efg-query '[:find (avg ?efgs) .
+                     :in $ %
+                     :with ?a
+                     :where
+                     (actions ?g ?t ?p ?a)
+                     (fga? ?a)
+                     (efgs ?a ?efgs)]]
+     (* 100 (q+ efg-query filters db query/rules)))))
+
+
+(re-frame/reg-sub
+ ::games-filter
  :<- [::shot-chart-games]
+ (fn [games _]
+   (when (seq games)
+     {:in '[[?g ...]]
+      :args [games]})))
+
+
+(re-frame/reg-sub
+ ::teams-filter
  :<- [::shot-chart-teams]
+ (fn [teams _]
+   (when (seq teams)
+     {:in '[[?t ...]]
+      :args [teams]})))
+
+
+(re-frame/reg-sub
+ ::players-filter
  :<- [::shot-chart-players]
+ (fn [players _]
+   (when (seq players)
+     {:in '[[?player ...]]
+      :where '[[?a :action/player ?player]]
+      :args [players]})))
+
+
+(re-frame/reg-sub
+ ::offense-filter
  :<- [::shot-chart-offense]
- :<- [::teams]
- :<- [::games]
- (fn [[db game-ids team-ids players offense teams games] _]
-   (->> (d/q '[:find (sum ?pts) (count-distinct ?p)
-               :keys  pts possessions
-               :in $ % [?g ...] [?t ...] [?player ...] ?offensive-players ?subset?
-               :with ?a
-               :where
-               (actions ?g ?t ?p ?a)
-               [?a :offense/players ?offense]
-               [(set ?offense) ?offense-set]
-               [(?subset? ?offensive-players ?offense-set)]
-               [?a :action/player ?player]
-               (pts ?a ?pts)]
-             db query/rules
-             (if (empty? game-ids)
-               (map :db/id games)
-               game-ids)
-             (if (empty? team-ids)
-               (map :db/id teams)
-               team-ids)
-             (if (empty? players)
-               (range 0 100)
-               players)
-             offense
-             clojure.set/subset?)
-        (map (fn [{:keys [pts possessions] :as result}]
-               (assoc result :offrtg (* 100 (/ pts possessions))))))))
+ (fn [offense _]
+   (when (seq offense)
+     {:in '[?offense-subset subset?]
+      :where '[[?a :offense/players ?offense-tuple]
+               [(set ?offense-tuple) ?offense]
+               [(subset? ?offense-subset ?offense)]]
+      :args [offense clojure.set/subset?]})))
+
+
+(re-frame/reg-sub
+ ::filters
+ :<- [::games-filter]
+ :<- [::teams-filter]
+ :<- [::players-filter]
+ :<- [::offense-filter]
+ (fn [[games-filter teams-filter players-filter offense-filter] _]
+   (remove nil?
+           [games-filter
+            teams-filter
+            players-filter
+            offense-filter])))
+
+(re-frame/reg-sub
+ ::offensive-rebounding-rate
+ :<- [::datascript-db]
+ :<- [::games-filter]
+ :<- [::teams-filter]
+ :<- [::players-filter]
+ :<- [::offense-filter]
+ (fn [[db games-filter teams-filter players-filter offense-filter] _]
+   (let [base-query '[:find (avg ?off-rebs) .
+                      :in $ %
+                      :with ?a
+                      :where
+                      (actions ?g ?t ?p ?a)
+                      (rebound? ?a)]
+         filters (remove nil? [games-filter
+                               teams-filter
+                               (if-some [{[players] :args} players-filter]
+                                 {:in '[[?player ...] ?players subset1?]
+                                  :args [players players clojure.set/subset?]
+                                  :where '[[?a :offense/players ?offense-tuple]
+                                           [(set ?offense-tuple) ?offense]
+                                           [(subset1? ?players ?offense)]
+                                           (off-rebs-player ?a ?player ?off-rebs)]}
+                                 {:where '[(off-rebs ?a ?off-rebs)]})
+                               offense-filter])]
+     (q+ base-query filters db query/rules))))
+
+
+(re-frame/reg-sub
+ ::points-per-75
+ :<- [::datascript-db]
+ :<- [::games-filter]
+ :<- [::teams-filter]
+ :<- [::players-filter]
+ :<- [::offense-filter]
+ (fn [[db games-filter teams-filter players-filter offense-filter]]
+   (let [base-query '[:find [(sum ?pts) (count-distinct ?p)]
+                      :keys pts possessions
+                      :in $ %
+                      :with ?a
+                      :where
+                      (actions ?g ?t ?p ?a)
+                      (pts-player ?a ?player ?pts)]
+         filters (remove nil?
+                         [games-filter
+                          teams-filter
+                          (if-some [{[players] :args} players-filter]
+                            {:in '[[?player ...] ?players subset1?]
+                             :args [players players clojure.set/subset?]
+                             :where '[[?a :offense/players ?offense-tuple]
+                                      [(set ?offense-tuple) ?offense]
+                                      [(subset1? ?players ?offense)]
+                                      (pts-player ?a ?player ?pts)]}
+                            {:where '[(pts ?a ?pts)]})
+                          offense-filter])
+         {:keys [pts possessions] :as result} (q+ base-query filters db query/rules)]
+     (assoc result :pts-per-75 (* 75 (/ pts possessions))))))
+
+
+(re-frame/reg-sub
+ ::turnovers-per-play
+ :<- [::datascript-db]
+ :<- [::filters]
+ (fn [[db filters] _]
+   (let [base-query '[:find [(sum ?tos) (count-distinct ?a)]
+                      :keys turnovers plays
+                      :in $ %
+                      :where
+                      (actions ?g ?t ?p ?a)
+                      (tos ?a ?tos)]
+         {:keys [turnovers plays]} (q+ base-query filters db query/rules)]
+     (/ turnovers plays))))
 
 
 (re-frame/reg-sub
  ::shots
  :<- [::datascript-db]
- :<- [::shot-chart-games]
- :<- [::shot-chart-teams]
- :<- [::shot-chart-players]
- :<- [::shot-chart-offense]
- :<- [::teams]
- :<- [::games]
- (fn [[db game-ids team-ids players offense teams games] _]
-   (d/q ds/shots-query-by-player
-        db query/rules
-        (if (empty? game-ids)
-          (map :db/id games)
-          game-ids)
-        (if (empty? team-ids)
-          (map :db/id teams)
-          team-ids)
-        (if (empty? players)
-          (set (range 0 100))
-          players)
-        offense
-        clojure.set/subset?)))
+ :<- [::filters]
+ (fn [[db filters] _]
+   (let [shots-query '[:find
+                       (pull ?g [:game/datetime {:game/home-team [:team/name]
+                                                 :game/away-team [:team/name]}])
+                       (pull ?t [:team/name])
+                       (pull ?a [:action/player :shot/distance :shot/angle :shot/make?]) ?pts
+                       :keys game team action pts
+                       :in $ %
+                       :where
+                       (actions ?g ?t ?p ?a)
+                       [?a :action/type :action.type/shot]
+                       (pts ?a ?pts)]]
+     (q+ shots-query filters db query/rules))))
 
 
 (re-frame/reg-sub
@@ -419,22 +622,18 @@
 (re-frame/reg-sub
  ::games
  :<- [::datascript-db]
- :<- [::shot-chart-teams]
- (fn [[db teams] _]
-   (let [pattern [:db/id :game/datetime {:game/home-team [:team/name]
-                                         :game/away-team [:team/name]}]]
-     (if (empty? teams)
-       (d/q '[:find [(pull ?g ?pattern) ...]
-              :in $ ?pattern
-              :where
-              [?g :game/possession]]
-            db pattern)
-       (d/q '[:find [(pull ?g ?pattern) ...]
-              :in $ ?pattern [?t ...]
-              :where
-              (or [?g :game/home-team ?t]
-                  [?g :game/away-team ?t])]
-            db pattern teams)))))
+ :<- [::filters]
+ (fn [[db filters] _]
+   (let [games-query '[:find [(pull ?g [:db/id :game/datetime
+                                        {:game/home-team [:team/name]
+                                         :game/away-team [:team/name]}])
+                              ...]
+                       :in $ %
+                       :where
+                       (actions ?g ?t ?p ?a)
+                       (or [?g :game/home-team ?t]
+                           [?g :game/away-team ?t])]]
+     (q+ games-query filters db query/rules))))
 
 
 (re-frame/reg-sub
