@@ -31,6 +31,12 @@
               (not [?p :possession/team ?t])
               [?a :defense/players ?number]]
 
+             ;; have to pass in subset? in cljs, b/c cljs datascript can't resolve clojure.set/subset?
+             [(lineup? ?subset? ?a ?side ?sub)
+              [?a ?side ?players-tuple]
+              [(set ?players-tuple) ?players]
+              [(?subset? ?sub ?players)]]
+
              [(subset? ?sub ?set)
               [(clojure.set/subset? ?sub ?set)]]
 
@@ -60,7 +66,7 @@
              [(fts-player ?a ?player ?fts)
               (not [?a :action/player ?player])
               [(ground 0) ?fts]]
-             
+
              [(fg-pts ?a ?pts)
               [?a :shot/make? true]
               [?a :shot/value ?pts]]
@@ -112,6 +118,13 @@
               (fts-player ?a ?player ?fts)
               (fg-pts-player ?a ?player ?fg-pts)
               [(+ ?fts ?fg-pts) ?pts]]
+             
+             [(plays-player ?a ?player ?plays)
+              [?a :action/player ?player]
+              [(ground 1) ?plays]]
+             [(plays-player ?a ?player ?plays)
+              (not [?a :action/player ?player])
+              [(ground 0) ?plays]]
 
              [(off-rebs ?a ?count)
               [?a :rebound/off? true]
