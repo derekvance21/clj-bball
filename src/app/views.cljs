@@ -759,10 +759,12 @@
                                                             (<sub [::subs/points-per-75])
                                                             (<sub [::subs/ppp]))
         ts% (or (<sub [::subs/true-shooting]) 0)
+        ts-diff (- ts% (<sub [::subs/true-shooting-average]))
         offreb (or (<sub [::subs/offensive-rebounding-rate]) 0)
         turnover-rate (or (<sub [::subs/turnovers-per-play]) 0)
         ft-rate (or (<sub [::subs/free-throw-rate]) 0)
-        efg% (or (<sub [::subs/effective-field-goal-percentage]) 0)]
+        efg% (or (<sub [::subs/effective-field-goal-percentage]) 0)
+        usage% (or (<sub [::subs/usage-rate]) 0)]
     [:div.flex.justify-between.gap-4
      [:div
       [:p (str "Points: " pts)]
@@ -770,7 +772,18 @@
       (if players-input?
         [:p (str "Points/75: " (.toFixed pts-per-75 2))]
         [:p (str "OffRtg: " (.toFixed offrtg 2))])
-      [:p (str "TS%: " (.toFixed ts% 2))]
+      (when players-input?
+        [:p (str "Usage%: " (.toFixed usage% 2))])
+      [:p (str "TS%: " (.toFixed ts% 2))
+       (when (pos? ts%)
+         [:span
+          " ("
+          [:span {:class (cond
+                           (zero? ts-diff) "text-slate-500"
+                           (neg? ts-diff) "text-red-500"
+                           (pos? ts-diff) "text-green-500")}
+           (str (when-not (neg? ts-diff) "+") (.toFixed ts-diff 2) "%")]
+          ")"])]
       [:p (str "eFG%: " (.toFixed efg% 2))]
       [:p (str "OffReb%: " (.toFixed (* 100 offreb) 2))]
       [:p (str "TO%: " (.toFixed (* 100 turnover-rate) 2))]

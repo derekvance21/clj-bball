@@ -5,6 +5,8 @@
    [bball.query :as query]
    [cljs.reader :as reader]
    [datascript.core :as d]
+   [datascript.parser :as dp]
+   [datascript.query :as dq]
    [reagent.core :as reagent]
    [clojure.set]
    [clojure.pprint :as pprint]
@@ -299,6 +301,7 @@
 
 
 (comment
+  #_{:clj-kondo/ignore [:datalog-syntax]}
   (d/q '[:find [(avg ?pts) (count-distinct ?a)]
          :keys pps shots
          :in $ % ?t
@@ -376,16 +379,17 @@
   ;;     {:feet 28, :pps 0, :shots 2})
 
 
-  (let [total-result (d/q '[:find [(avg ?pts) (count-distinct ?a)]
-                            :keys pps shots
-                            :in $ % ?t
-                            :where
-                            (actions ?g ?t ?p ?a)
-                            [?a :shot/value]
-                            (pts ?a ?pts)]
-                          @conn
-                          query/rules
-                          [:team/name "Blaine"])]
+  (let [total-result #_{:clj-kondo/ignore [:datalog-syntax]}
+        (d/q '[:find [(avg ?pts) (count-distinct ?a)]
+               :keys pps shots
+               :in $ % ?t
+               :where
+               (actions ?g ?t ?p ?a)
+               [?a :shot/value]
+               (pts ?a ?pts)]
+             @conn
+             query/rules
+             [:team/name "Blaine"])]
     (->> (d/q '[:find ?numbers ?sector (avg ?pts) (count ?a)
                 :keys player sector pps shots
                 :in $ % ?t [?numbers ...]
@@ -478,17 +482,18 @@
   ;;     {:player #{2 5}, :sector "3-10", :pps 0.55, :shots 20}
   ;;     {:player #{20}, :sector "3-10", :pps 0.3125, :shots 16})
 
-  (let [total-result (d/q '[:find [(avg ?pts) (count-distinct ?a)]
-                            :keys pps shots
-                            :in $ % ?blaine
-                            :where
-                            (actions ?g ?t ?p ?a)
-                            (not [?p :possession/team ?blaine])
-                            [?a :shot/value]
-                            (pts ?a ?pts)]
-                          @conn
-                          query/rules
-                          [:team/name "Blaine"])]
+  (let [total-result #_{:clj-kondo/ignore [:datalog-syntax]}
+        (d/q '[:find [(avg ?pts) (count-distinct ?a)]
+               :keys pps shots
+               :in $ % ?blaine
+               :where
+               (actions ?g ?t ?p ?a)
+               (not [?p :possession/team ?blaine])
+               [?a :shot/value]
+               (pts ?a ?pts)]
+             @conn
+             query/rules
+             [:team/name "Blaine"])]
     (->> (d/q '[:find ?sector (avg ?pts) (count ?a)
                 :keys sector pps shots
                 :in $ % ?blaine
@@ -525,7 +530,6 @@
   ;;     {:sector "3P-24", :pps 0.8697183098591549, :shots 284}
   ;;     {:sector "3-10", :pps 0.8542274052478134, :shots 343}
   ;;     {:sector "10-3P", :pps 0.6470588235294118, :shots 102}) 
-
   )
 
 (comment
@@ -840,7 +844,6 @@
   ;;      {:total-pts 31, :possessions 27, :defense #{20 1 3 35 42}, :defrtg 114.81481481481481}
   ;;      {:total-pts 20, :possessions 25, :defense #{20 1 4 3 35}, :defrtg 80}
   ;;      {:total-pts 16, :possessions 23, :defense #{4 3 35 #{2 5} 42}, :defrtg 69.56521739130434})]
-
   )
 
 
@@ -866,3 +869,125 @@
   ;
   )
 
+(comment
+
+  (->> (d/q '[:find ?e ?v
+              :in $
+              :where
+              [?e :possession/action ?v]
+              [?x :nonsense ?y]] @conn)
+       ((juxt count identity))
+       first)
+  ;; => 0
+
+  (->> (d/q '[:find ?a ?pts
+              :in $ % #_[?g ...] #_[?t ...] [?player ...] #_?offense-subset subset?
+              :where
+              [?a :action/player ?player]
+              [?a :offense/players ?offense-tuple]
+              [(set ?offense-tuple) ?offense]
+              [(subset? ?offense-subset ?offense)] ;; here, ?offense-subset is not bound
+
+              (actions ?g ?t ?p ?a)
+              (pts ?a ?pts)] @conn query/rules
+            #{1 3} clojure.set/subset?)
+       ((juxt count identity))
+       first)
+
+
+  (dp/parse-rule '[(pts ?a ?pts)
+                   [?a :ft/made ?ft-pts]
+                   [(+ ?ft-pts 2) ?pts]])
+  ;; {:name #datascript.parser.PlainSymbol{:symbol pts}
+  ;;  :vars #datascript.parser.RuleVars{:required nil
+  ;;                                    :free [#datascript.parser.Variable{:symbol ?a}
+  ;;                                           #datascript.parser.Variable{:symbol ?pts}]}
+  ;;  :clauses [#datascript.parser.Pattern{:source #datascript.parser.DefaultSrc{}
+  ;;                                       :pattern [#datascript.parser.Variable{:symbol ?a}
+  ;;                                                 #datascript.parser.Constant{:value :ft/made}
+  ;;                                                 #datascript.parser.Variable{:symbol ?ft-pts}]}
+  ;;            #datascript.parser.Function{:fn #datascript.parser.PlainSymbol{:symbol +}
+  ;;                                        :args [#datascript.parser.Variable{:symbol ?ft-pts}
+  ;;                                               #datascript.parser.Constant{:value 2}]
+  ;;                                        :binding #datascript.parser.BindScalar{:variable #datascript.parser.Variable{:symbol ?pts}}}]}
+
+
+
+  (dp/parse-where '[[?a :action/player ?player]
+                    [?a :offense/players ?offense-tuple]
+                    [(set ?offense-tuple) ?offense]
+                    [(subset? ?offense-subset ?offense)] ;; here, ?offense-subset is not bound
+
+                    (actions ?g ?t ?p ?a)
+                    (pts ?a ?pts)])
+  ;; [#datascript.parser.Pattern{:source #datascript.parser.DefaultSrc{},
+  ;;                             :pattern [#datascript.parser.Variable{:symbol ?a}
+  ;;                                       #datascript.parser.Constant{:value :action/player}
+  ;;                                       #datascript.parser.Variable{:symbol ?player}]}
+  ;;  #datascript.parser.Pattern{:source #datascript.parser.DefaultSrc{},
+  ;;                             :pattern [#datascript.parser.Variable{:symbol ?a}
+  ;;                                       #datascript.parser.Constant{:value :offense/players}
+  ;;                                       #datascript.parser.Variable{:symbol ?offense-tuple}]}
+  ;;  #datascript.parser.Function{:fn #datascript.parser.PlainSymbol{:symbol set},
+  ;;                              :args [#datascript.parser.Variable{:symbol ?offense-tuple}],
+  ;;                              :binding #datascript.parser.BindScalar{:variable #datascript.parser.Variable{:symbol ?offense}}}
+  ;;  #datascript.parser.Predicate{:fn #datascript.parser.PlainSymbol{:symbol subset?},
+  ;;                               :args [#datascript.parser.Variable{:symbol ?offense-subset}
+  ;;                                      #datascript.parser.Variable{:symbol ?offense}]}
+  ;;  #datascript.parser.RuleExpr{:source #datascript.parser.DefaultSrc{},
+  ;;                              :name #datascript.parser.PlainSymbol{:symbol actions},
+  ;;                              :args [#datascript.parser.Variable{:symbol ?g}
+  ;;                                     #datascript.parser.Variable{:symbol ?t}
+  ;;                                     #datascript.parser.Variable{:symbol ?p}
+  ;;                                     #datascript.parser.Variable{:symbol ?a}]}
+  ;;  #datascript.parser.RuleExpr{:source #datascript.parser.DefaultSrc{},
+  ;;                              :name #datascript.parser.PlainSymbol{:symbol pts},
+  ;;                              :args [#datascript.parser.Variable{:symbol ?a}
+  ;;                                     #datascript.parser.Variable{:symbol ?pts}]}]
+
+
+  (dp/parse-query
+   '[:find ?a ?pts
+     :in $ % #_[?g ...] #_[?t ...] [?player ...] #_?offense-subset subset?
+     :where
+     [?a :action/player ?player]
+     [?a :offense/players ?offense-tuple]
+     [(set ?offense-tuple) ?offense]
+     [(subset? ?offense-subset ?offense)] ;; here, ?offense-subset is not bound
+
+     (actions ?g ?t ?p ?a)
+     (pts ?a ?pts)])
+  ;; #datascript.parser.Query
+  ;;  {:qfind #datascript.parser.FindRel{:elements [#datascript.parser.Variable{:symbol ?a}
+  ;;                                                #datascript.parser.Variable{:symbol ?pts}]}
+  ;;   :qwith nil
+  ;;   :qreturn-map nil
+  ;;   :qin [#datascript.parser.BindScalar{:variable #datascript.parser.SrcVar{:symbol $}}
+  ;;         #datascript.parser.BindScalar{:variable #datascript.parser.RulesVar{}}
+  ;;         #datascript.parser.BindColl{:binding #datascript.parser.BindScalar{:variable #datascript.parser.Variable{:symbol ?player}}}
+  ;;         #datascript.parser.BindScalar{:variable #datascript.parser.Variable{:symbol subset?}}]
+  ;;   :qwhere [#datascript.parser.Pattern{:source #datascript.parser.DefaultSrc{}
+  ;;                                       :pattern [#datascript.parser.Variable{:symbol ?a}
+  ;;                                                 #datascript.parser.Constant{:value :action/player}
+  ;;                                                 #datascript.parser.Variable{:symbol ?player}]}
+  ;;            #datascript.parser.Pattern{:source #datascript.parser.DefaultSrc{}
+  ;;                                       :pattern [#datascript.parser.Variable{:symbol ?a}
+  ;;                                                 #datascript.parser.Constant{:value :offense/players}
+  ;;                                                 #datascript.parser.Variable{:symbol ?offense-tuple}]}
+  ;;            #datascript.parser.Function{:fn #datascript.parser.PlainSymbol{:symbol set}
+  ;;                                        :args [#datascript.parser.Variable{:symbol ?offense-tuple}]
+  ;;                                        :binding #datascript.parser.BindScalar{:variable #datascript.parser.Variable{:symbol ?offense}}}
+  ;;            #datascript.parser.Predicate{:fn #datascript.parser.PlainSymbol{:symbol subset?}
+  ;;                                         :args [#datascript.parser.Variable{:symbol ?offense-subset}
+  ;;                                                #datascript.parser.Variable{:symbol ?offense}]}
+  ;;            #datascript.parser.RuleExpr{:source #datascript.parser.DefaultSrc{}
+  ;;                                        :name #datascript.parser.PlainSymbol{:symbol actions}
+  ;;                                        :args [#datascript.parser.Variable{:symbol ?g}
+  ;;                                               #datascript.parser.Variable{:symbol ?t}
+  ;;                                               #datascript.parser.Variable{:symbol ?p}
+  ;;                                               #datascript.parser.Variable{:symbol ?a}]}
+  ;;            #datascript.parser.RuleExpr{:source #datascript.parser.DefaultSrc{}
+  ;;                                        :name #datascript.parser.PlainSymbol{:symbol pts}
+  ;;                                        :args [#datascript.parser.Variable{:symbol ?a}
+  ;;                                               #datascript.parser.Variable{:symbol ?pts}]}]}
+  )
