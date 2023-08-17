@@ -118,7 +118,7 @@
               (fts-player ?a ?player ?fts)
               (fg-pts-player ?a ?player ?fg-pts)
               [(+ ?fts ?fg-pts) ?pts]]
-             
+
              [(plays-player ?a ?player ?plays)
               [?a :action/player ?player]
               [(ground 1) ?plays]]

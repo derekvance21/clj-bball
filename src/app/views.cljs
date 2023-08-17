@@ -456,7 +456,8 @@
     ((svg-click-handler court-id scale true) e)))
 
 
-(defn court [{:keys [scale id on-click on-context-menu]} & children]
+(defn court [{:keys [scale id on-click on-context-menu]
+              :or {scale 1 id (gensym "court-")}} & children]
   (let [[court-width court-height] court-dimensions
         line-width 2
         [svg-width svg-height] (map #(* scale (+ % (* 2 line-width))) court-dimensions)]
@@ -468,6 +469,8 @@
       :view-box (string/join " " [(- line-width) (- line-width) (+ court-width (* 2 line-width)) (+ court-height (* 2 line-width))])
       :on-click on-click
       :on-context-menu on-context-menu}
+     (for [child children]
+       (with-meta child {:key (gensym "key-")}))
      [:rect {:id id :x 0 :y 0 :width court-width :height court-height :fill (or "none" "#dfbb85")}]
      [:g {:id "lines" :fill "none" :stroke-width line-width :stroke "black" :stroke-linecap "butt" :stroke-linejoin "miter"}
       [:rect {:x (- (/ line-width 2)) :y (- (/ line-width 2))
@@ -480,9 +483,7 @@
       [:path {:d "M 228 504 a 71 71 0 0 1 142 0"}] ;; halfcourt circle
       [:path {:d "M 227 94 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0"}] ; left lane markings
       [:path {:d "M 371 94 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0"}] ; right lane markings
-      ]
-     (for [child children]
-       (with-meta child {:key (gensym "key-")}))]))
+      ]]))
 
 
 (defn action-input []
@@ -634,7 +635,7 @@
   (let [{:shot/keys [angle distance]} action
         [x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
         icon-size 5
-        color (get {0 "#c0c0c0"
+        color (get {0 #_"#c0c0c0" "cornsilk"
                     1 "#ace1af"
                     2 "#3cd070"
                     3 "#008000"
@@ -668,16 +669,104 @@
         (str "#" player " " team-name (if team-home? " vs. " " @ ") opponent-name)]
        [:tspan
         {:x x :dx (if right-side? -15 15) :y y :dy 20}
-        (second (string/split (.toDateString datetime) #" " 2))]])))
+        (second (string/split (.toDateString datetime) #" " 2))]
+       [:tspan
+        {:x x :dx (if right-side? -15 15) :y y :dy 40}
+        (str (quot (:shot/distance action) 12) "'" (rem (:shot/distance action) 12)  "\", " (.toFixed (:shot/angle action) 4) "tr")]])))
+
+
+(defn sector-information
+  [sector-hovered? sector-info]
+  (when @sector-hovered?
+    (let [{:keys [pps shots]
+           :or {pps ##NaN shots 0}} @sector-info
+          [_ court-y] court-dimensions]
+      [:text
+       [:tspan
+        {:x 10 :y (- court-y 30)}
+        (str "PPS: " (.toFixed pps 2))]
+       [:tspan
+        {:x 10 :y (- court-y 10)}
+        (str "Shots: " shots)]])))
+
+
+(defn arc
+  ([distance]
+   (arc {} distance))
+  ([attrs distance]
+   (let [[hoop-x hoop-y] hoop-coordinates
+         x-start (- hoop-x distance)
+         [dx dy] [(* 2 distance) 0]
+         [rx ry] [distance distance]
+         d (string/join " "
+                        [\M x-start 0
+                         \l 0 hoop-y
+                         \a rx ry 0 0 0 dx dy
+                         \l 0 (- hoop-y)
+                         \Z])]
+     [:path (assoc attrs
+                   :d d)])))
+
+
+(defn cos-turns
+  [turns]
+  (Math/cos (* 2 Math/PI turns)))
+
+(defn sin-turns
+  [turns]
+  (Math/sin (* 2 Math/PI turns)))
+
+
+(defn partial-arc
+  ([min-angle max-angle distance]
+   (partial-arc {} min-angle max-angle distance))
+  ([attrs min-angle max-angle distance]
+   (let [[hoop-x hoop-y] hoop-coordinates
+         [min-x min-y] [(* distance (sin-turns min-angle)) (* distance (cos-turns min-angle))]
+         [max-x max-y] [(* distance (sin-turns max-angle)) (* distance (cos-turns max-angle))]
+         d (string/join " " [\M hoop-x hoop-y
+                             \l min-x min-y
+                             \a distance distance 0 0 0 (- max-x min-x) (- max-y min-y)
+                             \Z])]
+     [:path (assoc attrs
+                   :d d)])))
+
+
+(defn pps->color
+  [pps]
+  (let [max-pps 3
+        grayscale (Math/round (* 255 (/ (- max-pps pps) max-pps)))]
+    (str "rgb(" grayscale ", " grayscale ", " grayscale ")")))
 
 
 (defn shot-chart
   []
   (let [hovered? (reagent/atom false)
-        shot-info (reagent/atom {})]
+        shot-info (reagent/atom {})
+        sector-info (reagent/atom {})
+        sector-hovered? (reagent/atom false)]
     [court
      {:id "shot-chart"
       :scale 0.8}
+     [:g {:stroke-width 0.5 :stroke "black"}
+      (let [sector-pps-map (->> (<sub [::subs/pps-by-sector])
+                                (map (fn [{:keys [sector pps shots]}]
+                                       [sector {:pps pps
+                                                :shots shots}]))
+                                (into {}))]
+        (for [{:keys [max-distance] :as sector} (sort-by :max-distance > (<sub [::subs/sectors]))]
+          (let [sector-pps (get sector-pps-map sector)
+                pps (get-in sector-pps-map [sector :pps] 0)
+                {:keys [shots]
+                 :or {shots 0}} sector-pps]
+            ^{:key (gensym "key-")}
+            [arc {:on-mouse-enter (fn [e]
+                                    (reset! sector-info
+                                            {:pps pps
+                                             :shots shots})
+                                    (reset! sector-hovered? true))
+                  :on-mouse-leave #(reset! sector-hovered? false)
+                  :fill (pps->color pps)} max-distance])))]
      (for [{:keys [game team action pts]} (<sub [::subs/shots])]
        ^{:key (gensym "key-")}
        [shot {:on-mouse-enter (fn [x y]
@@ -691,7 +780,8 @@
                                   (reset! hovered? true)))
               :on-mouse-leave #(reset! hovered? false)}
         action pts])
-     [shot-information hovered? shot-info]]))
+     [shot-information hovered? shot-info]
+     [sector-information sector-hovered? sector-info]]))
 
 
 ;; TODO - make this a reagent component,
@@ -808,7 +898,6 @@
    [:div.flex
     [analysis-teams-selector]
     [analysis-games-selector]]])
-
 
 
 (defn main-panel
