@@ -864,3 +864,65 @@
  (fn [db _]
    (get-in db [:sub?] false)))
 
+
+(defn cos-turns
+  [turns]
+  (Math/cos (* 2 Math/PI turns)))
+
+
+(defn sin-turns
+  [turns]
+  (Math/sin (* 2 Math/PI turns)))
+
+
+(defn in-sector?
+  [{:keys [min-angle max-angle min-distance max-distance]
+    :or {min-angle -0.5 min-distance 0
+         max-angle 0.5 max-distance ##Inf}}
+   angle distance]
+  (let [effective-distance (cond (and (= min-angle -0.5)
+                                      (< angle -0.25)) (abs (* distance (sin-turns angle)))
+                                 (and (= max-angle 0.5)
+                                      (> angle 0.25)) (abs (* distance (sin-turns angle)))
+                                 :else distance)]
+    (and (>= angle min-angle)
+         (< angle max-angle)
+         (>= effective-distance min-distance)
+         (< effective-distance max-distance))))
+
+
+(defn make-sectors
+  [breakpoints]
+  (let [sorted (sort breakpoints)]
+    (map #(hash-map :min-distance %1 :max-distance %2) sorted (rest sorted))))
+
+
+(def standard-sectors (make-sectors [0 36 96 (+ (* 13 12) 9) (+ (* 19 12) 10) 300 (* 30 12)]))
+
+(re-frame/reg-sub
+ ::sectors
+ (fn [_ _]
+   (make-sectors (map #(* % 24) (range 0 15)))))
+
+
+(re-frame/reg-sub
+ ::pps-by-sector
+ :<- [::datascript-db]
+ :<- [::filters]
+ :<- [::sectors]
+ (fn [[db filters sectors] _]
+   (let [sector-pps-query '[:find ?sector (avg ?pts) (count-distinct ?a)
+                            :keys sector pps shots
+                            :in $ % [?sector ...] in-sector?
+                            ;; :with ?a
+                            :where
+                            (actions ?g ?t ?p ?a)
+                            [?a :action/type :action.type/shot]
+                            [?a :shot/angle ?angle]
+                            [?a :shot/distance ?distance]
+                            [(in-sector? ?sector ?angle ?distance)]
+                            (pts ?a ?pts)]]
+     (q+ sector-pps-query filters db query/rules
+         sectors
+         in-sector?))))
+
