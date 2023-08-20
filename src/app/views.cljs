@@ -635,7 +635,7 @@
   (let [{:shot/keys [angle distance]} action
         [x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
         icon-size 5
-        color (get {0 #_"#c0c0c0" "cornsilk"
+        color (get {0 "#c0c0c0" #_"cornsilk"
                     1 "#ace1af"
                     2 "#3cd070"
                     3 "#008000"
@@ -669,74 +669,90 @@
         (str "#" player " " team-name (if team-home? " vs. " " @ ") opponent-name)]
        [:tspan
         {:x x :dx (if right-side? -15 15) :y y :dy 20}
-        (second (string/split (.toDateString datetime) #" " 2))]
-       [:tspan
-        {:x x :dx (if right-side? -15 15) :y y :dy 40}
-        (str (quot (:shot/distance action) 12) "'" (rem (:shot/distance action) 12)  "\", " (.toFixed (:shot/angle action) 4) "tr")]])))
+        (str (quot (:shot/distance action) 12) "'" (rem (:shot/distance action) 12)  "\", " (.toFixed (:shot/angle action) 3) "tr")]
+       (when datetime
+         [:tspan
+          {:x x :dx (if right-side? -15 15) :y y :dy 40}
+          (second (string/split (.toDateString datetime) #" " 2))])])))
 
 
 (defn sector-information
   [sector-hovered? sector-info]
   (when @sector-hovered?
-    (let [{:keys [pps shots]
-           :or {pps ##NaN shots 0}} @sector-info
+    (let [{total-shots :shots total-pts :pts} (<sub [::subs/shot-data])
+          {:keys [pps shots pts]
+           :or {pps ##NaN shots 0 pts 0}} @sector-info
           [_ court-y] court-dimensions]
       [:text
        [:tspan
-        {:x 10 :y (- court-y 30)}
+        {:x 10 :y (- court-y 50)}
         (str "PPS: " (.toFixed pps 2))]
        [:tspan
+        {:x 10 :y (- court-y 30)}
+        (str "Shots: " shots " (" (.toFixed (* 100 (/ shots total-shots)) 1) "%)")]
+       [:tspan
         {:x 10 :y (- court-y 10)}
-        (str "Shots: " shots)]])))
-
-
-(defn arc
-  ([distance]
-   (arc {} distance))
-  ([attrs distance]
-   (let [[hoop-x hoop-y] hoop-coordinates
-         x-start (- hoop-x distance)
-         [dx dy] [(* 2 distance) 0]
-         [rx ry] [distance distance]
-         d (string/join " "
-                        [\M x-start 0
-                         \l 0 hoop-y
-                         \a rx ry 0 0 0 dx dy
-                         \l 0 (- hoop-y)
-                         \Z])]
-     [:path (assoc attrs
-                   :d d)])))
+        (str "Points: " pts " (" (.toFixed (* 100 (/ pts total-pts)) 1) "%)")]])))
 
 
 (defn cos-turns
   [turns]
   (Math/cos (* 2 Math/PI turns)))
 
+
 (defn sin-turns
   [turns]
   (Math/sin (* 2 Math/PI turns)))
 
 
-(defn partial-arc
-  ([min-angle max-angle distance]
-   (partial-arc {} min-angle max-angle distance))
-  ([attrs min-angle max-angle distance]
+(defn draw-sector
+  ([sector]
+   (draw-sector {} sector))
+  ([attrs {:keys [max-distance min-angle max-angle]}]
    (let [[hoop-x hoop-y] hoop-coordinates
-         [min-x min-y] [(* distance (sin-turns min-angle)) (* distance (cos-turns min-angle))]
-         [max-x max-y] [(* distance (sin-turns max-angle)) (* distance (cos-turns max-angle))]
-         d (string/join " " [\M hoop-x hoop-y
-                             \l min-x min-y
-                             \a distance distance 0 0 0 (- max-x min-x) (- max-y min-y)
-                             \Z])]
-     [:path (assoc attrs
-                   :d d)])))
+         min-y (- hoop-y 24)
+         [min-dx min-dy] [(* max-distance (sin-turns min-angle)) (* max-distance (cos-turns min-angle))]
+         [arc-x arc-y] [(+ hoop-x (* max-distance (sin-turns (min max-angle 0.25))))
+                        (+ hoop-y (* max-distance (cos-turns (min max-angle 0.25))))]
+         d (string/join " "
+                        (flatten
+                         [(if (= min-angle -0.5)
+                            [\M hoop-x min-y
+                             \l (- max-distance) 0
+                             \l 0 (- hoop-y min-y)]
+                            [\M hoop-x hoop-y
+                             \l min-dx min-dy])
+                          \A max-distance max-distance 0 0 0 arc-x arc-y
+                          (if (= max-angle 0.5)
+                            [\L (+ hoop-x max-distance) min-y
+                             \L hoop-x min-y
+                             \Z]
+
+                            [\L hoop-x hoop-y
+                             \Z])]))]
+     [:path (assoc attrs :d d)])))
+
+
+(defn %->color
+  [percent]
+  (let [grayscale (Math/round (* 255 percent))]
+    (str "rgb(" grayscale ", " grayscale ", " grayscale ")")))
 
 
 (defn pps->color
   [pps]
-  (let [max-pps 3
-        grayscale (Math/round (* 255 (/ (- max-pps pps) max-pps)))]
-    (str "rgb(" grayscale ", " grayscale ", " grayscale ")")))
+  (let [[min-pps max-pps] [0.4 2]
+        effective-pps (max min-pps (min pps max-pps))]
+    (%->color (/ (- max-pps effective-pps)
+                 (- max-pps min-pps)))))
+
+
+(defn freq->color
+  [percent]
+  (let [max-percent 0.3
+        effective-percent (min percent max-percent)]
+    (%->color (- 1 (/ effective-percent
+                      max-percent)))))
 
 
 (defn shot-chart
@@ -744,42 +760,49 @@
   (let [hovered? (reagent/atom false)
         shot-info (reagent/atom {})
         sector-info (reagent/atom {})
-        sector-hovered? (reagent/atom false)]
+        sector-hovered? (reagent/atom false)
+        {total-pts :pts total-shots :shots} (<sub [::subs/shot-data])
+        zone-by (<sub [::subs/zone-by])]
     [court
      {:id "shot-chart"
       :scale 0.8}
-     [:g {:stroke-width 0.5 :stroke "black"}
-      (let [sector-pps-map (->> (<sub [::subs/pps-by-sector])
-                                (map (fn [{:keys [sector pps shots]}]
-                                       [sector {:pps pps
-                                                :shots shots}]))
-                                (into {}))]
-        (for [{:keys [max-distance] :as sector} (sort-by :max-distance > (<sub [::subs/sectors]))]
-          (let [sector-pps (get sector-pps-map sector)
-                pps (get-in sector-pps-map [sector :pps] 0)
-                {:keys [shots]
-                 :or {shots 0}} sector-pps]
-            ^{:key (gensym "key-")}
-            [arc {:on-mouse-enter (fn [e]
-                                    (reset! sector-info
-                                            {:pps pps
-                                             :shots shots})
-                                    (reset! sector-hovered? true))
-                  :on-mouse-leave #(reset! sector-hovered? false)
-                  :fill (pps->color pps)} max-distance])))]
-     (for [{:keys [game team action pts]} (<sub [::subs/shots])]
-       ^{:key (gensym "key-")}
-       [shot {:on-mouse-enter (fn [x y]
-                                (fn [e]
-                                  (reset! shot-info
-                                          {:game game
-                                           :team team
-                                           :action action
-                                           :x x
-                                           :y y})
-                                  (reset! hovered? true)))
-              :on-mouse-leave #(reset! hovered? false)}
-        action pts])
+     (when (<sub [::subs/show-zones?])
+       [:g {:stroke-width 0.5 :stroke "black"}
+        (let [sector-pps-map (->> (<sub [::subs/shot-data-by-sector])
+                                  (map (juxt :sector #(dissoc % :sector)))
+                                  (into {}))]
+          (for [sector (sort-by :max-distance > (<sub [::subs/sectors]))]
+            (let [{:keys [pps shots pts]
+                   :or {pps 0 shots 0 pts 0}
+                   :as sector-data} (get sector-pps-map sector)]
+              ^{:key (gensym "key-")}
+              [draw-sector {:on-mouse-enter (fn [e]
+                                              (reset! sector-info
+                                                      sector-data)
+                                              (reset! sector-hovered? true))
+                            :on-mouse-leave #(reset! sector-hovered? false)
+                            :fill
+                            (case zone-by
+                              :pps (pps->color pps)
+                              :freq (freq->color (/ shots (or total-shots 1)))
+                              :pts (freq->color (/ pts (or total-pts 1)))
+                              "red")}
+               sector])))])
+     (when (<sub [::subs/show-shots?])
+       [:g
+        (for [{:keys [game team action pts]} (<sub [::subs/shots])]
+          ^{:key (gensym "key-")}
+          [shot {:on-mouse-enter (fn [x y]
+                                   (fn [e]
+                                     (reset! shot-info
+                                             {:game game
+                                              :team team
+                                              :action action
+                                              :x x
+                                              :y y})
+                                     (reset! hovered? true)))
+                 :on-mouse-leave #(reset! hovered? false)}
+           action pts])])
      [shot-information hovered? shot-info]
      [sector-information sector-hovered? sector-info]]))
 
@@ -807,38 +830,44 @@
   []
   (let [teams          (sort-by :team/name (<sub [::subs/teams]))
         selections     (<sub [::subs/shot-chart-teams])]
-    [selection-list
-     :src (at)
-     :height     "160px"
-     :model          selections
-     :choices        teams
-     :label-fn       :team/name
-     :id-fn :db/id
-     :multi-select?  false
-     :on-change      (fn [sel]
-                       (re-frame/dispatch
-                        [::events/set-shot-chart-teams sel]))]))
+    [:div
+     [selection-list
+      :src (at)
+      :height     "160px"
+      :model          selections
+      :choices        teams
+      :label-fn       :team/name
+      :id-fn :db/id
+      :multi-select?  false
+      :on-change      (fn [sel]
+                        (re-frame/dispatch
+                         [::events/set-shot-chart-teams sel]))]
+     [button {:class "px-2 py-1"
+              :on-click #(re-frame/dispatch [::events/set-shot-chart-teams #{}])} "Clear All"]]))
 
 
 (defn analysis-games-selector
   []
   (let [games (sort-by :game/datetime (<sub [::subs/games]))
         selections (<sub [::subs/shot-chart-games])]
-    [selection-list
-     :src (at)
+    [:div
+     [selection-list
+      :src (at)
            ;; :width          "391px"      ;; manual hack for width of variation panel A+B 1024px
-     :height     "160px"       ;; based on compact style @ 19px x 5 rows
-     :model          selections
-     :choices        games
-     :label-fn       (fn [{:game/keys [home-team away-team datetime]}]
-                       (str (:team/name away-team) " at " (:team/name home-team)
-                            ", " (when datetime
-                                   (.toDateString datetime))))
-     :id-fn :db/id
-     :multi-select?  true
-     :on-change      (fn [sel]
-                       (re-frame/dispatch
-                        [::events/set-shot-chart-games sel]))]))
+      :height     "160px"       ;; based on compact style @ 19px x 5 rows
+      :model          selections
+      :choices        games
+      :label-fn       (fn [{:game/keys [home-team away-team datetime]}]
+                        (str (:team/name away-team) " at " (:team/name home-team)
+                             ", " (when datetime
+                                    (.toDateString datetime))))
+      :id-fn :db/id
+      :multi-select?  true
+      :on-change      (fn [sel]
+                        (re-frame/dispatch
+                         [::events/set-shot-chart-games sel]))]
+     [button {:class "px-2 py-1"
+              :on-click #(re-frame/dispatch [::events/set-shot-chart-games #{}])} "Clear All"]]))
 
 
 (defn analysis-stats
@@ -887,14 +916,51 @@
           [:p (str "DefRtg: " (.toFixed defrtg 2))]]))]))
 
 
+(defn dropdown
+  [& {:keys [choices model on-change]}]
+  [:select {:on-change #(on-change (-> % .-target .-value keyword))
+            :value model}
+   (for [{:keys [id label]} choices]
+     [:option {:key id :value id}
+      label])])
+
+
+(defn analysis-chart-settings
+  []
+  [:div.flex.gap-2
+   [button
+    {:class "px-2 py-1"
+     :selected? (<sub [::subs/show-shots?])
+     :on-click #(re-frame/dispatch [::events/toggle-show-shots?])}
+    "Show shots?"]
+   [button
+    {:class "px-2 py-1"
+     :selected? (<sub [::subs/show-zones?])
+     :on-click #(re-frame/dispatch [::events/toggle-show-zones?])}
+    "Show zones?"]
+   (when (<sub [::subs/show-zones?])
+     [dropdown
+      :choices [{:id :pps
+                 :label "Points per shot"}
+                {:id :freq
+                 :label "Shot frequency"}
+                {:id :pts
+                 :label "Total points"}]
+      :model (<sub [::subs/zone-by])
+      :on-change (fn [id]
+                   (re-frame/dispatch [::events/zone-by id]))])])
+
+
 (defn analysis
   []
-  [:div.flex.flex-col.items-start
+  [:div.flex.flex-col.items-start.gap-2
+   [analysis-chart-settings]
    [:div.flex.gap-2
     [shot-chart]
     [analysis-stats]]
-   [analysis-players-selector]
-   [analysis-offense-selector]
+   [:div.flex.gap-2
+    [analysis-players-selector]
+    [analysis-offense-selector]]
    [:div.flex
     [analysis-teams-selector]
     [analysis-games-selector]]])

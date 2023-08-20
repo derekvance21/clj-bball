@@ -2,7 +2,10 @@
 
 
 (def init-db
-  {:init {:init/period 1}})
+  {:init {:init/period 1}
+   :shot-chart {:show-zones? true
+                :show-shots? true
+                :zone-by :pps}})
 
 
 (defn reboundable?
