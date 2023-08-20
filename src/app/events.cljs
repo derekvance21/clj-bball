@@ -66,7 +66,8 @@
    ;; so do you:
    ;; 1. only send over game transaction maps and then transact them in the background?
    ;; 2. do something else?
-   {::fx/fetch {:resource "http://localhost:8900/db"
+   {:db db/init-db
+    ::fx/fetch {:resource "http://localhost:8900/db"
                 :options {:method :GET}
                 :on-success (fn [text]
                               (let [remote-db (try
@@ -468,3 +469,17 @@
  (fn [db [_ games-set]]
    (assoc-in db [:shot-chart :games] games-set)))
 
+(re-frame/reg-event-db
+ ::toggle-show-shots?
+ (fn [db _]
+   (update-in db [:shot-chart :show-shots?] not)))
+
+(re-frame/reg-event-db
+ ::toggle-show-zones?
+ (fn [db _]
+   (update-in db [:shot-chart :show-zones?] not)))
+
+(re-frame/reg-event-db
+ ::zone-by
+ (fn [db [_ type]]
+   (assoc-in db [:shot-chart :zone-by] type)))

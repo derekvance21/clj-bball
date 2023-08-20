@@ -891,38 +891,103 @@
          (< effective-distance max-distance))))
 
 
-(defn make-sectors
+(defn make-arc-sectors
   [breakpoints]
   (let [sorted (sort breakpoints)]
-    (map #(hash-map :min-distance %1 :max-distance %2) sorted (rest sorted))))
+    (map #(hash-map :min-distance %1 :max-distance %2
+                    :min-angle -0.5 :max-angle 0.5) (into [0] sorted) sorted)))
 
 
-(def standard-sectors (make-sectors [0 36 96 (+ (* 13 12) 9) (+ (* 19 12) 10) 300 (* 30 12)]))
+(defn make-angles
+  [portions]
+  (flatten [-0.5
+            (->>
+             (iterate #(+ % (/ 0.5 portions)) -0.25)
+             (take-while #(<= (.toFixed % 2) 0.25))
+             (drop 1)
+             (drop-last 1))
+            0.5]))
+
+
+(defn make-sectors
+  [distance-angles-map]
+  (let [distances (sort (keys distance-angles-map))
+        distance-sectors (map #(hash-map :min-distance %1 :max-distance %2)
+                              (into [0] distances)
+                              distances)]
+    (mapcat (fn [{:keys [max-distance] :as distance-sector}]
+              (let [angles (get distance-angles-map max-distance)]
+                (map (fn [min-angle max-angle]
+                       (assoc distance-sector
+                              :min-angle min-angle
+                              :max-angle max-angle))
+                     angles
+                     (rest angles))))
+            distance-sectors)))
+
 
 (re-frame/reg-sub
  ::sectors
  (fn [_ _]
-   (make-sectors (map #(* % 24) (range 0 15)))))
+   #_(make-arc-sectors [36 84 144 (+ 10 (* 19 12)) (* 30 12)])
+   (make-sectors {36 [-0.5 -0.125 0.125 0.5]
+                  84 [-0.5 -0.125 0.125 0.5]
+                  144 [-0.5 -0.125 0.125 0.5]
+                  (+ 10 (* 19 12)) (make-angles 3)
+                  ;(+ 9 (* 23 12)) [-0.5 -0.2 -0.083333 0.083333 0.2 0.5] #_(make-angles 5)
+                  (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]})))
 
 
 (re-frame/reg-sub
- ::pps-by-sector
+ ::shot-data-by-sector
  :<- [::datascript-db]
  :<- [::filters]
  :<- [::sectors]
  (fn [[db filters sectors] _]
-   (let [sector-pps-query '[:find ?sector (avg ?pts) (count-distinct ?a)
-                            :keys sector pps shots
-                            :in $ % [?sector ...] in-sector?
-                            ;; :with ?a
-                            :where
-                            (actions ?g ?t ?p ?a)
-                            [?a :action/type :action.type/shot]
-                            [?a :shot/angle ?angle]
-                            [?a :shot/distance ?distance]
-                            [(in-sector? ?sector ?angle ?distance)]
-                            (pts ?a ?pts)]]
-     (q+ sector-pps-query filters db query/rules
+   (let [sector-data-query '[:find ?sector (avg ?pts) (count-distinct ?a) (sum ?pts)
+                             :keys sector pps shots pts
+                             :in $ % [?sector ...] in-sector?
+                             :where
+                             (actions ?g ?t ?p ?a)
+                             [?a :action/type :action.type/shot]
+                             [?a :shot/angle ?angle]
+                             [?a :shot/distance ?distance]
+                             [(in-sector? ?sector ?angle ?distance)]
+                             (pts ?a ?pts)]]
+     (q+ sector-data-query filters db query/rules
          sectors
          in-sector?))))
+
+
+(re-frame/reg-sub
+ ::shot-data
+ :<- [::datascript-db]
+ :<- [::filters]
+ (fn [[db filters] _]
+   (let [shot-data-query '[:find [(count-distinct ?a) (sum ?pts)]
+                             :keys shots pts
+                             :in $ %
+                             :where
+                             (actions ?g ?t ?p ?a)
+                             [?a :action/type :action.type/shot]
+                             (pts ?a ?pts)]]
+     (q+ shot-data-query filters db query/rules))))
+
+
+(re-frame/reg-sub
+ ::show-shots?
+ (fn [db _]
+   (get-in db [:shot-chart :show-shots?])))
+
+
+(re-frame/reg-sub
+ ::show-zones?
+ (fn [db _]
+   (get-in db [:shot-chart :show-zones?])))
+
+
+(re-frame/reg-sub
+ ::zone-by
+ (fn [db _]
+   (get-in db [:shot-chart :zone-by] :pps)))
 
