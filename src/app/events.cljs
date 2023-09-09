@@ -483,3 +483,8 @@
  ::zone-by
  (fn [db [_ type]]
    (assoc-in db [:shot-chart :zone-by] type)))
+
+(re-frame/reg-event-db
+ ::set-active-panel
+ (fn [db [_ panel]]
+   (assoc db :active-panel panel)))

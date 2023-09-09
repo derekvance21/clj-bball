@@ -2,6 +2,7 @@
 
 ## Todo
 
+- [ ] exclude button in the team selector. Doing select all then unselect given teams isn't great
 - [ ] here was a scenario - shooting foul, then technical. So you want to log the fouled shot and free throws. But then after you do so, you have to get the possession back to the same team to shoot the technicals. So which goes first. Also does the tech'ee get a turnover?
 - [ ] bug where, if you have in your db teams already with :team/name and you try to create new game, you can't set the team name from home/away to an already existing :team/name
 - [ ] free throw lane violation? Rn, counts as a 'miss', but really it's something else

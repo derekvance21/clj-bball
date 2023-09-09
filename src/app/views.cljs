@@ -572,18 +572,6 @@
           "Add"])]]]))
 
 
-(defn game-selector
-  []
-  [:select
-   {:on-change #(re-frame/dispatch [::events/set-game (-> % .-target .-value parse-long)])
-    :value (or (<sub [::subs/game-id]) "")}
-   (for [game-id (<sub [::subs/game-ids])]
-     [:option
-      {:key game-id
-       :value game-id}
-      (str game-id)])])
-
-
 (defn new-game
   []
   [:button.bg-red-500.hover:bg-red-700.text-white.font-bold.py-1.px-2.rounded-full
@@ -617,10 +605,7 @@
   []
   [:div.flex.gap-2
    [new-game]
-   [submit-game]
-   [:button {:type "button"
-             :on-click load-remote-games}
-    "Add Remote Games"]])
+   [submit-game]])
 
 
 (defn game-stats
@@ -634,7 +619,7 @@
   [{:keys [on-mouse-enter on-mouse-leave]} action pts]
   (let [{:shot/keys [angle distance]} action
         [x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
-        icon-size 5
+        icon-size 4
         color (get {0 "#c0c0c0" #_"cornsilk"
                     1 "#ace1af"
                     2 "#3cd070"
@@ -646,7 +631,7 @@
       {:r icon-size :cx x :cy y
        :fill-opacity 0
        :stroke color
-       :stroke-width 2
+       :stroke-width 1
        :on-mouse-enter (on-mouse-enter x y)
        :on-mouse-leave on-mouse-leave}]]))
 
@@ -733,26 +718,75 @@
      [:path (assoc attrs :d d)])))
 
 
-(defn %->color
-  [percent]
-  (let [grayscale (Math/round (* 255 percent))]
-    (str "rgb(" grayscale ", " grayscale ", " grayscale ")")))
+(defn pallete->color
+  [pallete x]
+  (get pallete (->> (keys pallete)
+                    (filter #(< x %))
+                    (reduce min))
+       (second (reduce max pallete))))
+
+
+(def orange-purple-divergent
+  ["#dd7d11"
+   "#e5903f"
+   "#eca363"
+   "#f1b686"
+   "#f3c9a9"
+   "#f3ddcc"
+   "#dcd8ee"
+   "#c8c0ec"
+   "#b2a8e9"
+   "#9b91e5"
+   "#827be2"
+   "#6665de"])
+
+
+(def red-green-divergent
+  ["#d43d51"
+   "#e0636b"
+   "#eb8387"
+   "#f3a3a4"
+   "#f9c2c1"
+   "#fde0e0"
+   "#dbebe5"
+   "#b7d7cc"
+   "#93c3b3"
+   "#6eaf9a"
+   "#469b83"
+   "#00876c"])
+
+(def purple-single
+  ["#edf2ff"
+   "#d2d9ec"
+   "#b9c1d9"
+   "#9fa9c7"
+   "#8792b4"
+   "#6f7ba2"
+   "#576590"
+   "#40507e"
+   "#273c6d"])
 
 
 (defn pps->color
   [pps]
-  (let [[min-pps max-pps] [0.4 2]
-        effective-pps (max min-pps (min pps max-pps))]
-    (%->color (/ (- max-pps effective-pps)
-                 (- max-pps min-pps)))))
+  (if (or (nil? pps) (NaN? pps))
+    "white"
+    (pallete->color
+     (zipmap (iterate #(+ % 0.1) 0.5 #_0.45)
+             red-green-divergent)
+     pps)))
 
 
 (defn freq->color
   [percent]
-  (let [max-percent 0.3
-        effective-percent (min percent max-percent)]
-    (%->color (- 1 (/ effective-percent
-                      max-percent)))))
+  (if (or (nil? percent) (NaN? percent) (zero? percent))
+    "white"
+    (pallete->color
+     (zipmap (let [step 0.015]
+               (iterate #(+ % step) step))
+             purple-single)
+
+     percent)))
 
 
 (defn shot-chart
@@ -773,7 +807,7 @@
                                   (into {}))]
           (for [sector (sort-by :max-distance > (<sub [::subs/sectors]))]
             (let [{:keys [pps shots pts]
-                   :or {pps 0 shots 0 pts 0}
+                   :or {shots 0 pts 0}
                    :as sector-data} (get sector-pps-map sector)]
               ^{:key (gensym "key-")}
               [draw-sector {:on-mouse-enter (fn [e]
@@ -838,12 +872,14 @@
       :choices        teams
       :label-fn       :team/name
       :id-fn :db/id
-      :multi-select?  false
+      :multi-select?  true
       :on-change      (fn [sel]
                         (re-frame/dispatch
                          [::events/set-shot-chart-teams sel]))]
      [button {:class "px-2 py-1"
-              :on-click #(re-frame/dispatch [::events/set-shot-chart-teams #{}])} "Clear All"]]))
+              :on-click #(re-frame/dispatch [::events/set-shot-chart-teams #{}])} "Clear All"]
+     [button {:class "px-2 py-1"
+              :on-click #(re-frame/dispatch [::events/set-shot-chart-teams (set (map :db/id teams))])} "Select All"]]))
 
 
 (defn analysis-games-selector
@@ -954,6 +990,9 @@
 (defn analysis
   []
   [:div.flex.flex-col.items-start.gap-2
+   [button {:class "px-2 py-1"
+            :on-click load-remote-games}
+    "Add Remote Games"]
    [analysis-chart-settings]
    [:div.flex.gap-2
     [shot-chart]
@@ -966,11 +1005,31 @@
     [analysis-games-selector]]])
 
 
-(defn main-panel
+(defn game
   []
-  [:div.container.mx-4.my-4.flex.flex-col.gap-4
-   {:class "w-11/12"}
+  [:div
    [game-input]
    [game-stats]
-   [game-controls]
-   [analysis]])
+   [game-controls]])
+
+
+(defn main-panel
+  []
+  (let [active-panel (<sub [::subs/active-panel])
+        game? (= active-panel :game)
+        analysis? (= active-panel :analysis)]
+    [:div.container.mx-4.my-4.flex.flex-col.gap-4
+     {:class "w-11/12"}
+     [:div.flex.gap-2
+      [button {:class "px-2 py-1"
+               :selected? game?
+               :on-click #(re-frame/dispatch [::events/set-active-panel :game])}
+       "Game"]
+      [button {:class "px-2 py-1"
+               :selected? analysis?
+               :on-click #(re-frame/dispatch [::events/set-active-panel :analysis])}
+       "Analysis"]]
+     (cond
+       game? [game]
+       analysis? [analysis]
+       :else nil)]))

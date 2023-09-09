@@ -964,8 +964,8 @@
  :<- [::datascript-db]
  :<- [::filters]
  (fn [[db filters] _]
-   (let [shot-data-query '[:find [(count-distinct ?a) (sum ?pts)]
-                             :keys shots pts
+   (let [shot-data-query '[:find [(count-distinct ?a) (sum ?pts) (avg ?pts)]
+                             :keys shots pts pps
                              :in $ %
                              :where
                              (actions ?g ?t ?p ?a)
@@ -991,3 +991,8 @@
  (fn [db _]
    (get-in db [:shot-chart :zone-by] :pps)))
 
+
+(re-frame/reg-sub
+ ::active-panel
+ (fn [db _]
+   (get db :active-panel)))
