@@ -24,3 +24,13 @@
        (.then (fn [text] (on-success text)))
        (.catch (fn [error] (on-failure error))))))
 
+
+(re-frame/reg-fx
+ ::download
+ (fn [{:keys [filename data]}]
+   (let [url (.createObjectURL js/URL (js/File. [data] filename))]
+     (doto (.createElement js/document "a")
+       (.setAttribute "download" filename)
+       (.setAttribute "href" url)
+       (.click))
+     (.revokeObjectURL js/URL url))))

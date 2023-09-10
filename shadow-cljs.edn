@@ -10,4 +10,5 @@
                                                            day8.re-frame.tracing.trace-enabled? true}
                                          :externs ["datascript/externs.js"]}}
                 :release {:compiler-options {:externs ["datascript/externs.js"]
-                                             :optimizations :advanced}}}}}
+                                             :optimizations :advanced}
+                          :closure-defines {app.env/URL "/"}}}}}

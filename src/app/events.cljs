@@ -8,7 +8,11 @@
    [app.interceptors :as interceptors]
    [cljs.reader :as reader]
    [datascript.core :as d]
-   [bball.game-utils :as game-utils]))
+   [bball.game-utils :as game-utils]
+   [app.env :as env]
+   [clojure.pprint :as pprint]
+   [clojure.string :as string]))
+
 
 (def blaine-games
   ["2022-12-06-Blaine-Bellingham.edn"
@@ -30,15 +34,13 @@
    "2023-02-11-Lynden-Christian-Blaine.edn"
    "2023-02-14-Blaine-Nooksack-Valley.edn"
    "2023-02-18-Northwest-Blaine.edn"
-   "2023-02-25-Zillah-Blaine.edn"
-
-   ])
+   "2023-02-25-Zillah-Blaine.edn"])
 
 
 (re-frame/reg-event-fx
  ::load-remote-game
  (fn [_ [_ remote-file]]
-   {::fx/fetch {:resource (str "http://localhost:8900/games/" remote-file)
+   {::fx/fetch {:resource (str env/URL "/games/" remote-file)
                 :options {:method :GET}
                 :on-success (fn [text]
                               (let [tx-map (try
@@ -67,38 +69,9 @@
    ;; 1. only send over game transaction maps and then transact them in the background?
    ;; 2. do something else?
    {:db db/init-db
-    ::fx/fetch {:resource "http://localhost:8900/db"
-                :options {:method :GET}
-                :on-success (fn [text]
-                              (let [remote-db (try
-                                                (reader/read-string text)
-                                                (catch js/Object e
-                                                  (.error js/console e)))]
-                                (re-frame/dispatch (if (d/db? remote-db)
-                                                     [::initialize-remote remote-db]
-                                                     [::initialize-local]))))
-                :on-failure (fn [error]
-                              (.error js/console error)
-                              (re-frame/dispatch [::initialize-local]))}}))
-
-
-(re-frame/reg-event-fx
- ::initialize-remote
- (fn [{:keys [db]} [_ remote-db]]
-   (merge
-    {:fx [[::fx/ds remote-db]
-          [:dispatch [::transact-local-storage-game]]]}
-    (when-some [game-id (d/q '[:find ?g . :where [?g :game/possession]] remote-db)]
-      {:db (assoc db
-                  :game-id game-id
-                  :players (datascript/get-players-map remote-db game-id))}))))
-
-
-(re-frame/reg-event-fx
- ::initialize-local
- (fn [_ _]
-   {:fx [[::fx/ds (datascript/empty-db)]
-         [:dispatch [::transact-local-storage-game]]]}))
+    :fx (into [[::fx/ds (datascript/empty-db)]
+               [:dispatch [::transact-local-storage-game]]]
+              (map #(vector :dispatch [::load-remote-game %]) blaine-games))}))
 
 
 ;; TODO - there needs to be much better error checking here
@@ -113,7 +86,9 @@
      (let [{:keys [db-after tempids]} (d/with ds [(assoc ls-game :db/id -1)])
            game-id (get tempids -1)
            players (datascript/get-players-map db-after game-id)]
-       {:db (assoc db :game-id game-id :players players)
+       {:db (cond-> db
+              true (assoc :game-id game-id :players players)
+              (seq (:game/possession ls-game)) (dissoc :init))
         ::fx/ds db-after})
      (when-not (contains? db :game-id)
        {:fx [[:dispatch [::start-new-game]]]}))))
@@ -439,7 +414,7 @@
  [cofx/inject-ds]
  (fn [{:keys [ds db]}]
    {::fx/fetch
-    {:url "http://localhost:8900/db"
+    {:url (str env/URL "/db")
      :method "POST"
      :body [(game-utils/datascript-game->tx-map ds (:game-id db))]
      :on-success (fn [text]
@@ -488,3 +463,19 @@
  ::set-active-panel
  (fn [db [_ panel]]
    (assoc db :active-panel panel)))
+
+
+(re-frame/reg-event-fx
+ ::download-game
+ [cofx/inject-ds]
+ (fn [{:keys [ds db]} _]
+   (let [{:keys [game-id]} db
+         {:game/keys [home-team away-team] :as game} (game-utils/datascript-game->tx-map ds game-id)
+         yyyy-mm-dd (first (string/split (.toISOString (js/Date.)) #"T"))
+         filename (str yyyy-mm-dd
+                       "-" (:team/name home-team)
+                       "-" (:team/name away-team)
+                       ".edn")
+         data (with-out-str (pprint/pprint game))]
+     {::fx/download {:filename filename
+                     :data data}})))
