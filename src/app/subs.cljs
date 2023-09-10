@@ -929,13 +929,35 @@
 (re-frame/reg-sub
  ::sectors
  (fn [_ _]
-   #_(make-arc-sectors [36 84 144 (+ 10 (* 19 12)) (* 30 12)])
-   (make-sectors {36 [-0.5 -0.125 0.125 0.5]
-                  84 [-0.5 -0.125 0.125 0.5]
-                  144 [-0.5 -0.125 0.125 0.5]
-                  (+ 10 (* 19 12)) (make-angles 3)
+   ;; arcs
+   #_(make-arc-sectors [36 78 144 (+ 10 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
+   ;; arcs detailed, NBA 3
+   #_(make-arc-sectors [24 42 60 84 108 144 192 (+ 10 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
+   ;; arcs detailed, 3's split in fourths
+   (make-arc-sectors [24 42 60 84 114 150 192 (+ 10 (* 19 12)) (* 22 12) (* 24.5 12) (* 27 12) (* 30 12)])
+
+   #_(make-sectors
+    ;; detailed
+    {36 [-0.5 -0.125 0.125 0.5]
+     78 [-0.5 -0.125 0.125 0.5]
+     144 [-0.5 -0.125 0.125 0.5]
+     (+ 10 (* 19 12)) (make-angles 3)
                   ;(+ 9 (* 23 12)) [-0.5 -0.2 -0.083333 0.083333 0.2 0.5] #_(make-angles 5)
-                  (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]})))
+     (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]}
+    ;; detailed with NBA 3
+    #_(make-sectors
+       {36 [-0.5 -0.125 0.125 0.5]
+        78 [-0.5 -0.125 0.125 0.5]
+        144 [-0.5 -0.125 0.125 0.5]
+        (+ 10 (* 19 12)) (make-angles 3)
+        (+ 9 (* 23 12)) [-0.5 -0.2 -0.083333 0.083333 0.2 0.5] #_(make-angles 5)
+        (* 30 12) [-0.5 -0.083333 0.083333 0.5]})
+    ;; fat bands
+    #_(make-sectors
+       {48 [-0.5 -0.125 0.125 0.5]
+        132 [-0.5 -0.125 0.125 0.5]
+        (+ 10 (* 19 12)) (make-angles 3)
+        (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]}))))
 
 
 (re-frame/reg-sub
@@ -965,12 +987,12 @@
  :<- [::filters]
  (fn [[db filters] _]
    (let [shot-data-query '[:find [(count-distinct ?a) (sum ?pts) (avg ?pts)]
-                             :keys shots pts pps
-                             :in $ %
-                             :where
-                             (actions ?g ?t ?p ?a)
-                             [?a :action/type :action.type/shot]
-                             (pts ?a ?pts)]]
+                           :keys shots pts pps
+                           :in $ %
+                           :where
+                           (actions ?g ?t ?p ?a)
+                           [?a :action/type :action.type/shot]
+                           (pts ?a ?pts)]]
      (q+ shot-data-query filters db query/rules))))
 
 
