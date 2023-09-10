@@ -229,7 +229,7 @@
         ft-bench-players (<sub [::subs/team-players-on-bench-ft team-id])
         sub? (<sub [::subs/sub?])
         ft? (<sub [::subs/ft?])]
-    [:div.border.border-2.rounded-md.p-2.flex.flex-col.gap-2
+    [:div.border.border-2.rounded-md.px-2.py-1.flex.flex-col.gap-1
      {:class (if offense? "border-blue-500" "border-transparent")}
      [team-button team]
      (if offense?
@@ -270,7 +270,7 @@
   []
   (let [[team1 team2] (<sub [::subs/game-teams])
         sub? (<sub [::subs/sub?])]
-    [:div.flex.flex-col.gap-2
+    [:div.flex.flex-col.gap-1
      [team-players-input team1]
      [button {:class "px-2 py-1"
               :disabled? false
@@ -493,10 +493,10 @@
 
 (defn submit-game
   []
-  [:button.self-start.bg-purple-700.text-white.font-bold.py-1.px-2.rounded-full
+  [:button.self-start.bg-indigo-500.hover:bg-indigo-600.text-white.font-bold.py-1.px-2.rounded-full
    {:type "button"
-    :on-click #(re-frame/dispatch [::events/submit-game])}
-   "Submit"])
+    :on-click #(re-frame/dispatch [::events/download-game])}
+   "Download"])
 
 
 (defn game-controls
@@ -508,9 +508,11 @@
 
 (defn game-stats
   []
-  [:div.flex.flex-col.flex-1.gap-4
-   [stats]
-   [possessions]])
+  [:div.flex.justify-between.gap-2
+   [possessions]
+   [:div.flex-1
+    [stats]]
+   ])
 
 
 (defn game

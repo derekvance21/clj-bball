@@ -369,18 +369,9 @@
                    (re-frame/dispatch [::events/zone-by id]))])])
 
 
-(defn load-remote-games
-  []
-  (doseq [game events/blaine-games]
-    (re-frame/dispatch [::events/load-remote-game game])))
-
-
 (defn analysis
   []
   [:div.flex.flex-col.items-start.gap-2
-   [button {:class "px-2 py-1"
-            :on-click load-remote-games}
-    "Add Remote Games"]
    [analysis-chart-settings]
    [:div.flex.gap-2
     [shot-chart]

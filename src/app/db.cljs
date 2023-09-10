@@ -5,7 +5,8 @@
   {:init {:init/period 1}
    :shot-chart {:show-zones? true
                 :show-shots? true
-                :zone-by :pps}})
+                :zone-by :pps}
+   :active-panel :game})
 
 
 (defn reboundable?

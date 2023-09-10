@@ -13,7 +13,7 @@
   (let [active-panel (<sub [::subs/active-panel])
         game? (= active-panel :game)
         analysis? (= active-panel :analysis)]
-    [:div.container.mx-4.my-4.flex.flex-col.gap-4
+    [:div.container.m-2.flex.flex-col.gap-2
      {:class "w-11/12"}
      [:div.flex.gap-2
       [button {:class "px-2 py-1"
