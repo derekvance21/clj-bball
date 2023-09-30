@@ -34,7 +34,8 @@
    "2023-02-11-Lynden-Christian-Blaine.edn"
    "2023-02-14-Blaine-Nooksack-Valley.edn"
    "2023-02-18-Northwest-Blaine.edn"
-   "2023-02-25-Zillah-Blaine.edn"])
+   "2023-02-25-Zillah-Blaine.edn"
+   "2023-03-02-Blaine-Overlake.edn"])
 
 
 (re-frame/reg-event-fx
@@ -99,7 +100,10 @@
  [cofx/inject-ds]
  (fn [{:keys [ds db]} _]
    (let [game-tempid -1
-         start-tx-map [{:db/id game-tempid :game/home-team {:team/name "Home"} :game/away-team {:team/name "Away"}}]
+         start-tx-map [{:db/id game-tempid
+                        :game/home-team {:team/name "Home"}
+                        :game/away-team {:team/name "Away"}
+                        :game/datetime (js/Date.)}]
          {:keys [db-after tempids]} (d/with ds start-tx-map)
          game-id (get tempids game-tempid)]
      ;; [console warning] re-frame: ":fx" effect should not contain a :db effect
@@ -362,12 +366,16 @@
 (re-frame/reg-event-fx
  ::update-team-name
  [cofx/inject-ds]
- (fn [{:keys [ds]} [_ team-id team-name]]
-   (try
-     ;; db/db-with may error because of upsert conflicts (two teams with the same name)
-     {::fx/ds (d/db-with ds [{:db/id team-id
-                              :team/name team-name}])}
-     (catch js/Object e))))
+ (fn [{:keys [ds db]} [_ team-id team-name]]
+   (let [game-id (:game-id db)
+         {:game/keys [home-team away-team]} (d/pull ds '[{:game/home-team [:db/id]
+                                                          :game/away-team [:db/id]}] game-id)
+         tx (assoc {:db/id game-id}
+                   (condp = team-id
+                     (:db/id home-team) :game/home-team
+                     (:db/id away-team) :game/away-team)
+                   {:team/name team-name})]
+     {::fx/ds (d/db-with ds [tx])})))
 
 
 (re-frame/reg-event-db

@@ -977,7 +977,7 @@
 (re-frame/reg-sub
  ::zone-layout
  (fn [db _]
-   (get-in db [:shot-chart :zone-layout] (:id (first zone-layouts)))))
+   (get-in db [:shot-chart :zone-layout] :0)))
 
 
 (re-frame/reg-sub

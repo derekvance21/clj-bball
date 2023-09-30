@@ -2,6 +2,7 @@
 
 ## Todo
 
+- [ ] send all the games as just a single vector of maps, so the entire thing can just be transacted
 - [ ] select color scheme
 - [ ] select zone layout
 - [ ] exclude button in the team selector. Doing select all then unselect given teams isn't great
