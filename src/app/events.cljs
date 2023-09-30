@@ -460,6 +460,12 @@
    (assoc-in db [:shot-chart :zone-by] type)))
 
 (re-frame/reg-event-db
+ ::zone-layout
+ (fn [db [_ layout-id]]
+   (assoc-in db [:shot-chart :zone-layout] layout-id)))
+
+
+(re-frame/reg-event-db
  ::set-active-panel
  (fn [db [_ panel]]
    (assoc db :active-panel panel)))

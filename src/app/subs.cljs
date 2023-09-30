@@ -846,7 +846,8 @@
  :<- [::action]
  :<- [::players]
  :<- [::team]
- (fn [[action players team] _]
+ :<- [::sub?]
+ (fn [[action players team sub?] _]
    (let [five-players? (->> (vals players)
                             (map :on-court)
                             (every? #(= 5 (count %))))
@@ -855,6 +856,7 @@
           (some? team)
           (some? player)
           (some? type)
+          (not sub?)
           ;; (or (not reboundable?) rebound?) ;; buzzer beaters don't have a rebounder
           ))))
 
@@ -926,38 +928,67 @@
             distance-sectors)))
 
 
+(def zone-layouts
+  [;; arcs detailed, 3's split in fourths
+   {:layout (make-arc-sectors [36 84 144 (+ 10 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
+    :label "Arcs"}
+   #_{:layout (make-arc-sectors [36 66 102 162 (+ 10 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
+      :label "Arcs"}
+     ;; one less arc from arcs detailed, 3's split in thirds
+   {:layout (make-arc-sectors [30 54 78 108 150 192 (+ 10 (* 19 12)) (* 22 12) (* 25.5 12) (* 30 12)])
+    :label "Detailed Arcs"}
+      ;; every two feet to 30 ft
+   {:layout (make-arc-sectors (take-while #(<= % (* 12 30)) (iterate #(+ % 12) 12)))
+    :label "Every Arc"}
+   #_{:layout (make-sectors
+          ;; detailed
+               {36 [-0.5 -0.125 0.125 0.5]
+                78 [-0.5 -0.125 0.125 0.5]
+                144 [-0.5 -0.125 0.125 0.5]
+                (+ 10 (* 19 12)) (make-angles 3)
+                        ;(+ 9 (* 23 12)) [-0.5 -0.2 -0.083333 0.083333 0.2 0.5] #_(make-angles 5)
+                (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]})
+      :label "Less Detailed Sectors"}
+          ;; detailed with NBA 3
+   {:layout (make-sectors
+             {48 [-0.5 -0.125 0.125 0.5]
+              132 [-0.5 -0.125 0.125 0.5]
+              (+ 10 (* 19 12)) (make-angles 3)
+              (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]})
+    :label "Sectors"}
+          ;; fat bands
+   {:layout (make-sectors
+             {36 [-0.5 -0.125 0.125 0.5]
+              78 [-0.5 -0.125 0.125 0.5]
+              144 [-0.5 -0.125 0.125 0.5]
+              (+ 10 (* 19 12)) (make-angles 3)
+              (+ 9 (* 23 12)) [-0.5 -0.2 -0.083333 0.083333 0.2 0.5] #_(make-angles 5)
+              (* 30 12) [-0.5 -0.083333 0.083333 0.5]})
+    :label "Detailed Sectors"}])
+
+
+(re-frame/reg-sub
+ ::zone-layouts
+ (fn [_ _]
+   (map-indexed (fn [idx itm]
+                  (assoc itm :id (keyword (str idx)))) zone-layouts)))
+
+
+(re-frame/reg-sub
+ ::zone-layout
+ (fn [db _]
+   (get-in db [:shot-chart :zone-layout] (:id (first zone-layouts)))))
+
+
 (re-frame/reg-sub
  ::sectors
- (fn [_ _]
-   ;; arcs
-   #_(make-arc-sectors [36 78 144 (+ 10 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
-   ;; arcs detailed, NBA 3
-   #_(make-arc-sectors [24 42 60 84 108 144 192 (+ 10 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
-   ;; arcs detailed, 3's split in fourths
-   (make-arc-sectors [24 42 60 84 114 150 192 (+ 10 (* 19 12)) (* 22 12) (* 24.5 12) (* 27 12) (* 30 12)])
-
-   #_(make-sectors
-    ;; detailed
-    {36 [-0.5 -0.125 0.125 0.5]
-     78 [-0.5 -0.125 0.125 0.5]
-     144 [-0.5 -0.125 0.125 0.5]
-     (+ 10 (* 19 12)) (make-angles 3)
-                  ;(+ 9 (* 23 12)) [-0.5 -0.2 -0.083333 0.083333 0.2 0.5] #_(make-angles 5)
-     (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]}
-    ;; detailed with NBA 3
-    #_(make-sectors
-       {36 [-0.5 -0.125 0.125 0.5]
-        78 [-0.5 -0.125 0.125 0.5]
-        144 [-0.5 -0.125 0.125 0.5]
-        (+ 10 (* 19 12)) (make-angles 3)
-        (+ 9 (* 23 12)) [-0.5 -0.2 -0.083333 0.083333 0.2 0.5] #_(make-angles 5)
-        (* 30 12) [-0.5 -0.083333 0.083333 0.5]})
-    ;; fat bands
-    #_(make-sectors
-       {48 [-0.5 -0.125 0.125 0.5]
-        132 [-0.5 -0.125 0.125 0.5]
-        (+ 10 (* 19 12)) (make-angles 3)
-        (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]}))))
+ :<- [::zone-layout]
+ :<- [::zone-layouts]
+ (fn [[layout-id layouts] _]
+   (->> layouts
+        (filter #(= layout-id (:id %)))
+        first
+        :layout)))
 
 
 (re-frame/reg-sub

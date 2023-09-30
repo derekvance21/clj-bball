@@ -45,6 +45,11 @@ These are explicit non-goals of the system:
 
 ## Getting Started
 
+Start the server:
+```sh
+clj -M -m bball.core
+```
+
 To enable tailwindcss:
 ```sh
 npx tailwindcss -i input.css -o ./resources/public/css/compiled/output.css --watch

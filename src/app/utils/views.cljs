@@ -8,6 +8,8 @@
 (def <sub  (comp deref re-frame/subscribe))
 
 
+;; id has to be keyword
+;; option for just vector w/o id
 (defn dropdown
   [& {:keys [choices model on-change]}]
   [:select {:on-change #(on-change (-> % .-target .-value keyword))
