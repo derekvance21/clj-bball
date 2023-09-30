@@ -491,6 +491,7 @@
    "New Game"])
 
 
+;; TODO - this will eventually post to the server
 (defn submit-game
   []
   [:button.self-start.bg-indigo-500.hover:bg-indigo-600.text-white.font-bold.py-1.px-2.rounded-full

@@ -38,14 +38,6 @@
      [:path (assoc attrs :d d)])))
 
 
-(defn pallete->color
-  [pallete x]
-  (get pallete (->> (keys pallete)
-                    (filter #(< x %))
-                    (reduce min))
-       (second (reduce max pallete))))
-
-
 (def orange-purple-divergent
   ["#dd7d11"
    "#e5903f"
@@ -88,6 +80,14 @@
    "#273c6d"])
 
 
+(defn pallete->color
+  [pallete x]
+  (get pallete (->> (keys pallete)
+                    (filter #(< x %))
+                    (reduce min))
+       (second (reduce max pallete))))
+
+
 (defn pps->color
   [pps]
   (if (or (nil? pps) (NaN? pps))
@@ -103,7 +103,7 @@
   (if (or (nil? percent) (NaN? percent) (zero? percent))
     "white"
     (pallete->color
-     (zipmap (let [step 0.015]
+     (zipmap (let [step 0.025]
                (iterate #(+ % step) step))
              purple-single)
 
@@ -345,28 +345,36 @@
 
 (defn analysis-chart-settings
   []
-  [:div.flex.gap-2
-   [button
-    {:class "px-2 py-1"
-     :selected? (<sub [::subs/show-shots?])
-     :on-click #(re-frame/dispatch [::events/toggle-show-shots?])}
-    "Show shots?"]
-   [button
-    {:class "px-2 py-1"
-     :selected? (<sub [::subs/show-zones?])
-     :on-click #(re-frame/dispatch [::events/toggle-show-zones?])}
-    "Show zones?"]
-   (when (<sub [::subs/show-zones?])
-     [dropdown
-      :choices [{:id :pps
-                 :label "Points per shot"}
-                {:id :freq
-                 :label "Shot frequency"}
-                {:id :pts
-                 :label "Total points"}]
-      :model (<sub [::subs/zone-by])
-      :on-change (fn [id]
-                   (re-frame/dispatch [::events/zone-by id]))])])
+  (let [zones? (<sub [::subs/show-zones?])
+        zone-layouts (<sub [::subs/zone-layouts])]
+    [:div.flex.gap-2
+     [button
+      {:class "px-2 py-1"
+       :selected? (<sub [::subs/show-shots?])
+       :on-click #(re-frame/dispatch [::events/toggle-show-shots?])}
+      "Show shots?"]
+     [button
+      {:class "px-2 py-1"
+       :selected? (<sub [::subs/show-zones?])
+       :on-click #(re-frame/dispatch [::events/toggle-show-zones?])}
+      "Show zones?"]
+     (when zones?
+       [dropdown
+        :choices [{:id :pps
+                   :label "Points per shot"}
+                  {:id :freq
+                   :label "Shot frequency"}
+                  {:id :pts
+                   :label "Total points"}]
+        :model (<sub [::subs/zone-by])
+        :on-change (fn [id]
+                     (re-frame/dispatch [::events/zone-by id]))])
+     (when zones?
+       [dropdown
+        :choices zone-layouts
+        :model (<sub [::subs/zone-layout])
+        :on-change (fn [zone-layout]
+                     (re-frame/dispatch [::events/zone-layout zone-layout]))])]))
 
 
 (defn analysis
