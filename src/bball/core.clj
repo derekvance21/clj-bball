@@ -1,5 +1,6 @@
 (ns bball.core
   (:require
+   [clojure.java.io :as io]
    [datomic.api :as datomic]
    [bball.db :as db]
    [bball.env :as env]
@@ -16,15 +17,31 @@
 (defn wrap-cors
   [handler]
   (fn [req]
-    (let [resp (handler req)]
-      (-> resp
-          (response/header "Access-Control-Allow-Origin" "*")))))
+    (response/header (handler req) "Access-Control-Allow-Origin" "*")))
+
+
+(defn folder-files
+  [folder]
+  (->> (file-seq (io/file folder))
+       (filter #(.isFile %))))
+
+
+(defn parse-edn
+  [file]
+  (with-open [r (clojure.java.io/reader file)]
+    (clojure.edn/read (java.io.PushbackReader. r))))
 
 
 (defroutes app-routes
   (GET "/" [] "<html><head><title>clj-bball</title></head><body><div style=\"height: 90vh; display: flex; flex-direction: column; justify-content: center; align-items: center\"><p style=\"font-family: sans-serif; \">Hello, Ring!</p></div></body></html>")
   (route/files "/" {:root "resources/public"})
-  (wrap-cors (route/files "/games/" {:root "resources/games"}))
+  (wrap-cors
+   (GET "/games" [] (response/response
+                     ;; if you just pass `(map ...)` to response,
+                     ;; the containing brackets/parentheses will be left off
+                     (pr-str
+                      ;; this might be able to be just `map`
+                      (mapv parse-edn (folder-files "resources/games"))))))
   (GET "/db" [] {:headers {"Access-Control-Allow-Origin" "*"
                            "Content-Type" "application/edn"}
                  :body (pr-str (db/datomic->datascript-db (db/get-db)))})

@@ -14,51 +14,28 @@
    [clojure.string :as string]))
 
 
-(def blaine-games
-  ["2022-12-06-Blaine-Bellingham.edn"
-   "2022-12-10-Oak-Harbor-Blaine.edn"
-   "2022-12-14-Blaine-Lakewood.edn"
-   "2022-12-16-Squalicum-Blaine.edn"
-   "2023-01-02-Nooksack-Valley-Blaine.edn"
-   "2023-01-05-Sedro-Woolley-Blaine.edn"
-   "2023-01-10-Blaine-Meridian.edn"
-   "2023-01-12-Blaine-Lynden.edn"
-   "2023-01-16-Mount-Baker-Blaine.edn"
-   "2023-01-20-Blaine-Burlington-Edison.edn"
-   "2023-01-23-Mount-Vernon-Blaine.edn"
-   "2023-01-26-Blaine-Lynden-Christian.edn"
-   "2023-01-28-Blaine-Anacortes.edn"
-   "2023-02-01-Sehome-Blaine.edn"
-   "2023-02-02-Blaine-Ferndale.edn"
-   "2023-02-08-Blaine-Meridian.edn"
-   "2023-02-11-Lynden-Christian-Blaine.edn"
-   "2023-02-14-Blaine-Nooksack-Valley.edn"
-   "2023-02-18-Northwest-Blaine.edn"
-   "2023-02-25-Zillah-Blaine.edn"
-   "2023-03-02-Blaine-Overlake.edn"])
-
-
 (re-frame/reg-event-fx
- ::load-remote-game
- (fn [_ [_ remote-file]]
-   {::fx/fetch {:resource (str env/URL "/games/" remote-file)
+ ::load-remote-games
+ (fn [_ _]
+   {::fx/fetch {:resource (str env/URL "/games")
                 :options {:method :GET}
                 :on-success (fn [text]
-                              (let [tx-map (try
-                                             (reader/read-string text)
-                                             (catch js/Object e
-                                               (.error js/console e)))]
-                                (when (map? tx-map)
-                                  (re-frame/dispatch [::transact-game-tx-map tx-map]))))
+                              (let [tx-maps (try
+                                              (reader/read-string text)
+                                              (catch js/Object e
+                                                (.error js/console e)))]
+                                (when (and (sequential? tx-maps)
+                                           (every? map? tx-maps))
+                                  (re-frame/dispatch [::transact-games tx-maps]))))
                 :on-failure (fn [error]
                               (.error js/console error))}}))
 
 
 (re-frame/reg-event-fx
- ::transact-game-tx-map
+ ::transact-games
  [cofx/inject-ds]
- (fn [{:keys [ds]} [_ tx-map]]
-   {::fx/ds (d/db-with ds [tx-map])}))
+ (fn [{:keys [ds]} [_ tx-maps]]
+   {::fx/ds (d/db-with ds tx-maps)}))
 
 
 (re-frame/reg-event-fx
@@ -70,9 +47,9 @@
    ;; 1. only send over game transaction maps and then transact them in the background?
    ;; 2. do something else?
    {:db db/init-db
-    :fx (into [[::fx/ds (datascript/empty-db)]
-               [:dispatch [::transact-local-storage-game]]]
-              (map #(vector :dispatch [::load-remote-game %]) blaine-games))}))
+    :fx [[::fx/ds (datascript/empty-db)]
+         [:dispatch [::transact-local-storage-game]]
+         [:dispatch [::load-remote-games]]]}))
 
 
 ;; TODO - there needs to be much better error checking here
