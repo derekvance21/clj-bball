@@ -17,7 +17,7 @@
 (re-frame/reg-event-fx
  ::load-remote-games
  (fn [_ _]
-   {::fx/fetch {:resource (str env/URL "/games")
+   {::fx/fetch {:resource (str env/URL "games")
                 :options {:method :GET}
                 :on-success (fn [text]
                               (let [tx-maps (try
