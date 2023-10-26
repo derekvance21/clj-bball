@@ -4,7 +4,7 @@
 (def init-db
   {:init {:init/period 1}
    :shot-chart {:show-zones? true
-                :show-shots? true
+                :show-shots? false
                 :zone-by :pps}
    :active-panel :game})
 

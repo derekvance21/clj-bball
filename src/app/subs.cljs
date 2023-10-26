@@ -487,6 +487,22 @@
 
 
 (re-frame/reg-sub
+ ::three-fg-percentage
+ :<- [::datascript-db]
+ :<- [::filters]
+ (fn [[db filters] _]
+   (let [fg3-query '[:find (avg ?fgs) .
+                     :in $ %
+                     :with ?a
+                     :where
+                     (actions ?g ?t ?p ?a)
+                     (fga? ?a)
+                     [?a :shot/value 3]
+                     (fgs ?a ?fgs)]]
+     (* 100 (q+ fg3-query filters db query/rules)))))
+
+
+(re-frame/reg-sub
  ::games-filter
  :<- [::shot-chart-games]
  (fn [games _]
@@ -991,20 +1007,23 @@
         :layout)))
 
 
+;; the fg% data causes the browser tab to crash :(
 (re-frame/reg-sub
  ::shot-data-by-sector
  :<- [::datascript-db]
  :<- [::filters]
  :<- [::sectors]
  (fn [[db filters sectors] _]
-   (let [sector-data-query '[:find ?sector (avg ?pts) (count-distinct ?a) (sum ?pts)
-                             :keys sector pps shots pts
+   (let [sector-data-query '[:find ?sector (avg ?pts) (count-distinct ?a) (sum ?pts) ;; (sum ?fgs) (sum ?fgas)
+                             :keys sector pps shots pts ;; fgm fga
                              :in $ % [?sector ...] in-sector?
                              :where
                              (actions ?g ?t ?p ?a)
                              [?a :action/type :action.type/shot]
                              [?a :shot/angle ?angle]
                              [?a :shot/distance ?distance]
+                            ;;  (fgs ?a ?fgs)
+                            ;;  (fgas ?a ?fgas)
                              [(in-sector? ?sector ?angle ?distance)]
                              (pts ?a ?pts)]]
      (q+ sector-data-query filters db query/rules

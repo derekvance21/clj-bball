@@ -310,7 +310,8 @@
         turnover-rate (or (<sub [::subs/turnovers-per-play]) 0)
         ft-rate (or (<sub [::subs/free-throw-rate]) 0)
         efg% (or (<sub [::subs/effective-field-goal-percentage]) 0)
-        usage% (or (<sub [::subs/usage-rate]) 0)]
+        usage% (or (<sub [::subs/usage-rate]) 0)
+        three-fg% (or (<sub [::subs/three-fg-percentage]) 0)]
     [:div.flex.justify-between.gap-4
      [:div
       [:p (str "Points: " pts)]
@@ -331,6 +332,7 @@
            (str (when-not (neg? ts-diff) "+") (.toFixed ts-diff 2) "%")]
           ")"])]
       [:p (str "eFG%: " (.toFixed efg% 2))]
+      [:p (str "3FG%: " (.toFixed three-fg% 2))]
       [:p (str "OffReb%: " (.toFixed (* 100 offreb) 2))]
       [:p (str "TO%: " (.toFixed (* 100 turnover-rate) 2))]
       [:p (str "FTRate: " (.toFixed (* 100 ft-rate) 2))]]
