@@ -15,9 +15,13 @@
 
 (defn bounding-rect-xy
   [id]
-  (let [bounding-client-rect (.getBoundingClientRect (.getElementById js/document id))]
-    [(.-left bounding-client-rect)
-     (.-top bounding-client-rect)]))
+  (let [dom-rect (.getBoundingClientRect (.getElementById js/document id))
+        x (.-left dom-rect)
+        y (.-top dom-rect)]
+    {:x x
+     :width (- (.-right dom-rect) x)
+     :y y
+     :height (- (.-bottom dom-rect) y)}))
 
 
 (defn polar-hoop->eucl-court
@@ -41,16 +45,16 @@
 
 
 (defn client->eucl-court
-  [court-id [court-client-width court-client-height] [court-width court-height] [x y]]
-  (let [[rect-x rect-y] (bounding-rect-xy court-id)]
-    [(-> x (- rect-x) (/ court-client-width) (* court-width))
-     (-> y (- rect-y) (/ court-client-height) (* court-height))]))
+  [court-id [court-width court-height] [x y]]
+  (let [{rect-x :x rect-y :y rect-width :width rect-height :height} (bounding-rect-xy court-id)]
+    [(-> x (- rect-x) (/ rect-width) (* court-width))
+     (-> y (- rect-y) (/ rect-height) (* court-height))]))
 
 
 (defn client->polar-hoop
-  [court-id court-client-dimensions court-dimensions hoop-coordinates [x y]]
+  [court-id court-dimensions hoop-coordinates [x y]]
   (->> [x y]
-       (client->eucl-court court-id court-client-dimensions court-dimensions)
+       (client->eucl-court court-id court-dimensions)
        (eucl-court->eucl-hoop hoop-coordinates)
        (eucl-hoop->polar-hoop)))
 

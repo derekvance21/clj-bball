@@ -33,16 +33,15 @@
    label])
 
 
-(defn court [{:keys [scale id on-click on-context-menu]
-              :or {scale 1 id (gensym "court-")}} & children]
+(defn court
+  [{:keys [id on-click on-context-menu width]
+    :or {width "w-full" id (gensym "court-")}} & children]
   (let [[court-width court-height] court-dimensions
-        line-width 2
-        [svg-width svg-height] (map #(* scale (+ % (* 2 line-width))) court-dimensions)]
+        line-width 2]
     [:svg
      {:xmlns "http://www.w3.org/2000/svg"
       :version "1.1"
-      :width svg-width
-      :height svg-height
+      :class width
       :view-box (string/join " " [(- line-width) (- line-width) (+ court-width (* 2 line-width)) (+ court-height (* 2 line-width))])
       :on-click on-click
       :on-context-menu on-context-menu}

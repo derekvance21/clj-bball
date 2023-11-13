@@ -114,6 +114,7 @@
   [hovered? shot-info]
   (when @hovered?
     (let [{:keys [game team action x y]} @shot-info
+          y (min (- (* 12 42) 45) (max 10 y))
           {:game/keys [home-team away-team datetime]} game
           team-home? (= team home-team)
           {opponent-name :team/name} (if team-home? away-team home-team)
@@ -159,7 +160,7 @@
 
 
 (defn shot
-  [{:keys [on-mouse-enter on-mouse-leave]} action pts]
+  [{:keys [on-click on-mouse-enter on-mouse-leave]} action pts]
   (let [{:shot/keys [angle distance]} action
         [x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
         icon-size 4
@@ -176,27 +177,28 @@
        :stroke color
        :stroke-width 1
        :on-mouse-enter (on-mouse-enter x y)
+       :on-click (on-click x y)
        :on-mouse-leave on-mouse-leave}]]))
 
 
 (defn shot-chart
   []
-  (let [hovered? (reagent/atom false)
+  (let [selected? (reagent/atom false)
         shot-info (reagent/atom {})
         sector-info (reagent/atom {})
-        sector-hovered? (reagent/atom false)
+        sector-selected? (reagent/atom false)
         {total-pts :pts total-shots :shots} (<sub [::subs/shot-data])
         zone-by (<sub [::subs/zone-by])
         shot-data-by-sector (<sub [::subs/shot-data-by-sector])]
     [court
      {:id "shot-chart"
-      :scale 0.8}
+      :width "max-h-96"}
      (when (<sub [::subs/show-zones?])
        [:g {:stroke-width 0.5 :stroke "black"}
         (let [sector-pps-map (->> shot-data-by-sector
                                   (map (juxt :sector #(dissoc % :sector)))
                                   (into {}))]
-          (for [{:keys [min-distance max-distance] :as sector} (sort-by :max-distance > (<sub [::subs/sectors]))]
+          (for [sector (sort-by :max-distance > (<sub [::subs/sectors]))]
             (let [{:keys [pps shots pts]
                    :or {shots 0 pts 0}
                    :as sector-data} (get sector-pps-map sector)]
@@ -204,8 +206,12 @@
               [draw-sector {:on-mouse-enter (fn [e]
                                               (reset! sector-info
                                                       (conj sector sector-data))
-                                              (reset! sector-hovered? true))
-                            :on-mouse-leave #(reset! sector-hovered? false)
+                                              (reset! sector-selected? true))
+                            :on-mouse-leave #(reset! sector-selected? false)
+                            :on-click (fn [e]
+                                        (reset! sector-info
+                                                (conj sector sector-data))
+                                        (reset! sector-selected? true))
                             :fill
                             (case zone-by
                               :pps (pps->color pps)
@@ -217,19 +223,21 @@
        [:g
         (for [{:keys [game team action pts]} (<sub [::subs/shots])]
           ^{:key (gensym "key-")}
-          [shot {:on-mouse-enter (fn [x y]
-                                   (fn [e]
-                                     (reset! shot-info
-                                             {:game game
-                                              :team team
-                                              :action action
-                                              :x x
-                                              :y y})
-                                     (reset! hovered? true)))
-                 :on-mouse-leave #(reset! hovered? false)}
-           action pts])])
-     [shot-information hovered? shot-info]
-     [sector-information sector-hovered? sector-info]]))
+          (letfn [(select-shot [x y]
+                    (fn [e]
+                      (reset! selected? true)
+                      (reset! shot-info
+                              {:game game
+                               :team team
+                               :action action
+                               :x x
+                               :y y})))]
+            [shot {:on-click select-shot
+                   :on-mouse-enter select-shot
+                   :on-mouse-leave #(reset! selected? false)}
+             action pts]))])
+     [shot-information selected? shot-info]
+     [sector-information sector-selected? sector-info]]))
 
 
 ;; TODO - make this a reagent component,
@@ -239,6 +247,7 @@
   []
   [:input.rounded-full.border.border-black.px-2.py-1
    {:type "text"
+    :placeholder "Player"
     :value (<sub [::subs/shot-chart-players-input])
     :on-change #(re-frame/dispatch [::events/set-shot-chart-players-input (-> % .-target .-value)])}])
 
@@ -256,6 +265,7 @@
   (let [teams          (sort-by :team/name (<sub [::subs/teams]))
         selections     (<sub [::subs/shot-chart-teams])]
     [:div
+     [:p "Teams"]
      [selection-list
       :src (at)
       :height     "160px"
@@ -267,10 +277,11 @@
       :on-change      (fn [sel]
                         (re-frame/dispatch
                          [::events/set-shot-chart-teams sel]))]
-     [button {:class "px-2 py-1"
-              :on-click #(re-frame/dispatch [::events/set-shot-chart-teams #{}])} "Clear All"]
-     [button {:class "px-2 py-1"
-              :on-click #(re-frame/dispatch [::events/set-shot-chart-teams (set (map :db/id teams))])} "Select All"]]))
+     [:div.flex.gap-1
+      [button {:class "px-2"
+               :on-click #(re-frame/dispatch [::events/set-shot-chart-teams #{}])} "Clear"]
+      [button {:class "px-2 whitespace-nowrap"
+               :on-click #(re-frame/dispatch [::events/set-shot-chart-teams (set (map :db/id teams))])} "Select All"]]]))
 
 
 (defn analysis-games-selector
@@ -278,6 +289,7 @@
   (let [games (sort-by :game/datetime (<sub [::subs/games]))
         selections (<sub [::subs/shot-chart-games])]
     [:div
+     [:p "Games"]
      [selection-list
       :src (at)
            ;; :width          "391px"      ;; manual hack for width of variation panel A+B 1024px
@@ -293,8 +305,13 @@
       :on-change      (fn [sel]
                         (re-frame/dispatch
                          [::events/set-shot-chart-games sel]))]
-     [button {:class "px-2 py-1"
-              :on-click #(re-frame/dispatch [::events/set-shot-chart-games #{}])} "Clear All"]]))
+     [:div.flex.gap-1
+      [button {:class "px-2"
+               :on-click #(re-frame/dispatch [::events/set-shot-chart-games #{}])}
+       "Clear"]
+      [button {:class "px-2"
+               :on-click #(re-frame/dispatch [::events/set-shot-chart-games (into #{} (map :db/id games))])}
+       "Select All"]]]))
 
 
 (defn analysis-stats
@@ -311,84 +328,112 @@
         ft-rate (or (<sub [::subs/free-throw-rate]) 0)
         efg% (or (<sub [::subs/effective-field-goal-percentage]) 0)
         usage% (or (<sub [::subs/usage-rate]) 0)
-        three-fg% (or (<sub [::subs/three-fg-percentage]) 0)]
-    [:div.flex.justify-between.gap-4
-     [:div
-      [:p (str "Points: " pts)]
-      [:p (str "Possessions: " possessions)]
+        three-fg% (or (<sub [::subs/three-fg-percentage]) 0)
+        {pts-allowed :pts defensive-possessions :possessions defrtg :defrtg
+         :or {pts-allowed 0 defensive-possessions 0 defrtg 0}} (<sub [::subs/defensive-ppp])]
+    [:table.whitespace-nowrap
+     [:thead
+      [:tr.text-left
+       [:th "Stat"]
+       [:th "Offense"]
+       (when-not players-input?
+         [:th "Defense"])]]
+     [:tbody
+      [:tr
+       [:td "Points"]
+       [:td pts]
+       (when-not players-input?
+         [:td pts-allowed])]
+      [:tr
+       [:td "Possessions"]
+       [:td possessions]
+       (when-not players-input?
+         [:td defensive-possessions])]
       (if players-input?
-        [:p (str "Points/75: " (.toFixed pts-per-75 2))]
-        [:p (str "OffRtg: " (.toFixed offrtg 2))])
+        [:tr
+         [:td "Points/75"]
+         [:td (.toFixed pts-per-75 2)]]
+        [:tr
+         [:td "OffRtg"]
+         [:td (.toFixed offrtg 2)]
+         [:td (.toFixed defrtg 2)]])
       (when players-input?
-        [:p (str "Usage%: " (.toFixed usage% 2))])
-      [:p (str "TS%: " (.toFixed ts% 2))
-       (when (pos? ts%)
-         [:span
-          " ("
-          [:span {:class (cond
-                           (zero? ts-diff) "text-slate-500"
-                           (neg? ts-diff) "text-red-500"
-                           (pos? ts-diff) "text-green-500")}
-           (str (when-not (neg? ts-diff) "+") (.toFixed ts-diff 2) "%")]
-          ")"])]
-      [:p (str "eFG%: " (.toFixed efg% 2))]
-      [:p (str "3FG%: " (.toFixed three-fg% 2))]
-      [:p (str "OffReb%: " (.toFixed (* 100 offreb) 2))]
-      [:p (str "TO%: " (.toFixed (* 100 turnover-rate) 2))]
-      [:p (str "FTRate: " (.toFixed (* 100 ft-rate) 2))]]
-     (when-not players-input?
-       (let [{pts-allowed :pts defensive-possessions :possessions defrtg :defrtg
-              :or {pts-allowed 0 defensive-possessions 0 defrtg 0}} (<sub [::subs/defensive-ppp])]
-         [:div
-          [:p (str "Points: " pts-allowed)]
-          [:p (str "Possessions: " defensive-possessions)]
-          [:p (str "DefRtg: " (.toFixed defrtg 2))]]))]))
+        [:tr
+         [:td "Usage%: "]
+         [:td (.toFixed usage% 2)]])
+      [:tr
+       [:td "TS%"]
+       [:td
+        (.toFixed ts% 2)
+        (when (pos? ts%)
+          [:span
+           " ("
+           [:span {:class (cond
+                            (zero? ts-diff) "text-slate-500"
+                            (neg? ts-diff) "text-red-500"
+                            (pos? ts-diff) "text-green-500")}
+            (str (when-not (neg? ts-diff) "+") (.toFixed ts-diff 2) "%")]
+           ")"])]]
+      [:tr
+       [:td "eFG%"]
+       [:td (.toFixed efg% 2)]]
+      [:tr
+       [:td "3FG%"]
+       [:td (.toFixed three-fg% 2)]]
+      [:tr
+       [:td "OffReb%"]
+       [:td (.toFixed (* 100 offreb) 2)]]
+      [:tr
+       [:td "TO%"]
+       [:td (.toFixed (* 100 turnover-rate) 2)]]
+      [:tr
+       [:td "FTRate"]
+       [:td (.toFixed (* 100 ft-rate) 2)]]]]))
 
 
 (defn analysis-chart-settings
   []
   (let [zones? (<sub [::subs/show-zones?])
         zone-layouts (<sub [::subs/zone-layouts])]
-    [:div.flex.gap-2
+    [:div.flex.gap-1.flex-wrap
      [button
-      {:class "px-2 py-1"
+      {:class "px-2"
        :selected? (<sub [::subs/show-shots?])
        :on-click #(re-frame/dispatch [::events/toggle-show-shots?])}
       "Show shots?"]
      [button
-      {:class "px-2 py-1"
+      {:class "px-2"
        :selected? (<sub [::subs/show-zones?])
        :on-click #(re-frame/dispatch [::events/toggle-show-zones?])}
       "Show zones?"]
      (when zones?
-       [dropdown
-        :choices [{:id :pps
-                   :label "Points per shot"}
-                  {:id :freq
-                   :label "Shot frequency"}
-                  {:id :pts
-                   :label "Total points"}]
-        :model (<sub [::subs/zone-by])
-        :on-change (fn [id]
-                     (re-frame/dispatch [::events/zone-by id]))])
-     (when zones?
-       [dropdown
-        :choices zone-layouts
-        :model (<sub [::subs/zone-layout])
-        :on-change (fn [zone-layout]
-                     (re-frame/dispatch [::events/zone-layout zone-layout]))])]))
+       [:div.flex.gap-2
+        [dropdown
+         :choices [{:id :pps
+                    :label "Points per shot"}
+                   {:id :freq
+                    :label "Shot frequency"}
+                   {:id :pts
+                    :label "Total points"}]
+         :model (<sub [::subs/zone-by])
+         :on-change (fn [id]
+                      (re-frame/dispatch [::events/zone-by id]))]
+        [dropdown
+         :choices zone-layouts
+         :model (<sub [::subs/zone-layout])
+         :on-change (fn [zone-layout]
+                      (re-frame/dispatch [::events/zone-layout zone-layout]))]])]))
 
 
 (defn analysis
   []
-  [:div.flex.flex-col.items-start.gap-2
+  [:div.flex.flex-col.items-stretch.gap-2
    [analysis-chart-settings]
-   [:div.flex.gap-2
+   [:div.flex.gap-2.flex-wrap.md:flex-nowrap.items-start
     [shot-chart]
     [analysis-stats]]
+   [:div.self-start
+    [analysis-players-selector]]
    [:div.flex.gap-2
-    [analysis-players-selector]
-    [analysis-offense-selector]]
-   [:div.flex
     [analysis-teams-selector]
     [analysis-games-selector]]])
