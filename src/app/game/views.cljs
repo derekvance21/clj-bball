@@ -167,18 +167,21 @@
                        #(re-frame/dispatch [::events/set-player player]))
            :class "w-8 h-8"}
           (str player)]])]
-     (when (if sub? ft? (or ft? reboundable?))
-       [:ul.flex.flex-col.gap-1
-        (for [player (if ft? ft-players players)]
-          [:li {:key (str team-id "#" player "secondary")}
-           [button
-            {:selected? (cond reboundable? (rebounder? player)
-                              :else false)
-             :disabled? (if sub? (= player action-player) (not reboundable?))
-             :on-click (cond (and sub? ft?) #(re-frame/dispatch [::events/put-player-to-ft-bench team-id player])
-                             reboundable? #(re-frame/dispatch [::events/set-rebounder true player]))
-             :class "w-8 h-8"}
-            (str player)]])])]))
+     [:ul.flex.flex-col.gap-1
+      {:class (when-not
+               (if sub? ft? (or ft? reboundable?))
+                "invisible")}
+      (for [player (if ft? ft-players players)]
+        [:li {:key (str team-id "#" player "secondary")}
+
+         [button
+          {:selected? (cond reboundable? (rebounder? player)
+                            :else false)
+           :disabled? (if sub? (= player action-player) (not reboundable?))
+           :on-click (cond (and sub? ft?) #(re-frame/dispatch [::events/put-player-to-ft-bench team-id player])
+                           reboundable? #(re-frame/dispatch [::events/set-rebounder true player]))
+           :class "w-8 h-8"}
+          (str player)]])]]))
 
 
 (defn defensive-team-players
@@ -270,7 +273,7 @@
   []
   (let [[team1 team2] (<sub [::subs/game-teams])
         sub? (<sub [::subs/sub?])]
-    [:div.flex.flex-col.gap-1
+    [:div.flex.gap-1.sm:flex-col.items-baseline.sm:items-stretch
      [team-players-input team1]
      [button {:class "px-2 py-1"
               :disabled? false
@@ -366,7 +369,7 @@
         preview-entities (<sub [::subs/preview-entities])]
     [:div
      [:h2.text-xl "Possessions"]
-     [:ol.max-h-32.overflow-auto.flex.flex-col
+     [:ol.max-h-52.overflow-auto.flex.flex-col
       (for [possession possessions]
         [:li
          {:key (:db/id possession)}
@@ -374,20 +377,19 @@
 
 
 (defn svg-click-handler
-  [court-id scale make?]
-  (let [court-client-dimensions (map #(* % scale) court-dimensions)]
-    (fn [e]
-      (let [[turns radius] (client->polar-hoop
-                            court-id court-client-dimensions court-dimensions hoop-coordinates
-                            [(.-clientX e) (.-clientY e)])]
-        (re-frame/dispatch [::events/set-action-shot-with-info turns (math/round radius) make?])))))
+  [court-id make?]
+  (fn [e]
+    (let [[turns radius] (client->polar-hoop
+                          court-id court-dimensions hoop-coordinates
+                          [(.-clientX e) (.-clientY e)])]
+      (re-frame/dispatch [::events/set-action-shot-with-info turns (math/round radius) make?]))))
 
 
 (defn svg-right-click-handler
-  [court-id scale]
+  [court-id]
   (fn [e]
     (.preventDefault e)
-    ((svg-click-handler court-id scale true) e)))
+    ((svg-click-handler court-id true) e)))
 
 
 (defn action-input []
@@ -396,15 +398,14 @@
                          [e]
                          (.preventDefault e)
                          (re-frame/dispatch [::events/add-action]))}
-     [:div.flex.flex-col.items-start.gap-2
+     [:div.flex.flex-col.items-start.gap-1
       (let [shot-location (<sub [::subs/shot-location])
-            id "court"
-            scale 0.6]
+            id "court"]
         [court
          {:id id
-          :scale scale
-          :on-context-menu (svg-right-click-handler id scale)
-          :on-click (svg-click-handler id scale false)}
+          :width "max-h-96"
+          :on-context-menu (svg-right-click-handler id)
+          :on-click (svg-click-handler id false)}
          (when (some? shot-location)
            (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
                  icon-size 5]
@@ -478,9 +479,11 @@
 
 (defn game-input
   []
-  [:div.flex.justify-between.gap-4
-   [players-input]
-   [action-input]])
+  [:div.flex.justify-between.gap-2.flex-col.sm:flex-row
+   [:div.order-last.sm:order-none
+    [players-input]]
+   [:div.grow
+    [action-input]]])
 
 
 (defn new-game
@@ -509,16 +512,16 @@
 
 (defn game-stats
   []
-  [:div.flex.justify-between.gap-2
-   [possessions]
+  [:div.flex.justify-between.gap-2.flex-wrap.md:flex-nowrap
    [:div.flex-1
     [stats]]
-   ])
+   [:div.md:flex-1
+    [possessions]]])
 
 
 (defn game
   []
-  [:div
+  [:div.flex.flex-col.gap-2
    [game-input]
    [game-stats]
    [game-controls]])

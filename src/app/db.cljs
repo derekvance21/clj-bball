@@ -4,9 +4,9 @@
 (def init-db
   {:init {:init/period 1}
    :shot-chart {:show-zones? true
-                :show-shots? false
+                :show-shots? true
                 :zone-by :pps}
-   :active-panel :game})
+   :active-panel :analysis})
 
 
 (defn reboundable?

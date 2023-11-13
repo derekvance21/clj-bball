@@ -13,18 +13,21 @@
   (let [active-panel (<sub [::subs/active-panel])
         game? (= active-panel :game)
         analysis? (= active-panel :analysis)]
-    [:div.container.m-2.flex.flex-col.gap-2
-     {:class "w-11/12"}
-     [:div.flex.gap-2
-      [button {:class "px-2 py-1"
-               :selected? game?
-               :on-click #(re-frame/dispatch [::events/set-active-panel :game])}
-       "Game"]
+    [:div.container.mx-auto
+     {:class "lg:w-2/3"}
+     ;; header
+     [:div.flex.gap-2.px-2.py-1
       [button {:class "px-2 py-1"
                :selected? analysis?
                :on-click #(re-frame/dispatch [::events/set-active-panel :analysis])}
-       "Analysis"]]
-     (cond
-       game? [game]
-       analysis? [analysis]
-       :else nil)]))
+       "Analysis"]
+      [button {:class "px-2 py-1"
+               :selected? game?
+               :on-click #(re-frame/dispatch [::events/set-active-panel :game])}
+       "Game"]]
+     ;; main
+     [:div.flex.flex-col.gap-2.m-2
+      
+      (cond
+        game? [game]
+        analysis? [analysis])]]))

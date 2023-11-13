@@ -946,12 +946,13 @@
 
 (def zone-layouts
   [;; arcs detailed, 3's split in fourths
-   {:layout (make-arc-sectors [36 84 144 (+ 10 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
+   {:layout (make-arc-sectors [36 84 144 (+ 9 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
     :label "Arcs"}
-   #_{:layout (make-arc-sectors [36 66 102 162 (+ 10 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
+   #_{:layout (make-arc-sectors [36 66 102 162 (+ 9 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
       :label "Arcs"}
      ;; one less arc from arcs detailed, 3's split in thirds
-   {:layout (make-arc-sectors [30 54 78 108 150 192 (+ 10 (* 19 12)) (* 22 12) (* 25.5 12) (* 30 12)])
+   {:layout (make-arc-sectors [30 54 78 108 150 192 (+ 9 (* 19 12)) (+ 1.75 (* 22 12)) (* 25.5 12) (* 30 12)]
+                              #_[30 54 78 108 150 192 (+ 9 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
     :label "Detailed Arcs"}
       ;; every two feet to 30 ft
    {:layout (make-arc-sectors (take-while #(<= % (* 12 30)) (iterate #(+ % 12) 12)))
@@ -961,7 +962,7 @@
                {36 [-0.5 -0.125 0.125 0.5]
                 78 [-0.5 -0.125 0.125 0.5]
                 144 [-0.5 -0.125 0.125 0.5]
-                (+ 10 (* 19 12)) (make-angles 3)
+                (+ 9 (* 19 12)) (make-angles 3)
                         ;(+ 9 (* 23 12)) [-0.5 -0.2 -0.083333 0.083333 0.2 0.5] #_(make-angles 5)
                 (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]})
       :label "Less Detailed Sectors"}
@@ -969,7 +970,7 @@
    {:layout (make-sectors
              {48 [-0.5 -0.125 0.125 0.5]
               132 [-0.5 -0.125 0.125 0.5]
-              (+ 10 (* 19 12)) (make-angles 3)
+              (+ 9 (* 19 12)) (make-angles 3)
               (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]})
     :label "Sectors"}
           ;; fat bands
@@ -977,7 +978,7 @@
              {36 [-0.5 -0.125 0.125 0.5]
               78 [-0.5 -0.125 0.125 0.5]
               144 [-0.5 -0.125 0.125 0.5]
-              (+ 10 (* 19 12)) (make-angles 3)
+              (+ 9 (* 19 12)) (make-angles 3)
               (+ 9 (* 23 12)) [-0.5 -0.2 -0.083333 0.083333 0.2 0.5] #_(make-angles 5)
               (* 30 12) [-0.5 -0.083333 0.083333 0.5]})
     :label "Detailed Sectors"}])
