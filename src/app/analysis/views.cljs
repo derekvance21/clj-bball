@@ -39,18 +39,18 @@
 
 
 (def orange-purple-divergent
-  ["#dd7d11"
-   "#e5903f"
-   "#eca363"
-   "#f1b686"
-   "#f3c9a9"
-   "#f3ddcc"
-   "#dcd8ee"
-   "#c8c0ec"
-   "#b2a8e9"
-   "#9b91e5"
+  ["#6665de"
    "#827be2"
-   "#6665de"])
+   "#9b91e5"
+   "#b2a8e9"
+   "#c8c0ec"
+   "#dcd8ee"
+   "#f3ddcc"
+   "#f3c9a9"
+   "#f1b686"
+   "#eca363"
+   "#e5903f"
+   "#dd7d11"])
 
 
 (def red-green-divergent
@@ -164,7 +164,7 @@
   (let [{:shot/keys [angle distance]} action
         [x y] (polar-hoop->eucl-court hoop-coordinates [angle distance])
         icon-size 4
-        color (get {0 "#c0c0c0" #_"cornsilk"
+        color (get {0 "#ff5349"
                     1 "#ace1af"
                     2 "#3cd070"
                     3 "#008000"
@@ -277,7 +277,7 @@
       :on-change      (fn [sel]
                         (re-frame/dispatch
                          [::events/set-shot-chart-teams sel]))]
-     [:div.flex.gap-1
+     [:div.flex.gap-1.mt-1
       [button {:class "px-2"
                :on-click #(re-frame/dispatch [::events/set-shot-chart-teams #{}])} "Clear"]
       [button {:class "px-2 whitespace-nowrap"
@@ -305,7 +305,7 @@
       :on-change      (fn [sel]
                         (re-frame/dispatch
                          [::events/set-shot-chart-games sel]))]
-     [:div.flex.gap-1
+     [:div.flex.gap-1.mt-1
       [button {:class "px-2"
                :on-click #(re-frame/dispatch [::events/set-shot-chart-games #{}])}
        "Clear"]
