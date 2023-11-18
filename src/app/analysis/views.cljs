@@ -232,7 +232,8 @@
                                :action action
                                :x x
                                :y y})))]
-            [shot {:on-click select-shot
+            [shot {:key (gensym "shot-")
+                   :on-click select-shot
                    :on-mouse-enter select-shot
                    :on-mouse-leave #(reset! selected? false)}
              action pts]))])
@@ -334,7 +335,7 @@
     [:table.whitespace-nowrap
      [:thead
       [:tr.text-left
-       [:th "Stat"]
+       [:th]
        [:th "Offense"]
        (when-not players-input?
          [:th "Defense"])]]
@@ -430,8 +431,9 @@
   [:div.flex.flex-col.items-stretch.gap-2
    [analysis-chart-settings]
    [:div.flex.gap-2.flex-wrap.md:flex-nowrap.items-start
-    [shot-chart]
-    [analysis-stats]]
+    [:div.md:order-last
+     [analysis-stats]]
+    [shot-chart]]
    [:div.self-start
     [analysis-players-selector]]
    [:div.flex.gap-2

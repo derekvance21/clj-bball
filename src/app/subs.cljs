@@ -182,12 +182,11 @@
  :<- [::datascript-db]
  :<- [::game-id]
  :<- [::action]
- :<- [::players]
  :<- [::init]
  :<- [::show-preview?]
- (fn [[db g action players init preview?] _]
+ (fn [[db g action init preview?] _]
    (if preview?
-     (d/with db [[:db.fn/call ds/append-action-tx-data g action players init]])
+     (d/with db [[:db.fn/call ds/append-action-tx-data g action nil init]])
      (d/with db nil))))
 
 
@@ -969,7 +968,7 @@
           ;; detailed with NBA 3
    {:layout (make-sectors
              {48 [-0.5 -0.125 0.125 0.5]
-              132 [-0.5 -0.125 0.125 0.5]
+              120 [-0.5 -0.125 0.125 0.5]
               (+ 9 (* 19 12)) (make-angles 3)
               (* 30 12) [-0.5 -0.1786 -0.065 0.065 0.1786 0.5]})
     :label "Sectors"}

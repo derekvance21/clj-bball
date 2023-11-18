@@ -251,9 +251,10 @@
                               last-team-id)))
         action          (cond-> action
                           true (assoc
-                                :action/order (if poss-change? 1 (inc (get last-action :action/order 0)))
-                                :offense/players (get-in players [team-id :on-court])
-                                :defense/players (:on-court (val (first (dissoc players team-id)))))
+                                :action/order (if poss-change? 1 (inc (get last-action :action/order 0))))
+                          (some? players) (assoc
+                                           :offense/players (get-in players [team-id :on-court])
+                                           :defense/players (:on-court (val (first (dissoc players team-id)))))
                           (db/ft? action) (assoc
                                            :ft/offense (get-in players [team-id :on-court-ft])
                                            :ft/defense (:on-court-ft (val (first (dissoc players team-id))))))]
