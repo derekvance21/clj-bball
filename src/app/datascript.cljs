@@ -75,6 +75,15 @@
   ((juxt :game/home-team :game/away-team) (d/pull db '[{:game/home-team [*]
                                                         :game/away-team [*]}] g)))
 
+(def ppp-base-query
+  '[:find [(sum ?pts) (count-distinct ?p)]
+    :keys pts possessions
+    :in $ %
+    :with ?a
+    :where
+    (actions ?g ?t ?p ?a)
+    (pts ?a ?pts)])
+
 
 (defn ppp
   [db g]

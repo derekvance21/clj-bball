@@ -257,6 +257,7 @@
   []
   [:input.rounded-full.border.border-black.px-2.py-1
    {:type "text"
+    :placeholder "On Court Players"
     :value (<sub [::subs/shot-chart-offense-input])
     :on-change #(re-frame/dispatch [::events/set-shot-chart-offense-input (-> % .-target .-value)])}])
 
@@ -434,8 +435,9 @@
     [:div.md:order-last
      [analysis-stats]]
     [shot-chart]]
-   [:div.self-start
-    [analysis-players-selector]]
+   [:div.self-start.flex.gap-2.flex-wrap
+    [analysis-players-selector]
+    [analysis-offense-selector]]
    [:div.flex.gap-2
     [analysis-teams-selector]
     [analysis-games-selector]]])

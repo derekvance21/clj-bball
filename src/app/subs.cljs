@@ -390,14 +390,7 @@
  :<- [::datascript-db]
  :<- [::filters]
  (fn [[db filters] _]
-   (let [base-query '[:find [(sum ?pts) (count-distinct ?p)]
-                      :keys pts possessions
-                      :in $ %
-                      :with ?a
-                      :where
-                      (actions ?g ?t ?p ?a)
-                      (pts ?a ?pts)]
-         {:keys [pts possessions] :as result} (q+ base-query filters db query/rules)]
+   (let [{:keys [pts possessions] :as result} (q+ ds/ppp-base-query filters db query/rules)]
      (assoc result :offrtg (* 100 (/ pts possessions))))))
 
 
@@ -406,14 +399,7 @@
  :<- [::datascript-db]
  :<- [::defensive-filters]
  (fn [[db filters] _]
-   (let [base-query '[:find [(sum ?pts) (count-distinct ?p)]
-                      :keys pts possessions
-                      :in $ %
-                      :with ?a
-                      :where
-                      (actions ?g ?t ?p ?a)
-                      (pts ?a ?pts)]
-         {:keys [pts possessions] :as result} (q+ base-query filters db query/rules)]
+   (let [{:keys [pts possessions] :as result} (q+ ds/ppp-base-query filters db query/rules)]
      (assoc result :defrtg (* 100 (/ pts possessions))))))
 
 
@@ -568,7 +554,7 @@
                       :in $ %
                       :with ?a
                       :where
-                      (actions ?g ?t ?p ?a)
+                      (actions ?g ?t ?p ?a) ;; defensive actions
                       (rebound? ?a)]
          filters (remove nil? [games-filter
                                teams-filter
