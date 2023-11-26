@@ -14,4 +14,4 @@
   ([k]
    (env k nil))
   ([k not-found]
-   (get env-map k (or (System/getenv (name k)) not-found))))
+   (or (System/getenv (name k)) (get env-map k not-found))))

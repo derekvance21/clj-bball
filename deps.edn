@@ -1,5 +1,4 @@
-{:paths ["src"]
- :resource-paths ["resources"]
+{:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
         com.datomic/client-pro {:mvn/version "1.0.76"}
         com.datomic/peer {:mvn/version "1.0.6726"}
@@ -22,5 +21,6 @@
                                datascript/datascript {:mvn/version "1.4.2"}
                                re-com/re-com {:mvn/version "2.13.2"}}}
            :build {:deps {io.github.clojure/tools.build {:mvn/version "0.9.4"}
-                          thheller/shadow-cljs {:mvn/version "2.19.9"}}
+                          ;; thheller/shadow-cljs {:mvn/version "2.19.9"}
+                          }
                    :ns-default build}}}
