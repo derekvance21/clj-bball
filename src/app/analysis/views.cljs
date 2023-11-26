@@ -4,7 +4,7 @@
    [re-frame.core :as re-frame]
    [app.events :as events]
    [app.subs :as subs]
-   [clojure.string :as string]
+   [clojure.string :as str]
    [re-com.core :refer [at selection-list]]
    [app.utils.views :refer [button <sub dropdown court]]
    [app.utils :refer [court-dimensions hoop-coordinates sin-turns cos-turns polar-hoop->eucl-court]]))
@@ -19,22 +19,22 @@
          [min-dx min-dy] [(* max-distance (sin-turns min-angle)) (* max-distance (cos-turns min-angle))]
          [arc-x arc-y] [(+ hoop-x (* max-distance (sin-turns (min max-angle 0.25))))
                         (+ hoop-y (* max-distance (cos-turns (min max-angle 0.25))))]
-         d (string/join " "
-                        (flatten
-                         [(if (= min-angle -0.5)
-                            [\M hoop-x min-y
-                             \l (- max-distance) 0
-                             \l 0 (- hoop-y min-y)]
-                            [\M hoop-x hoop-y
-                             \l min-dx min-dy])
-                          \A max-distance max-distance 0 0 0 arc-x arc-y
-                          (if (= max-angle 0.5)
-                            [\L (+ hoop-x max-distance) min-y
-                             \L hoop-x min-y
-                             \Z]
+         d (->> [(if (= min-angle -0.5)
+                   [\M hoop-x min-y
+                    \l (- max-distance) 0
+                    \l 0 (- hoop-y min-y)]
+                   [\M hoop-x hoop-y
+                    \l min-dx min-dy])
+                 \A max-distance max-distance 0 0 0 arc-x arc-y
+                 (if (= max-angle 0.5)
+                   [\L (+ hoop-x max-distance) min-y
+                    \L hoop-x min-y
+                    \Z]
 
-                            [\L hoop-x hoop-y
-                             \Z])]))]
+                   [\L hoop-x hoop-y
+                    \Z])]
+                (flatten)
+                (str/join " "))]
      [:path (assoc attrs :d d)])))
 
 
@@ -133,7 +133,7 @@
        (when datetime
          [:tspan
           {:x x :dx (if right-side? -15 15) :y y :dy 40}
-          (second (string/split (.toDateString datetime) #" " 2))])])))
+          (second (str/split (.toDateString datetime) #" " 2))])])))
 
 
 (defn sector-information
@@ -244,7 +244,7 @@
 ;; TODO - make this a reagent component,
 ;; set on-blur
 ;; set on debounce
-(defn analysis-players-selector
+(defn players-selector
   []
   [:input.rounded-full.border.border-black.px-2.py-1
    {:type "text"
@@ -253,7 +253,7 @@
     :on-change #(re-frame/dispatch [::events/set-shot-chart-players-input (-> % .-target .-value)])}])
 
 
-(defn analysis-offense-selector
+(defn offense-selector
   []
   [:input.rounded-full.border.border-black.px-2.py-1
    {:type "text"
@@ -262,7 +262,7 @@
     :on-change #(re-frame/dispatch [::events/set-shot-chart-offense-input (-> % .-target .-value)])}])
 
 
-(defn analysis-teams-selector
+(defn teams-selector
   []
   (let [teams          (sort-by :team/name (<sub [::subs/teams]))
         selections     (<sub [::subs/shot-chart-teams])]
@@ -286,7 +286,7 @@
                :on-click #(re-frame/dispatch [::events/set-shot-chart-teams (set (map :db/id teams))])} "Select All"]]]))
 
 
-(defn analysis-games-selector
+(defn games-selector
   []
   (let [games (sort-by :game/datetime (<sub [::subs/games]))
         selections (<sub [::subs/shot-chart-games])]
@@ -299,9 +299,11 @@
       :model          selections
       :choices        games
       :label-fn       (fn [{:game/keys [home-team away-team datetime]}]
-                        (str (:team/name away-team) " at " (:team/name home-team)
+                        (str (:team/name away-team) " @ " (:team/name home-team)
                              ", " (when datetime
-                                    (.toDateString datetime))))
+                                    (-> (.toDateString datetime)
+                                        (str/split #" " 2)
+                                        (second)))))
       :id-fn :db/id
       :multi-select?  true
       :on-change      (fn [sel]
@@ -316,7 +318,7 @@
        "Select All"]]]))
 
 
-(defn analysis-stats
+(defn stats
   []
   (let [players-input? (seq (<sub [::subs/shot-chart-players-input]))
         {:keys [pts possessions pts-per-75 offrtg]
@@ -393,7 +395,7 @@
        [:td (.toFixed (* 100 ft-rate) 2)]]]]))
 
 
-(defn analysis-chart-settings
+(defn chart-settings
   []
   (let [zones? (<sub [::subs/show-zones?])
         zone-layouts (<sub [::subs/zone-layouts])]
@@ -430,14 +432,14 @@
 (defn analysis
   []
   [:div.flex.flex-col.items-stretch.gap-2
-   [analysis-chart-settings]
+   [chart-settings]
    [:div.flex.gap-2.flex-wrap.md:flex-nowrap.items-start
     [:div.md:order-last
-     [analysis-stats]]
+     [stats]]
     [shot-chart]]
    [:div.self-start.flex.gap-2.flex-wrap
-    [analysis-players-selector]
-    [analysis-offense-selector]]
+    [players-selector]
+    [offense-selector]]
    [:div.flex.gap-2
-    [analysis-teams-selector]
-    [analysis-games-selector]]])
+    [teams-selector]
+    [games-selector]]])
