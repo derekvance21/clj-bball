@@ -30,15 +30,13 @@
 
 
 (defroutes app-routes
-  (route/resources "/")
-  (wrap-cors
-   (GET "/games" []
-     (response/response
-                     ;; if you just pass `(map ...)` to response,
-                     ;; the containing brackets/parentheses will be left off
-      (pr-str
-                      ;; this might be able to be just `map`
-       (mapv parse-edn (folder-files "resources/games"))))))
+  (GET "/" []
+    (-> (response/resource-response "public/index.html")
+        (response/content-type "text/html")))
+  (GET "/games" []
+    (-> (response/resource-response "games.edn") #_(response/response (pr-str (mapv parse-edn (folder-files "resources/games"))))
+        (response/content-type "application/edn")
+        (response/header "Access-Control-Allow-Origin" "*")))
   (route/not-found "Not Found"))
 
 
