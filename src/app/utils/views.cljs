@@ -34,14 +34,15 @@
 
 
 (defn court
-  [{:keys [id on-click on-context-menu width]
-    :or {width "w-full" id (gensym "court-")}} & children]
+  [{:keys [id on-click on-context-menu class]
+    :or {class "w-full" id (gensym "court-")}} & children]
   (let [[court-width court-height] court-dimensions
         line-width 2]
     [:svg
      {:xmlns "http://www.w3.org/2000/svg"
       :version "1.1"
-      :class width
+      :class class
+      :style {:min-width "200px"}
       :view-box (string/join " " [(- line-width) (- line-width) (+ court-width (* 2 line-width)) (+ court-height (* 2 line-width))])
       :on-click on-click
       :on-context-menu on-context-menu}

@@ -191,8 +191,7 @@
         zone-by (<sub [::subs/zone-by])
         shot-data-by-sector (<sub [::subs/shot-data-by-sector])]
     [court
-     {:id "shot-chart"
-      :width "max-h-96"}
+     {:class "max-h-96"}
      (when (<sub [::subs/show-zones?])
        [:g {:stroke-width 0.5 :stroke "black"}
         (let [sector-pps-map (->> shot-data-by-sector

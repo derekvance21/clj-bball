@@ -30,7 +30,7 @@
 
 
 (defroutes app-routes
-  (route/files "/" {:root "resources/public"})
+  (route/resources "/")
   (wrap-cors
    (GET "/games" []
      (response/response

@@ -400,10 +400,10 @@
                          (re-frame/dispatch [::events/add-action]))}
      [:div.flex.flex-col.items-start.gap-1
       (let [shot-location (<sub [::subs/shot-location])
-            id "court"]
+            id "game-court"]
         [court
          {:id id
-          :width "max-h-96"
+          :class "max-h-96"
           :on-context-menu (svg-right-click-handler id)
           :on-click (svg-click-handler id false)}
          (when (some? shot-location)
