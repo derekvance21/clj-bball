@@ -1,3 +1,6 @@
+;; THIS USES DATOMIC, WHICH I'M NOT SURE I WANT TO USE
+;; SO THIS IS GOING TO SIT HERE, NOT IN THE compile-clj PATH
+
 (ns bball.db
   (:require
    [bball.env :as env]

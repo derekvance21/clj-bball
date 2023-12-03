@@ -26,8 +26,7 @@
                :on-click #(re-frame/dispatch [::events/set-active-panel :game])}
        "Game"]]
      ;; main
-     [:div.flex.flex-col.gap-2.m-2
-      
+     [:div.m-2
       (cond
         game? [game]
         analysis? [analysis])]]))

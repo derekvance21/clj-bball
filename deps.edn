@@ -1,7 +1,5 @@
 {:paths ["src" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        com.datomic/client-pro {:mvn/version "1.0.76"}
-        com.datomic/peer {:mvn/version "1.0.6726"}
         datascript/datascript {:mvn/version "1.4.2"}
         ring/ring-core {:mvn/version "1.10.0"}
         ring/ring-jetty-adapter {:mvn/version "1.10.0"}
