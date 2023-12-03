@@ -393,28 +393,29 @@
 
 
 (defn action-input []
-  [:div.flex.flex-col.items-start.gap-1
-   (let [shot-location (<sub [::subs/shot-location])
-         id "game-court"]
-     [:div
-      {:style {:width "420px"}}
-      [court
-       {:id id
-        :on-context-menu (svg-right-click-handler id)
-        :on-click (svg-click-handler id false)}
-       (when (some? shot-location)
-         (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
-               icon-size 5]
-           [:circle
-            {:r icon-size :cx x :cy y
-             :fill "none"
-             :stroke (if (<sub [::subs/shot-make?]) "green" "red")
-             :stroke-width 2}]))]])
-   (let [type (re-frame/subscribe [::subs/action-type])]
-     [:form {:on-submit (fn submit-action-input
-                          [e]
-                          (.preventDefault e)
-                          (re-frame/dispatch [::events/add-action]))}
+  (let [shot-location (<sub [::subs/shot-location])
+        id "game-court"
+        type (re-frame/subscribe [::subs/action-type])]
+    [:form.flex.flex-col.gap-1
+     {:on-submit (fn submit-action-input
+                   [e]
+                   (.preventDefault e)
+                   (re-frame/dispatch [::events/add-action]))}
+     [:div.flex.flex-col.gap-1
+      [:div
+       {:style {:width "420px"}}
+       [court
+        {:id id
+         :on-context-menu (svg-right-click-handler id)
+         :on-click (svg-click-handler id false)}
+        (when (some? shot-location)
+          (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
+                icon-size 5]
+            [:circle
+             {:r icon-size :cx x :cy y
+              :fill "none"
+              :stroke (if (<sub [::subs/shot-make?]) "green" "red")
+              :stroke-width 2}]))]]
       [:div.flex.gap-2
        [button
         {:class "px-2 py-1"
@@ -475,7 +476,7 @@
           {:type "submit"
            :class (when disabled? "opacity-50 cursor-not-allowed")
            :disabled disabled?}
-          "Add"])]])])
+          "Add"])]]]))
 
 
 (defn game-input
