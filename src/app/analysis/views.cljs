@@ -191,7 +191,7 @@
         zone-by (<sub [::subs/zone-by])
         shot-data-by-sector (<sub [::subs/shot-data-by-sector])]
     [court
-     {:class "max-h-96"}
+     {}
      (when (<sub [::subs/show-zones?])
        [:g {:stroke-width 0.5 :stroke "black"}
         (let [sector-pps-map (->> shot-data-by-sector
@@ -435,7 +435,9 @@
    [:div.flex.gap-2.flex-wrap.md:flex-nowrap.items-start
     [:div.md:order-last
      [stats]]
-    [shot-chart]]
+    [:div
+     {:style {:width "480px"}}
+     [shot-chart]]]
    [:div.self-start.flex.gap-2.flex-wrap
     [players-selector]
     [offense-selector]]

@@ -34,30 +34,32 @@
 
 
 (defn court
-  [{:keys [id on-click on-context-menu class]
-    :or {class "w-full" id (gensym "court-")}} & children]
+  [{:keys [id on-click on-context-menu]
+    :or {id (gensym "court-")}} & children]
   (let [[court-width court-height] court-dimensions
-        line-width 2]
-    [:svg
-     {:xmlns "http://www.w3.org/2000/svg"
-      :version "1.1"
-      :class class
-      :style {:min-width "200px"}
-      :view-box (string/join " " [(- line-width) (- line-width) (+ court-width (* 2 line-width)) (+ court-height (* 2 line-width))])
-      :on-click on-click
-      :on-context-menu on-context-menu}
-     (for [child children]
-       (with-meta child {:key (gensym "key-")}))
-     [:rect {:id id :x 0 :y 0 :width court-width :height court-height :fill (or "none" "#dfbb85")}]
-     [:g {:id "lines" :fill "none" :stroke-width line-width :stroke "black" :stroke-linecap "butt" :stroke-linejoin "miter"}
-      [:rect {:x (- (/ line-width 2)) :y (- (/ line-width 2))
-              :width (+ line-width court-width) :height (+ line-width court-height)}]
-      [:path {:d "M 63 0 L 63 63 a 237 237 0 0 0 474 0 l 0 -63"}] ;; 3 point arc
-      [:circle {:cx 300 :cy 63 :r 9}] ;; hoop
-      [:line {:x1 269 :y1 48 :x2 331 :y2 48}] ;; backboard
-      [:polyline {:points "228 0 228 228 370 228 370 0"}] ;; paint
-      [:path {:d "M 228 228 A 71 71 0 0 0 370 228"}] ;; top of key
-      [:path {:d "M 228 504 a 71 71 0 0 1 142 0"}] ;; halfcourt circle
-      [:path {:d "M 227 94 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0"}] ; left lane markings
-      [:path {:d "M 371 94 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0"}] ; right lane markings
-      ]]))
+        line-width 2
+        viewbox-width (+ court-width (* 2 line-width))
+        viewbox-height (+ court-height (* 2 line-width))]
+    [:div.relative.h-0.w-full.p-0
+     {:style {:padding-bottom (str (* 100 (/ viewbox-height viewbox-width)) "%")}}
+     [:svg.absolute.w-full.h-full.top-0.left-0
+      {:xmlns "http://www.w3.org/2000/svg"
+       :version "1.1"
+       :view-box (string/join " " [(- line-width) (- line-width) viewbox-width viewbox-height])
+       :on-click on-click
+       :on-context-menu on-context-menu}
+      (for [child children]
+        (with-meta child {:key (gensym "key-")}))
+      [:rect {:id id :x 0 :y 0 :width court-width :height court-height :fill (or "none" "#dfbb85")}]
+      [:g {:id "lines" :fill "none" :stroke-width line-width :stroke "black" :stroke-linecap "butt" :stroke-linejoin "miter"}
+       [:rect {:x (- (/ line-width 2)) :y (- (/ line-width 2))
+               :width (+ line-width court-width) :height (+ line-width court-height)}]
+       [:path {:d "M 63 0 L 63 63 a 237 237 0 0 0 474 0 l 0 -63"}] ;; 3 point arc
+       [:circle {:cx 300 :cy 63 :r 9}] ;; hoop
+       [:line {:x1 269 :y1 48 :x2 331 :y2 48}] ;; backboard
+       [:polyline {:points "228 0 228 228 370 228 370 0"}] ;; paint
+       [:path {:d "M 228 228 A 71 71 0 0 0 370 228"}] ;; top of key
+       [:path {:d "M 228 504 a 71 71 0 0 1 142 0"}] ;; halfcourt circle
+       [:path {:d "M 227 94 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0 m 8 36 l -8 0"}] ; left lane markings
+       [:path {:d "M 371 94 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0 m -8 36 l 8 0"}] ; right lane markings
+       ]]]))

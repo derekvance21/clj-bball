@@ -14,7 +14,7 @@
         game? (= active-panel :game)
         analysis? (= active-panel :analysis)]
     [:div.container.mx-auto
-     {:class "lg:w-2/3"}
+     {:class "lg:w-3/4"}
      ;; header
      [:div.flex.gap-2.px-2.py-1
       [button {:class "px-2 py-1"

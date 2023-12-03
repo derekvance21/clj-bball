@@ -403,7 +403,6 @@
             id "game-court"]
         [court
          {:id id
-          :class "max-h-96"
           :on-context-menu (svg-right-click-handler id)
           :on-click (svg-click-handler id false)}
          (when (some? shot-location)

@@ -931,7 +931,7 @@
 
 (def zone-layouts
   [;; arcs detailed, 3's split in fourths
-   {:layout (make-arc-sectors [36 84 144 (+ 9 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
+   {:layout (make-arc-sectors [36 78 144 (+ 9 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
     :label "Arcs"}
    #_{:layout (make-arc-sectors [36 66 102 162 (+ 9 (* 19 12)) (+ 9 (* 23 12)) (* 30 12)])
       :label "Arcs"}
