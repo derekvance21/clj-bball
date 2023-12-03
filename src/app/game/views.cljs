@@ -273,7 +273,7 @@
   []
   (let [[team1 team2] (<sub [::subs/game-teams])
         sub? (<sub [::subs/sub?])]
-    [:div.flex.gap-1.sm:flex-col.items-baseline.sm:items-stretch
+    [:div.flex.gap-1.md:flex-col.items-baseline.md:items-stretch
      [team-players-input team1]
      [button {:class "px-2 py-1"
               :disabled? false
@@ -393,26 +393,28 @@
 
 
 (defn action-input []
-  (let [type (re-frame/subscribe [::subs/action-type])]
-    [:form {:on-submit (fn submit-action-input
-                         [e]
-                         (.preventDefault e)
-                         (re-frame/dispatch [::events/add-action]))}
-     [:div.flex.flex-col.items-start.gap-1
-      (let [shot-location (<sub [::subs/shot-location])
-            id "game-court"]
-        [court
-         {:id id
-          :on-context-menu (svg-right-click-handler id)
-          :on-click (svg-click-handler id false)}
-         (when (some? shot-location)
-           (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
-                 icon-size 5]
-             [:circle
-              {:r icon-size :cx x :cy y
-               :fill "none"
-               :stroke (if (<sub [::subs/shot-make?]) "green" "red")
-               :stroke-width 2}]))])
+  [:div.flex.flex-col.items-start.gap-1
+   (let [shot-location (<sub [::subs/shot-location])
+         id "game-court"]
+     [:div
+      {:style {:width "420px"}}
+      [court
+       {:id id
+        :on-context-menu (svg-right-click-handler id)
+        :on-click (svg-click-handler id false)}
+       (when (some? shot-location)
+         (let [[x y] (polar-hoop->eucl-court hoop-coordinates shot-location)
+               icon-size 5]
+           [:circle
+            {:r icon-size :cx x :cy y
+             :fill "none"
+             :stroke (if (<sub [::subs/shot-make?]) "green" "red")
+             :stroke-width 2}]))]])
+   (let [type (re-frame/subscribe [::subs/action-type])]
+     [:form {:on-submit (fn submit-action-input
+                          [e]
+                          (.preventDefault e)
+                          (re-frame/dispatch [::events/add-action]))}
       [:div.flex.gap-2
        [button
         {:class "px-2 py-1"
@@ -473,16 +475,15 @@
           {:type "submit"
            :class (when disabled? "opacity-50 cursor-not-allowed")
            :disabled disabled?}
-          "Add"])]]]))
+          "Add"])]])])
 
 
 (defn game-input
   []
-  [:div.flex.justify-between.gap-2.flex-col.sm:flex-row
-   [:div.order-last.sm:order-none
+  [:div.flex.justify-between.gap-2.flex-col.md:flex-row
+   [:div.order-last.md:order-none
     [players-input]]
-   [:div.grow
-    [action-input]]])
+   [action-input]])
 
 
 (defn new-game
@@ -509,18 +510,12 @@
    [submit-game]])
 
 
-(defn game-stats
-  []
-  [:div.flex.justify-between.gap-2.flex-wrap.md:flex-nowrap
-   [:div.flex-1
-    [stats]]
-   [:div.md:flex-1
-    [possessions]]])
-
-
 (defn game
   []
   [:div.flex.flex-col.gap-2
-   [game-input]
-   [game-stats]
+   [:div.flex.flex-wrap.md:flex-nowrap.gap-4
+    [game-input]
+    [:div.flex-1
+     [stats]
+     [possessions]]]
    [game-controls]])

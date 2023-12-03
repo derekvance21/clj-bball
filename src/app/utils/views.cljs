@@ -42,7 +42,7 @@
         viewbox-height (+ court-height (* 2 line-width))]
     [:div.relative.h-0.w-full.p-0
      {:style {:padding-bottom (str (* 100 (/ viewbox-height viewbox-width)) "%")}}
-     [:svg.absolute.w-full.h-full.top-0.left-0
+     [:svg.absolute.top-0.left-0.w-full.h-full
       {:xmlns "http://www.w3.org/2000/svg"
        :version "1.1"
        :view-box (string/join " " [(- line-width) (- line-width) viewbox-width viewbox-height])
