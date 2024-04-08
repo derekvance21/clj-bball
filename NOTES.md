@@ -2,6 +2,7 @@
 
 ## Todo
 
+- [ ] try using [seaborn kde plot](https://seaborn.pydata.org/generated/seaborn.kdeplot.html) to contour plot! ![seaborn plot](image.png)
 - [ ] send all the games as just a single vector of maps, so the entire thing can just be transacted
 - [ ] select color scheme
 - [ ] select zone layout
